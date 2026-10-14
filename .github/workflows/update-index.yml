@@ -1,0 +1,41 @@
+name: Update index
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.html"
+      - "!index.html"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-index
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Generate drafts.js
+        run: python3 .github/scripts/generate-index.py
+
+      - name: Commit index data
+        run: |
+          git add drafts.js
+          if git diff --cached --quiet; then
+            echo "drafts.js is already up to date."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "Regenerate draft index"
+          git push origin HEAD:main
