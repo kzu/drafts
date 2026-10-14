@@ -234,10 +234,21 @@
 
     html.dark .btn-outline:hover { background: color-mix(in oklch, var(--input) 50%, transparent); }
 
-    #show-all[aria-pressed="true"] {
+    .btn-outline[aria-pressed="true"],
+    .btn-outline[aria-checked="true"],
+    html.dark .btn-outline[aria-pressed="true"],
+    html.dark .btn-outline[aria-checked="true"] {
       background: var(--primary);
       color: var(--primary-foreground);
       border-color: transparent;
+    }
+
+    .btn-outline[aria-pressed="true"]:hover,
+    .btn-outline[aria-checked="true"]:hover,
+    html.dark .btn-outline[aria-pressed="true"]:hover,
+    html.dark .btn-outline[aria-checked="true"]:hover {
+      background: color-mix(in oklch, var(--primary) 90%, transparent);
+      color: var(--primary-foreground);
     }
 
     .btn:disabled {
@@ -406,6 +417,19 @@
         <input id="query" class="field" type="search" placeholder="Search titles, paths, and headings" autocomplete="off" spellcheck="false">
       </label>
       <button type="button" id="show-all" class="btn btn-outline" aria-pressed="false">Show All</button>
+      <button type="button" id="all-done" class="btn btn-outline btn-icon" title="All Done" aria-label="All Done">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6 7 17l-5-5"></path>
+          <path d="m22 10-7.5 7.5L13 16"></path>
+        </svg>
+      </button>
+      <button type="button" id="none-done" class="btn btn-outline btn-icon" title="None Done" aria-label="None Done">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+          <path d="m15 9-6 6"></path>
+          <path d="m9 9 6 6"></path>
+        </svg>
+      </button>
     </div>
 
     <div id="list"></div>
@@ -422,6 +446,8 @@
       var query = document.getElementById("query");
       var theme = document.getElementById("theme");
       var showAllButton = document.getElementById("show-all");
+      var allDoneButton = document.getElementById("all-done");
+      var noneDoneButton = document.getElementById("none-done");
       var showAll = false;
       var done = loadDone();
 
@@ -501,9 +527,9 @@
               '<p class="card-description" data-slot="card-description">' + esc(file.path) + "</p>" +
             "</div>" +
             '<div class="card-actions">' +
-              '<button type="button" class="btn btn-outline btn-sm" data-done="' + esc(file.path) + '"' +
-                (done.has(file.path) ? ' aria-pressed="true" disabled' : '') +
-              ">Done</button>" +
+              '<button type="button" class="btn btn-outline btn-sm" role="switch" aria-checked="' +
+                (done.has(file.path) ? "true" : "false") + '" data-done="' + esc(file.path) +
+              '">Done</button>' +
               '<a class="btn btn-default btn-sm" href="' + esc(href(file.path)) + '">Open</a>' +
             "</div>" +
           "</div>" +
@@ -553,17 +579,42 @@
         syncThemeButton();
       });
 
+      function focusDone(path) {
+        var buttons = list.querySelectorAll("[data-done]");
+        for (var i = 0; i < buttons.length; i++) {
+          if (buttons[i].getAttribute("data-done") === path) {
+            buttons[i].focus();
+            return;
+          }
+        }
+      }
+
       list.addEventListener("click", function (event) {
         var button = event.target.closest("[data-done]");
-        if (!button || button.disabled) return;
-        done.add(button.getAttribute("data-done"));
+        if (!button) return;
+        var path = button.getAttribute("data-done");
+        if (done.has(path)) done.delete(path);
+        else done.add(path);
         saveDone();
         render();
+        focusDone(path);
       });
 
       showAllButton.addEventListener("click", function () {
         showAll = !showAll;
         showAllButton.setAttribute("aria-pressed", showAll ? "true" : "false");
+        render();
+      });
+
+      allDoneButton.addEventListener("click", function () {
+        files.forEach(function (file) { done.add(file.path); });
+        saveDone();
+        render();
+      });
+
+      noneDoneButton.addEventListener("click", function () {
+        done.clear();
+        saveDone();
         render();
       });
 
