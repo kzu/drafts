@@ -137,9 +137,14 @@
       font-size: 0.875rem;
     }
 
-    .toolbar { margin-bottom: 1.5rem; }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
 
-    .search { position: relative; display: block; }
+    .search { position: relative; display: block; flex: 1; min-width: 0; }
 
     .search svg {
       position: absolute;
@@ -229,11 +234,21 @@
 
     html.dark .btn-outline:hover { background: color-mix(in oklch, var(--input) 50%, transparent); }
 
+    #show-all[aria-pressed="true"] {
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border-color: transparent;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
     .btn-icon { width: 2.25rem; padding: 0; }
 
-    .icon-sun { display: none; }
+    html:not(.dark) .icon-sun,
     html.dark .icon-moon { display: none; }
-    html.dark .icon-sun { display: block; }
 
     .badge {
       display: inline-flex;
@@ -311,7 +326,13 @@
       font-size: 0.75rem;
     }
 
-    .card-header .btn { grid-column: 2; grid-row: 1 / span 2; }
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      grid-column: 2;
+      grid-row: 1 / span 2;
+    }
 
     .outline {
       display: flex;
@@ -384,6 +405,7 @@
         </svg>
         <input id="query" class="field" type="search" placeholder="Search titles, paths, and headings" autocomplete="off" spellcheck="false">
       </label>
+      <button type="button" id="show-all" class="btn btn-outline" aria-pressed="false">Show All</button>
     </div>
 
     <div id="list"></div>
@@ -399,6 +421,24 @@
       var count = document.getElementById("count");
       var query = document.getElementById("query");
       var theme = document.getElementById("theme");
+      var showAllButton = document.getElementById("show-all");
+      var showAll = false;
+      var done = loadDone();
+
+      function loadDone() {
+        try {
+          var parsed = JSON.parse(localStorage.getItem("drafts-done") || "[]");
+          return new Set(Array.isArray(parsed) ? parsed.filter(function (path) { return typeof path === "string"; }) : []);
+        } catch (e) {
+          return new Set();
+        }
+      }
+
+      function saveDone() {
+        try {
+          localStorage.setItem("drafts-done", JSON.stringify(Array.from(done)));
+        } catch (e) {}
+      }
 
       function esc(value) {
         return String(value).replace(/[&<>"']/g, function (ch) {
@@ -460,15 +500,25 @@
               "<" + tag + ' class="card-title" data-slot="card-title"><a href="' + esc(href(file.path)) + '">' + esc(file.title) + "</a></" + tag + ">" +
               '<p class="card-description" data-slot="card-description">' + esc(file.path) + "</p>" +
             "</div>" +
-            '<a class="btn btn-default btn-sm" href="' + esc(href(file.path)) + '">Open</a>' +
+            '<div class="card-actions">' +
+              '<button type="button" class="btn btn-outline btn-sm" data-done="' + esc(file.path) + '"' +
+                (done.has(file.path) ? ' aria-pressed="true" disabled' : '') +
+              ">Done</button>" +
+              '<a class="btn btn-default btn-sm" href="' + esc(href(file.path)) + '">Open</a>' +
+            "</div>" +
           "</div>" +
           body +
         "</article>";
       }
 
+      function hidden(file) {
+        return !showAll && done.has(file.path);
+      }
+
       function render() {
         var q = query.value.trim().toLowerCase();
-        var matched = files.filter(function (file) { return matches(file, q); });
+        var pool = files.filter(function (file) { return !hidden(file); });
+        var matched = pool.filter(function (file) { return matches(file, q); });
         var grouped = sections(matched);
         var showTitles = grouped.length > 1 || (grouped[0] && grouped[0].dir);
         list.innerHTML = grouped.map(function (group) {
@@ -480,12 +530,13 @@
         }).join("");
 
         var noun = matched.length === 1 ? "page" : "pages";
-        count.textContent = q && matched.length !== files.length
-          ? matched.length + " of " + files.length
+        count.textContent = q && matched.length !== pool.length
+          ? matched.length + " of " + pool.length
           : matched.length + " " + noun;
 
         var message = "";
         if (!files.length) message = "No HTML pages in this repo yet.";
+        else if (!pool.length) message = "Every page is marked done.";
         else if (!matched.length) message = "No pages match that search.";
         empty.hidden = !message;
         empty.textContent = message;
@@ -500,6 +551,20 @@
         var dark = document.documentElement.classList.toggle("dark");
         localStorage.setItem("theme", dark ? "dark" : "light");
         syncThemeButton();
+      });
+
+      list.addEventListener("click", function (event) {
+        var button = event.target.closest("[data-done]");
+        if (!button || button.disabled) return;
+        done.add(button.getAttribute("data-done"));
+        saveDone();
+        render();
+      });
+
+      showAllButton.addEventListener("click", function () {
+        showAll = !showAll;
+        showAllButton.setAttribute("aria-pressed", showAll ? "true" : "false");
+        render();
       });
 
       query.addEventListener("input", render);
