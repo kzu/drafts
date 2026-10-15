@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jobs API — MercadoPago QR Payment</title>
+  <meta name="description" content="How ARS-priced jobs wait on a MercadoPago dynamic QR, then unlock Cursor automation kickoff after the Order webhook. Includes what you still need to configure in MercadoPago and Cloudflare.">
+  <style>
+    :root {
+      --bg: #10141c;
+      --bg-lift: #171d28;
+      --panel: #1d2533;
+      --ink: #e8ecf2;
+      --muted: #9aa6b8;
+      --faint: #6b778c;
+      --line: rgba(232, 236, 242, 0.12);
+      --accent: #5eb8ff;
+      --accent-soft: rgba(94, 184, 255, 0.12);
+      --good: #6dca8f;
+      --good-soft: rgba(109, 202, 143, 0.12);
+      --warn: #e2b15a;
+      --warn-soft: rgba(226, 177, 90, 0.12);
+      --risk: #e07a6a;
+      --risk-soft: rgba(224, 122, 106, 0.12);
+      --mp: #009ee3;
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+      --sans: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+      --mono: "Cascadia Code", "SF Mono", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 70% 45% at 0% -5%, rgba(0, 158, 227, 0.18), transparent 55%),
+        radial-gradient(ellipse 50% 35% at 100% 0%, rgba(94, 184, 255, 0.1), transparent 50%),
+        var(--bg);
+      font-family: var(--serif);
+      font-size: 1.125rem;
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+    a:hover { color: #9ed2ff; }
+    code, .mono { font-family: var(--mono); font-size: 0.86em; }
+    code {
+      background: var(--accent-soft);
+      border: 1px solid rgba(94, 184, 255, 0.22);
+      padding: 0.1em 0.35em;
+      border-radius: 0.25rem;
+    }
+    pre {
+      margin: 0.9rem 0;
+      padding: 1rem 1.1rem;
+      overflow-x: auto;
+      background: #0b0f16;
+      border: 1px solid var(--line);
+      border-radius: 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: #d7e2f0;
+      max-width: 48rem;
+    }
+    pre code {
+      background: none;
+      border: 0;
+      padding: 0;
+      font-size: inherit;
+      color: inherit;
+    }
+
+    .wrap {
+      width: min(1000px, calc(100% - 2.5rem));
+      margin: 0 auto;
+      padding: 2.75rem 0 5rem;
+    }
+
+    .mast {
+      display: grid;
+      gap: 1.1rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 2.5rem;
+    }
+    .eyebrow {
+      margin: 0;
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--mp);
+    }
+    h1 {
+      margin: 0;
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: clamp(2.3rem, 5.5vw, 3.4rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      max-width: 18ch;
+    }
+    .lede {
+      margin: 0;
+      max-width: 44rem;
+      font-size: 1.25rem;
+      color: var(--muted);
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+    .chip {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.7rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: var(--bg-lift);
+    }
+    .chip.mp {
+      border-color: rgba(0, 158, 227, 0.45);
+      color: #7fd0f5;
+      background: rgba(0, 158, 227, 0.12);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 12.5rem 1fr;
+      gap: 2.5rem;
+    }
+    nav {
+      position: sticky;
+      top: 1.25rem;
+      align-self: start;
+    }
+    nav .label {
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin: 0 0 0.75rem;
+    }
+    nav ol {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    nav a {
+      display: block;
+      padding: 0.35rem 0;
+      color: var(--muted);
+      text-decoration: none;
+      font-family: var(--sans);
+      font-size: 0.88rem;
+      border-top: 1px solid var(--line);
+    }
+    nav a:hover { color: var(--accent); }
+
+    section { margin: 0 0 3rem; scroll-margin-top: 1.5rem; }
+    h2 {
+      margin: 0 0 1rem;
+      padding-top: 0.35rem;
+      border-top: 1px solid var(--line);
+      font-family: var(--sans);
+      font-size: 1.35rem;
+      letter-spacing: -0.02em;
+    }
+    h3 {
+      margin: 1.6rem 0 0.5rem;
+      font-family: var(--sans);
+      font-size: 1.05rem;
+      color: var(--accent);
+    }
+    h4 {
+      margin: 1.1rem 0 0.4rem;
+      font-family: var(--sans);
+      font-size: 0.92rem;
+      letter-spacing: 0.02em;
+      color: var(--ink);
+    }
+    p { margin: 0.65rem 0; max-width: 44rem; }
+    ul, ol.prose { margin: 0.5rem 0 0.9rem; padding-left: 1.2rem; max-width: 44rem; }
+    li { margin: 0.3rem 0; }
+
+    .states {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.65rem;
+      margin: 1rem 0;
+    }
+    .state {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 0.75rem;
+      padding: 0.85rem 0.95rem;
+    }
+    .state .name {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--accent);
+    }
+    .state p {
+      margin: 0.35rem 0 0;
+      font-size: 0.95rem;
+      color: var(--muted);
+      max-width: none;
+    }
+
+    .paths {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+      margin: 1rem 0;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 0.85rem;
+      padding: 1rem 1.1rem 1.15rem;
+    }
+    .card h4 {
+      margin: 0 0 0.45rem;
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .card p { margin: 0; font-size: 1rem; max-width: none; }
+    .card.free { border-color: rgba(109, 202, 143, 0.35); }
+    .card.paid { border-color: rgba(0, 158, 227, 0.4); }
+
+    .flow {
+      list-style: none;
+      margin: 1rem 0 0;
+      padding: 0;
+      border-left: 2px solid rgba(94, 184, 255, 0.45);
+    }
+    .flow li {
+      position: relative;
+      padding: 0 0 1.15rem 1.25rem;
+      margin: 0;
+      max-width: 44rem;
+    }
+    .flow li::before {
+      content: "";
+      position: absolute;
+      left: -0.4rem;
+      top: 0.45rem;
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px var(--bg);
+    }
+    .flow .n {
+      display: block;
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.15rem;
+    }
+
+    .checklist {
+      list-style: none;
+      margin: 0.8rem 0;
+      padding: 0;
+      max-width: 48rem;
+    }
+    .checklist li {
+      display: grid;
+      grid-template-columns: 1.6rem 1fr;
+      gap: 0.75rem;
+      margin: 0 0 0.65rem;
+      padding: 0.9rem 1rem;
+      background: var(--bg-lift);
+      border: 1px solid var(--line);
+      border-radius: 0.75rem;
+    }
+    .checklist .box {
+      width: 1.15rem;
+      height: 1.15rem;
+      margin-top: 0.15rem;
+      border: 2px solid var(--mp);
+      border-radius: 0.25rem;
+      background: transparent;
+    }
+    .checklist strong {
+      display: block;
+      font-family: var(--sans);
+      font-size: 0.98rem;
+      margin-bottom: 0.25rem;
+    }
+    .checklist p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      max-width: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.9rem 0;
+      font-size: 0.98rem;
+      background: rgba(29, 37, 51, 0.7);
+    }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 0.65rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+    }
+    th {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+    td.mono { white-space: nowrap; }
+
+    .callout {
+      margin: 1rem 0;
+      padding: 0.95rem 1.1rem;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      max-width: 44rem;
+      border-radius: 0 0.5rem 0.5rem 0;
+    }
+    .callout strong {
+      display: block;
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+    .callout.good { border-left-color: var(--good); background: var(--good-soft); }
+    .callout.good strong { color: var(--good); }
+    .callout.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+    .callout.warn strong { color: var(--warn); }
+    .callout.risk { border-left-color: var(--risk); background: var(--risk-soft); }
+    .callout.risk strong { color: var(--risk); }
+    .callout.mp { border-left-color: var(--mp); background: rgba(0, 158, 227, 0.1); }
+    .callout.mp strong { color: #7fd0f5; }
+
+    .todo-banner {
+      margin: 0 0 1.25rem;
+      padding: 1.1rem 1.2rem;
+      border: 1px solid rgba(226, 177, 90, 0.4);
+      border-radius: 0.85rem;
+      background: linear-gradient(135deg, rgba(226, 177, 90, 0.14), rgba(0, 158, 227, 0.08));
+      max-width: 48rem;
+    }
+    .todo-banner h3 {
+      margin: 0 0 0.4rem;
+      color: var(--warn);
+    }
+    .todo-banner p { margin: 0; color: var(--ink); max-width: none; }
+
+    footer {
+      margin-top: 2.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    @media (max-width: 860px) {
+      .layout, .paths, .states { grid-template-columns: 1fr; }
+      nav { position: static; }
+      h1 { max-width: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="mast">
+      <p class="eyebrow">Implemented · chebot.si / jobs</p>
+      <h1>MercadoPago QR for paid jobs</h1>
+      <p class="lede">
+        ARS-priced jobs no longer kick off Cursor immediately. The Jobs API creates a MercadoPago
+        dynamic QR order, holds the job in <code>pending</code>, and only enqueues the automation
+        after MercadoPago reports <code>order.processed</code>.
+      </p>
+      <div class="meta">
+        <span class="chip">jobs.chebot.si</span>
+        <span class="chip mp">MercadoPago Orders API</span>
+        <span class="chip">Dynamic QR</span>
+        <span class="chip">Oct 2026</span>
+      </div>
+    </header>
+
+    <div class="layout">
+      <nav aria-label="Contents">
+        <p class="label">Contents</p>
+        <ol>
+          <li><a href="#summary">Summary</a></li>
+          <li><a href="#status">Statuses</a></li>
+          <li><a href="#flows">Flows</a></li>
+          <li><a href="#api">API surface</a></li>
+          <li><a href="#code">What shipped</a></li>
+          <li><a href="#mp">Your MercadoPago checklist</a></li>
+          <li><a href="#cf">Cloudflare secrets</a></li>
+          <li><a href="#test">How to test</a></li>
+          <li><a href="#caveats">Caveats</a></li>
+        </ol>
+      </nav>
+
+      <main>
+        <section id="summary">
+          <h2>1. Summary</h2>
+          <p>
+            Before this change, <code>POST /jobs/{id}</code> always wrote status <code>queued</code>
+            and POSTed the Cursor automation webhook in the same request. Optional
+            <code>amount</code> / <code>currency</code> were stored on the D1 row and never used.
+          </p>
+          <p>
+            Now payment is a gate for ARS amounts:
+          </p>
+          <ul class="prose">
+            <li><strong>No amount</strong> — free job: create → kickoff Cursor → <code>queued</code> (same response as before).</li>
+            <li><strong>Amount in ARS</strong> — create MercadoPago QR order → <code>pending</code> + return <code>qr</code> → wait for webhook → kickoff → <code>queued</code>.</li>
+            <li><strong>USD</strong> — rejected with <code>400 Invalid currency.</code> Only unpaid or ARS-paid jobs are supported.</li>
+          </ul>
+          <div class="callout good">
+            <strong>Names kept on purpose</strong>
+            <code>queued</code>, <code>running</code>, <code>done</code>, and <code>failed</code> are unchanged.
+            Only <code>created</code> and <code>pending</code> were added ahead of work.
+          </div>
+        </section>
+
+        <section id="status">
+          <h2>2. Status model</h2>
+          <div class="states">
+            <div class="state">
+              <div class="name">created</div>
+              <p>Row just inserted. Brief; free jobs leave it immediately, paid jobs move to pending after the MP call.</p>
+            </div>
+            <div class="state">
+              <div class="name">pending</div>
+              <p>Waiting for payment (or, later, other HITL). QR is available on GET/SSE. Cursor is not called yet.</p>
+            </div>
+            <div class="state">
+              <div class="name">queued</div>
+              <p>Automation kickoff succeeded. Same meaning as before.</p>
+            </div>
+            <div class="state">
+              <div class="name">running</div>
+              <p>Agent called MCP <code>progress</code>.</p>
+            </div>
+            <div class="state">
+              <div class="name">done</div>
+              <p>Agent called MCP <code>success</code>. Outputs downloadable.</p>
+            </div>
+            <div class="state">
+              <div class="name">failed</div>
+              <p>Kickoff failed, payment canceled/expired, or agent <code>fail</code>.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="flows">
+          <h2>3. Flows</h2>
+          <div class="paths">
+            <div class="card free">
+              <h4>Free job (no amount)</h4>
+              <p><code>created</code> → kickoff Cursor → <code>queued</code> → MCP → <code>done</code> | <code>failed</code></p>
+            </div>
+            <div class="card paid">
+              <h4>Paid job (ARS amount)</h4>
+              <p><code>created</code> → MP order → <code>pending</code> + QR → webhook <code>order.processed</code> → kickoff → <code>queued</code> → …</p>
+            </div>
+          </div>
+
+          <h3>Paid path in detail</h3>
+          <ol class="flow">
+            <li>
+              <span class="n">Client</span>
+              Uploads inputs to <code>POST /jobs/{id}/in/…</code>, then starts with
+              <code>amount</code> (and optional <code>currency: "ARS"</code>).
+            </li>
+            <li>
+              <span class="n">Worker</span>
+              Inserts the row as <code>created</code>, stores automation URL/token/agent for later,
+              calls MercadoPago <code>POST /v1/orders</code> with <code>type: "qr"</code> and
+              <code>config.qr.mode: "dynamic"</code>.
+            </li>
+            <li>
+              <span class="n">Response</span>
+              Returns <code>201 { id, status: "pending", qr }</code>.
+              <code>qr</code> is the EMVCo string from <code>type_response.qr_data</code> —
+              the client renders it as a QR image for the buyer.
+            </li>
+            <li>
+              <span class="n">Buyer</span>
+              Scans with the MercadoPago app and pays.
+            </li>
+            <li>
+              <span class="n">MercadoPago</span>
+              POSTs to <code>https://jobs.chebot.si/webhooks/mercadopago</code>
+              with action <code>order.processed</code>.
+            </li>
+            <li>
+              <span class="n">Worker</span>
+              Verifies <code>x-signature</code>, resolves the job via
+              <code>external_reference</code> (the job UUID) or <code>mp_order_id</code>,
+              kicks off Cursor with the stored automation credentials, clears those secrets,
+              sets status <code>queued</code>.
+            </li>
+            <li>
+              <span class="n">Agent</span>
+              Runs as before: MCP <code>progress</code> / <code>success</code> / <code>fail</code>.
+            </li>
+          </ol>
+        </section>
+
+        <section id="api">
+          <h2>4. API surface</h2>
+
+          <h3>Start job — <code>POST /jobs/{id}</code></h3>
+          <table>
+            <thead>
+              <tr><th>Body</th><th>Result</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>No <code>amount</code></td>
+                <td><code>201 { id, status: "queued" }</code> after successful Cursor kickoff</td>
+              </tr>
+              <tr>
+                <td><code>amount</code> (ARS, default currency)</td>
+                <td><code>201 { id, status: "pending", qr: "…" }</code> — Cursor not called yet</td>
+              </tr>
+              <tr>
+                <td><code>currency: "USD"</code></td>
+                <td><code>400 { error: "Invalid currency." }</code></td>
+              </tr>
+              <tr>
+                <td>MP create fails</td>
+                <td><code>502</code>, job marked <code>failed</code></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Public status</h3>
+          <p>
+            <code>GET /jobs/{id}</code> and the SSE stream include <code>qr</code>
+            <strong>only while</strong> <code>status === "pending"</code>, so a status page can
+            refresh the code without holding secrets. Amount, currency, and automation credentials
+            stay off the public payload.
+          </p>
+
+          <h3>Webhook — <code>POST /webhooks/mercadopago</code></h3>
+          <ul class="prose">
+            <li>No <code>JOBS_TOKEN</code> (MercadoPago cannot send it).</li>
+            <li>Requires valid <code>x-signature</code> / <code>x-request-id</code> / <code>data.id</code> HMAC against <code>MP_WEBHOOK_SECRET</code>.</li>
+            <li><code>order.processed</code> → enqueue automation (idempotent if already past <code>pending</code>).</li>
+            <li><code>order.canceled</code> / <code>order.expired</code> → <code>failed</code> with a clear message, only if still <code>pending</code>.</li>
+            <li>Always acknowledges with <code>200</code> after handling (or <code>401</code> on bad signature).</li>
+          </ul>
+
+          <h3>MCP gate</h3>
+          <p>
+            Agent tools reject <code>created</code> / <code>pending</code> with
+            “Job is not ready.” Work tools still require <code>queued</code> or <code>running</code>.
+          </p>
+        </section>
+
+        <section id="code">
+          <h2>5. What shipped in the repo</h2>
+          <table>
+            <thead>
+              <tr><th>File</th><th>Change</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">jobs/worker.js</td>
+                <td>Deferred kickoff, MP order create, webhook handler, signature verify, public <code>qr</code></td>
+              </tr>
+              <tr>
+                <td class="mono">jobs/schema.sql</td>
+                <td>Columns: <code>automation_url</code>, <code>automation_auth</code>, <code>automation_agent</code>, <code>mp_order_id</code>, <code>qr_data</code></td>
+              </tr>
+              <tr>
+                <td class="mono">jobs/migrations/0001_payment.sql</td>
+                <td><code>ALTER TABLE</code> for existing D1 databases</td>
+              </tr>
+              <tr>
+                <td class="mono">jobs/worker.test.mjs</td>
+                <td>Free vs ARS, USD reject, webhook unlock/idempotency, cancel/expire, signature failure</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            Automation credentials are stored until kickoff succeeds, then nulled so they do not
+            linger on paid or free jobs.
+          </p>
+          <p>
+            MercadoPago create uses job UUID as <code>external_reference</code> and as
+            <code>X-Idempotency-Key</code>, so retries do not mint duplicate orders for the same job.
+          </p>
+        </section>
+
+        <section id="mp">
+          <h2>6. Your MercadoPago checklist</h2>
+          <div class="todo-banner">
+            <h3>Still on you — not done in code</h3>
+            <p>
+              The Worker is ready to call the Orders API and receive webhooks. You still need a
+              seller application, a store + cash register (<code>external_pos_id</code>), production
+              credentials, and a webhook URL pointed at jobs.
+            </p>
+          </div>
+
+          <ol class="checklist">
+            <li>
+              <span class="box" aria-hidden="true"></span>
+              <div>
+                <strong>1. Application in Your integrations</strong>
+                <p>
+                  Open
+                  <a href="https://www.mercadopago.com.ar/developers/panel/app" rel="noopener">MercadoPago Developers → Your integrations</a>
+                  and use (or create) the application that will own QR Code / Orders.
+                  Prefer production credentials for real money; use test credentials
+                  (Access Token starts with <code>APP_USR</code>) while developing.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span class="box" aria-hidden="true"></span>
+              <div>
+                <strong>2. Create store and cash register (caja)</strong>
+                <p>
+                  QR Orders require a store and a POS/caja with an
+                  <code>external_id</code> you choose. That value becomes
+                  <code>MP_EXTERNAL_POS_ID</code> in the Worker
+                  (<code>config.qr.external_pos_id</code>). Follow
+                  <a href="https://www.mercadopago.com.ar/developers/es/docs/qr-code/overview" rel="noopener">QR Code → prerequisites / configure sucursal y caja</a>.
+                  Without this, <code>POST /v1/orders</code> fails and paid jobs go <code>failed</code>.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span class="box" aria-hidden="true"></span>
+              <div>
+                <strong>3. Copy Access Token</strong>
+                <p>
+                  From the app → Integration data → Credentials (test or production).
+                  This is <code>MP_ACCESS_TOKEN</code>. Never put it in client-side code or the repo.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span class="box" aria-hidden="true"></span>
+              <div>
+                <strong>4. Configure the Order webhook</strong>
+                <p>
+                  In the same app: <strong>Webhooks → Configure notifications</strong>.
+                  Production URL:
+                </p>
+                <pre><code>https://jobs.chebot.si/webhooks/mercadopago</code></pre>
+                <p>
+                  Subscribe to the event named <strong>Order (Mercado Pago)</strong>
+                  (topic <code>orders</code>). Save, then copy the generated
+                  <strong>secret signature</strong> — that is <code>MP_WEBHOOK_SECRET</code>.
+                </p>
+                <p>
+                  Docs:
+                  <a href="https://www.mercadopago.com.ar/developers/en/docs/qr-code/notifications" rel="noopener">Configure orders notifications</a>.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span class="box" aria-hidden="true"></span>
+              <div>
+                <strong>5. Simulate a notification</strong>
+                <p>
+                  In the Webhooks UI, use <strong>Simulate notification</strong> with a real
+                  <code>ORD…</code> id from a test order (or the id from a pending job’s
+                  <code>mp_order_id</code>). Confirm the Worker returns <code>200</code>.
+                  A bad secret yields <code>401</code>.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span class="box" aria-hidden="true"></span>
+              <div>
+                <strong>6. End-to-end with a test buyer</strong>
+                <p>
+                  Create a paid job against test credentials, render the returned <code>qr</code>
+                  string as a QR image, pay with a
+                  <a href="https://www.mercadopago.com.ar/developers/es/docs/qr-code/test-integration" rel="noopener">buyer test account</a>
+                  in the MercadoPago app, and watch the job leave <code>pending</code> for
+                  <code>queued</code> (and Cursor kickoff).
+                </p>
+              </div>
+            </li>
+          </ol>
+
+          <div class="callout mp">
+            <strong>What the Worker sends to MercadoPago</strong>
+            <pre><code>POST https://api.mercadopago.com/v1/orders
+Authorization: Bearer &lt;MP_ACCESS_TOKEN&gt;
+X-Idempotency-Key: &lt;job-uuid&gt;
+
+{
+  "type": "qr",
+  "total_amount": "1500.00",
+  "description": "Job &lt;job-uuid&gt;",
+  "external_reference": "&lt;job-uuid&gt;",
+  "config": {
+    "qr": {
+      "external_pos_id": "&lt;MP_EXTERNAL_POS_ID&gt;",
+      "mode": "dynamic"
+    }
+  },
+  "transactions": { "payments": [{ "amount": "1500.00" }] },
+  "items": [{ "title": "&lt;actor&gt;", "unit_price": "1500.00",
+              "quantity": 1, "unit_measure": "unit",
+              "external_code": "&lt;job-uuid&gt;" }]
+}</code></pre>
+            Response field used: <code>type_response.qr_data</code> (EMVCo payload for your QR renderer).
+          </div>
+
+          <div class="callout warn">
+            <strong>QR signature note from MercadoPago docs</strong>
+            Some QR documentation says Order webhooks for QR cannot always be verified with the
+            secret signature the same way as other products. The Worker still validates
+            <code>x-signature</code> as documented for Order notifications. If simulations fail
+            signature checks in production QR, open a MercadoPago support ticket — they document
+            that path explicitly — or temporarily diagnose with the simulate tool and GET
+            <code>/v1/orders/{id}</code> confirmation (the handler already GETs the order when
+            the body is thin).
+          </div>
+        </section>
+
+        <section id="cf">
+          <h2>7. Cloudflare / D1 you still need</h2>
+          <ol class="checklist">
+            <li>
+              <span class="box" aria-hidden="true"></span>
+              <div>
+                <strong>Apply the D1 migration</strong>
+                <p>
+                  On the existing <code>jobs</code> database, run
+                  <code>jobs/migrations/0001_payment.sql</code>
+                  (or recreate from updated <code>schema.sql</code> in a fresh DB).
+                  Without these columns, inserts fail at runtime.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span class="box" aria-hidden="true"></span>
+              <div>
+                <strong>Set Worker secrets / vars</strong>
+                <p>In the <code>jobs</code> Worker:</p>
+                <table>
+                  <thead>
+                    <tr><th>Name</th><th>Role</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td class="mono">MP_ACCESS_TOKEN</td><td>Bearer for Orders API</td></tr>
+                    <tr><td class="mono">MP_WEBHOOK_SECRET</td><td>HMAC key from Webhooks config</td></tr>
+                    <tr><td class="mono">MP_EXTERNAL_POS_ID</td><td>Caja <code>external_id</code> / POS id</td></tr>
+                  </tbody>
+                </table>
+                <p>
+                  Example: <code>npx wrangler secret put MP_ACCESS_TOKEN</code> (and the other two)
+                  from the <code>jobs/</code> directory. <code>MP_EXTERNAL_POS_ID</code> can be a
+                  plain <code>[vars]</code> entry if you prefer it non-secret.
+                </p>
+              </div>
+            </li>
+            <li>
+              <span class="box" aria-hidden="true"></span>
+              <div>
+                <strong>Deploy the Worker</strong>
+                <p>
+                  Deploy so <code>https://jobs.chebot.si/webhooks/mercadopago</code> is live
+                  before you save the webhook URL in MercadoPago.
+                </p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <section id="test">
+          <h2>8. How to test locally</h2>
+          <pre><code>cd jobs
+npm test</code></pre>
+          <p>
+            Coverage includes: free enqueue still hits Cursor; ARS amount hits MP and stays
+            <code>pending</code>; USD rejected; signed <code>order.processed</code> unlocks kickoff
+            and is idempotent; cancel/expire → <code>failed</code>; bad signature → <code>401</code>.
+          </p>
+          <h3>Manual smoke after deploy</h3>
+          <ol class="prose">
+            <li>Upload an input, <code>POST /jobs/{id}</code> with <code>amount: 100</code>.</li>
+            <li>Expect <code>pending</code> + <code>qr</code>. Confirm status GET also returns <code>qr</code>.</li>
+            <li>Pay (test buyer) or simulate webhook with that order id.</li>
+            <li>Expect status <code>queued</code> and a Cursor automation invocation.</li>
+          </ol>
+        </section>
+
+        <section id="caveats">
+          <h2>9. Caveats</h2>
+          <ul class="prose">
+            <li>Client must render <code>qr</code> (EMVCo string) into a QR image — the API does not return a PNG.</li>
+            <li>Default MP order expiration is short (on the order of minutes unless you later pass <code>expiration_time</code>). Expired orders fail the job if still pending.</li>
+            <li>Input uploads remain forbidden once the row exists — same as before — so upload first, then start (and pay).</li>
+            <li>HITL approval beyond payment is not implemented; <code>pending</code> is the status reserved for that class of waits.</li>
+            <li>Refunds / <code>order.refunded</code> are not handled yet (ack only / no status change beyond ignore).</li>
+          </ul>
+          <div class="callout">
+            <strong>Related draft</strong>
+            Broader product framing (Muse, MODO, Stripe) lives in
+            <a href="muse-jobs-connector.html">Jobs → Muse Connector</a>.
+            This page is only the jobs-Worker MercadoPago QR implementation.
+          </div>
+        </section>
+
+        <footer>
+          Draft · kzu/drafts · source: chebot.si/jobs · MercadoPago Orders + QR docs
+        </footer>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
