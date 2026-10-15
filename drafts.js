@@ -63,6 +63,96 @@ window.DRAFTS = {
       ]
     },
     {
+      "path": "muse-jobs-connector.html",
+      "title": "Jobs → Muse Connector — Draft",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Jobs processing as a Muse connector"
+        },
+        {
+          "level": 2,
+          "text": "1. The scene we’re aiming for"
+        },
+        {
+          "level": 2,
+          "text": "2. What we already have"
+        },
+        {
+          "level": 4,
+          "text": "Jobs engine"
+        },
+        {
+          "level": 4,
+          "text": "IPC+3 product shell"
+        },
+        {
+          "level": 2,
+          "text": "3. What Muse’s platform demands"
+        },
+        {
+          "level": 2,
+          "text": "4. The gap map"
+        },
+        {
+          "level": 2,
+          "text": "5. Proposed Muse-facing tool surface"
+        },
+        {
+          "level": 3,
+          "text": "Happy path as Muse sees it"
+        },
+        {
+          "level": 2,
+          "text": "6. Payment: three realistic tracks"
+        },
+        {
+          "level": 4,
+          "text": "Stripe / Link first (Muse-native)"
+        },
+        {
+          "level": 4,
+          "text": "Guest or prepaid credits"
+        },
+        {
+          "level": 4,
+          "text": "MODO inside Muse"
+        },
+        {
+          "level": 2,
+          "text": "7. Build plan (what it would take)"
+        },
+        {
+          "level": 3,
+          "text": "Phase 0 — Decide the product border"
+        },
+        {
+          "level": 3,
+          "text": "Phase 1 — Consumer MCP on top of ipcmas3"
+        },
+        {
+          "level": 3,
+          "text": "Phase 2 — Payment that Muse can finish"
+        },
+        {
+          "level": 3,
+          "text": "Phase 3 — Platform intake"
+        },
+        {
+          "level": 3,
+          "text": "Phase 4 — Hardening that review will poke"
+        },
+        {
+          "level": 2,
+          "text": "8. Open questions to settle before coding"
+        },
+        {
+          "level": 3,
+          "text": "Bottom line"
+        }
+      ]
+    },
+    {
       "path": "nativevalidation-format-message.html",
       "title": "FormatMessage in NativeValidation",
       "headings": [
