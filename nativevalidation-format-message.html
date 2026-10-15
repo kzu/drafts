@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FormatMessage in NativeValidation</title>
+  <meta name="description" content="How NativeValidation matches ValidationAttribute.FormatMessage from dotnet/runtime#132853 without constructing attributes.">
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem("theme");
+        var dark = theme === "dark" || (theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark");
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --radius: 0.625rem;
+      --background: oklch(1 0 0);
+      --foreground: oklch(0.145 0 0);
+      --card: oklch(1 0 0);
+      --card-foreground: oklch(0.145 0 0);
+      --primary: oklch(0.205 0 0);
+      --primary-foreground: oklch(0.985 0 0);
+      --secondary: oklch(0.97 0 0);
+      --secondary-foreground: oklch(0.205 0 0);
+      --muted: oklch(0.97 0 0);
+      --muted-foreground: oklch(0.556 0 0);
+      --accent: oklch(0.97 0 0);
+      --accent-foreground: oklch(0.205 0 0);
+      --border: oklch(0.922 0 0);
+      --input: oklch(0.922 0 0);
+      --ring: oklch(0.708 0 0);
+      --code: oklch(0.97 0 0);
+      --mark: oklch(0.96 0.04 85);
+      --mark-foreground: oklch(0.35 0.06 70);
+      color-scheme: light;
+    }
+
+    html.dark {
+      --background: oklch(0.145 0 0);
+      --foreground: oklch(0.985 0 0);
+      --card: oklch(0.205 0 0);
+      --card-foreground: oklch(0.985 0 0);
+      --primary: oklch(0.922 0 0);
+      --primary-foreground: oklch(0.205 0 0);
+      --secondary: oklch(0.269 0 0);
+      --secondary-foreground: oklch(0.985 0 0);
+      --muted: oklch(0.269 0 0);
+      --muted-foreground: oklch(0.708 0 0);
+      --accent: oklch(0.269 0 0);
+      --accent-foreground: oklch(0.985 0 0);
+      --border: oklch(1 0 0 / 10%);
+      --input: oklch(1 0 0 / 15%);
+      --ring: oklch(0.556 0 0);
+      --code: oklch(0.22 0 0);
+      --mark: oklch(0.32 0.04 85);
+      --mark-foreground: oklch(0.92 0.04 90);
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: Geist, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection { background: var(--primary); color: var(--primary-foreground); }
+
+    a { color: inherit; }
+    a.inline { text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 3.5rem;
+      padding: 0 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in oklch, var(--background) 80%, transparent);
+      backdrop-filter: blur(8px);
+    }
+
+    .brand {
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      text-decoration: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 2.25rem;
+      padding: 0 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) - 2px);
+      background: var(--background);
+      color: var(--foreground);
+      font: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    html.dark .btn { background: color-mix(in oklch, var(--input) 30%, transparent); border-color: var(--input); }
+    .btn:hover { background: var(--accent); }
+    .btn:focus-visible, .field:focus-visible, .area:focus-visible, select.field:focus-visible {
+      outline: none;
+      border-color: var(--ring);
+      box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent);
+    }
+    .btn-icon { width: 2.25rem; padding: 0; }
+    .btn svg { width: 1rem; height: 1rem; }
+    html:not(.dark) .icon-sun, html.dark .icon-moon { display: none; }
+
+    .page {
+      width: min(920px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2.5rem 0 5rem;
+    }
+
+    .kicker {
+      margin: 0 0 0.5rem;
+      color: var(--muted-foreground);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.875rem, 4vw, 2.5rem);
+      font-weight: 600;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+    }
+
+    .lede {
+      margin: 1rem 0 0;
+      max-width: 42rem;
+      color: var(--muted-foreground);
+      font-size: 1.0625rem;
+    }
+
+    .toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1.75rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .toc a {
+      display: inline-flex;
+      padding: 0.25rem 0.625rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted-foreground);
+      font-size: 0.8125rem;
+      text-decoration: none;
+    }
+
+    .toc a:hover { color: var(--foreground); border-color: color-mix(in oklch, var(--foreground) 25%, var(--border)); }
+
+    h2 {
+      margin: 3rem 0 0.75rem;
+      font-size: 1.375rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1.25;
+    }
+
+    h3 {
+      margin: 1.75rem 0 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    p { margin: 0.75rem 0; }
+
+    .prose { max-width: 42rem; }
+
+    code, .mono {
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size: 0.875em;
+    }
+
+    p code, li code, td code {
+      padding: 0.1em 0.35em;
+      border-radius: 0.3rem;
+      background: var(--code);
+    }
+
+    pre {
+      margin: 1rem 0;
+      padding: 1rem 1.1rem;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--code);
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size: 0.8125rem;
+      line-height: 1.55;
+    }
+
+    pre code { padding: 0; background: none; font-size: inherit; }
+
+    .figure {
+      margin: 1.25rem 0;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) + 4px);
+      background: var(--card);
+    }
+
+    .figure figcaption {
+      margin-bottom: 0.75rem;
+      color: var(--muted-foreground);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .flow {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 7.5rem 1fr;
+      gap: 0.75rem;
+      align-items: start;
+      padding: 0.75rem 0.9rem;
+      border-radius: calc(var(--radius) - 2px);
+      background: var(--muted);
+    }
+
+    .step strong { font-size: 0.8125rem; }
+    .step p { margin: 0.15rem 0 0; color: var(--muted-foreground); font-size: 0.875rem; }
+
+    .arrow {
+      justify-self: center;
+      color: var(--muted-foreground);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+    }
+
+    .table-wrap { margin: 1rem 0; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+
+    th, td {
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.05rem 0.4rem;
+      border-radius: 0.3rem;
+      background: var(--mark);
+      color: var(--mark-foreground);
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .lab {
+      display: grid;
+      gap: 1rem;
+      margin: 1.25rem 0 0;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) + 4px);
+      background: var(--card);
+    }
+
+    @media (min-width: 800px) {
+      .lab { grid-template-columns: 16rem 1fr; }
+    }
+
+    .fields { display: grid; gap: 0.75rem; }
+
+    label.block { display: grid; gap: 0.3rem; font-size: 0.75rem; font-weight: 600; }
+
+    .field, .area {
+      width: 100%;
+      margin: 0;
+      border: 1px solid var(--input);
+      border-radius: calc(var(--radius) - 2px);
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 0.875rem;
+    }
+
+    html.dark .field, html.dark .area { background: color-mix(in oklch, var(--input) 30%, transparent); }
+
+    .field { height: 2.25rem; padding: 0 0.65rem; }
+    .area { min-height: 5.5rem; padding: 0.55rem 0.65rem; resize: vertical; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 0.8125rem; }
+
+    .output {
+      display: grid;
+      gap: 0.75rem;
+      align-content: start;
+    }
+
+    .result {
+      margin: 0;
+      padding: 0.9rem 1rem;
+      border-radius: var(--radius);
+      background: var(--primary);
+      color: var(--primary-foreground);
+      font-size: 0.9375rem;
+    }
+
+    .args {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .args li {
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: var(--muted);
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size: 0.75rem;
+    }
+
+    .note { margin: 0; color: var(--muted-foreground); font-size: 0.8125rem; }
+
+    .split { display: grid; gap: 0.75rem; }
+    @media (min-width: 700px) { .split { grid-template-columns: 1fr 1fr; } }
+
+    .panel {
+      padding: 0.9rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--muted);
+    }
+
+    .panel h3 { margin: 0 0 0.35rem; }
+    .panel p { margin: 0; font-size: 0.875rem; }
+    .panel .big {
+      margin-top: 0.6rem;
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size: 0.8125rem;
+    }
+
+    ul { margin: 0.5rem 0 0.75rem; padding-left: 1.15rem; }
+    li + li { margin-top: 0.3rem; }
+
+    .sources { margin-top: 2.5rem; color: var(--muted-foreground); font-size: 0.8125rem; }
+    .sources a { color: inherit; }
+
+    @media (max-width: 560px) {
+      .topbar { padding: 0 1rem; }
+      .page { width: calc(100% - 2rem); }
+      .step { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">Drafts</a>
+    <button type="button" id="theme" class="btn btn-icon" aria-label="Switch to dark theme">
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+      </svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2"></path>
+        <path d="M12 20v2"></path>
+        <path d="m4.93 4.93 1.41 1.41"></path>
+        <path d="m17.66 17.66 1.41 1.41"></path>
+        <path d="M2 12h2"></path>
+        <path d="M20 12h2"></path>
+        <path d="m6.34 17.66-1.41 1.41"></path>
+        <path d="m19.07 4.93-1.41 1.41"></path>
+      </svg>
+    </button>
+  </header>
+
+  <main class="page">
+    <p class="kicker">NativeValidation · .NET 11</p>
+    <h1 id="format-message">FormatMessage in NativeValidation</h1>
+    <p class="lede">dotnet/runtime#132853 lets a caller hand a validation attribute a message template. The attribute still fills its own placeholders. NativeValidation now does that same job without constructing the attribute.</p>
+    <ul class="toc">
+      <li><a href="#runtime">The runtime method</a></li>
+      <li><a href="#why-not-call">Why it is not called</a></li>
+      <li><a href="#contract">Placeholder contract</a></li>
+      <li><a href="#template">Choosing the template</a></li>
+      <li><a href="#generator">Generated checks</a></li>
+      <li><a href="#limits">What stays out</a></li>
+      <li><a href="#evidence">How it was checked</a></li>
+    </ul>
+
+    <h2 id="runtime">The runtime method</h2>
+    <div class="prose">
+      <p><a class="inline" href="https://github.com/dotnet/runtime/pull/132853">dotnet/runtime#132853</a> backports <a class="inline" href="https://github.com/dotnet/runtime/pull/132764">#132764</a> to <code>release/11.0</code>. The approved API, from <a class="inline" href="https://github.com/dotnet/runtime/issues/132605">#132605</a>, is a public virtual method on <code>ValidationAttribute</code>:</p>
+    </div>
+    <pre><code>public virtual string FormatMessage(string format, string name)
+{
+    return string.Format(CultureInfo.CurrentCulture, format, name);
+}</code></pre>
+    <div class="prose">
+      <p>The base method substitutes only the display name. Built-in attributes that need more values override it. <code>FormatErrorMessage</code> now calls <code>FormatMessage</code> with the attribute’s own template, so the placeholder list lives in one place.</p>
+      <p>That split is what localization hosts needed. Microsoft.Extensions.Validation and Blazor look up a translated sentence, then call <code>attribute.FormatMessage(localizedTemplate, displayName)</code>. The host owns the words. The attribute owns <code>{1}</code> and <code>{2}</code>.</p>
+      <p>The motivating mismatch is <code>FileExtensionsAttribute</code>. The attribute formats a normalized, dot-prefixed list. Hosts that copied the raw <code>Extensions</code> property formatted <code>PDF, .TXT</code> while the attribute formatted <code>.pdf, .txt</code>.</p>
+    </div>
+
+    <h2 id="why-not-call">Why NativeValidation does not call it</h2>
+    <div class="prose">
+      <p>NativeValidation targets <code>net10.0</code>. <code>FormatMessage</code> is a .NET 11 method, so the library cannot cref it or dispatch it. More importantly, the generator never constructs a <code>ValidationAttribute</code>. It inlines the attribute’s arguments into a direct call on <code>NativeValidator</code>, which is what keeps object validation free of reflection.</p>
+      <p>Calling the virtual method would require an attribute instance. Several of those constructors are themselves trim-unsafe (<code>MinLength</code>, <code>MaxLength</code>, <code>Length</code>, <code>Compare</code>, <code>Range(Type, string, string)</code>). The support that fits this library is to reproduce the placeholder contract inside <code>NativeValidator</code>, where the arguments are already known.</p>
+      <p>The options source generator took the other route. It emits replica attribute types and, when the compilation can see the new API, overrides <code>FormatMessage</code> on those replicas. NativeValidation has no replica types, so there is nothing to override.</p>
+    </div>
+
+    <h2 id="contract">The placeholder contract</h2>
+    <div class="prose">
+      <p><code>{0}</code> is always the display name, or the member name when no display name was copied from <code>[Display]</code> or <code>[DisplayName]</code>. The rest follow the override on each built-in attribute. <code>StringLength</code> and <code>Length</code> use opposite orders. That is the whole reason the arguments live on the attribute instead of in the host.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Attribute</th><th>{0}</th><th>{1}</th><th>{2}</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Required, EmailAddress, Phone, CreditCard, Url, Base64String, EnumDataType, AllowedValues, DeniedValues, and the empty CustomValidation message</td><td>Display name</td><td></td><td></td></tr>
+          <tr><td>StringLength</td><td>Display name</td><td>MaximumLength</td><td>MinimumLength</td></tr>
+          <tr><td>MinLength, MaxLength</td><td>Display name</td><td>Length</td><td></td></tr>
+          <tr><td>Length</td><td>Display name</td><td>MinimumLength</td><td>MaximumLength</td></tr>
+          <tr><td>Range</td><td>Display name</td><td>Minimum</td><td>Maximum</td></tr>
+          <tr><td>RegularExpression</td><td>Display name</td><td>Pattern</td><td></td></tr>
+          <tr><td>Compare</td><td>Display name</td><td>Other member’s display name</td><td></td></tr>
+          <tr><td>FileExtensions</td><td>Display name</td><td>Normalized, dot-prefixed list</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="prose">
+      <p>Public helpers expose that contract when the caller already has a template and the arguments: <code>FormatMessage</code>, <code>FormatStringLengthMessage</code>, <code>FormatMinLengthMessage</code>, <code>FormatMaxLengthMessage</code>, <code>FormatLengthMessage</code>, <code>FormatRangeMessage</code>, <code>FormatPatternMessage</code>, <code>FormatCompareMessage</code>, and <code>FormatFileExtensionsMessage</code>. A null format throws <code>ArgumentNullException</code>. Formatting uses <code>CultureInfo.CurrentCulture</code>, as the runtime method does.</p>
+      <p>The lab below uses the same argument order. It substitutes <code>{0}</code>, <code>{1}</code>, and <code>{2}</code>. The library’s real path is <code>string.Format</code>, so alignment and format specifiers behave as they do on the attribute.</p>
+    </div>
+
+    <section class="lab" aria-labelledby="lab-title">
+      <div class="fields">
+        <label class="block" for="attr">Attribute
+          <select id="attr" class="field"></select>
+        </label>
+        <label class="block" for="name">Display name
+          <input id="name" class="field" value="Email address">
+        </label>
+        <div id="extra-fields" class="fields"></div>
+      </div>
+      <div class="output">
+        <label class="block" for="template">Template
+          <textarea id="template" class="area" spellcheck="false"></textarea>
+        </label>
+        <p id="result" class="result"></p>
+        <ul id="args" class="args"></ul>
+        <p id="lab-note" class="note"></p>
+      </div>
+    </section>
+    <p id="lab-title" class="sr-only">Placeholder lab</p>
+
+    <h3 id="length-order">StringLength and Length</h3>
+    <div class="prose">
+      <p>Same numbers, same template <code>{0}/{1}/{2}</code>. <code>StringLength(8, MinimumLength = 2)</code> produces <code>name/8/2</code>. <code>Length(2, 8)</code> produces <code>name/2/8</code>.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <h3>StringLength</h3>
+        <p><span class="chip">{0}</span> name · <span class="chip">{1}</span> 8 · <span class="chip">{2}</span> 2</p>
+        <p class="big" id="demo-string"></p>
+      </div>
+      <div class="panel">
+        <h3>Length</h3>
+        <p><span class="chip">{0}</span> name · <span class="chip">{1}</span> 2 · <span class="chip">{2}</span> 8</p>
+        <p class="big" id="demo-length"></p>
+      </div>
+    </div>
+
+    <h3 id="extensions">File extensions</h3>
+    <div class="prose">
+      <p><code>FormatFileExtensionsMessage</code> normalizes before formatting. Spaces and dots are removed, the text is lowercased, each item is prefixed with a dot, and the items are joined with a comma and a space. A blank value uses <code>png,jpg,jpeg,gif</code>. The check that validates a filename uses that same list.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <h3>Raw property</h3>
+        <p class="big">PDF, .TXT</p>
+      </div>
+      <div class="panel">
+        <h3>What {1} receives</h3>
+        <p class="big">.pdf, .txt</p>
+      </div>
+    </div>
+    <pre><code>static string[] ParseExtensions(string? extensions)
+{
+    var source = string.IsNullOrWhiteSpace(extensions) ? "png,jpg,jpeg,gif" : extensions!;
+    var normalized = source.Replace(" ", "").Replace(".", "").ToLowerInvariant();
+    var parts = normalized.Split(',');
+    for (var i = 0; i &lt; parts.Length; i++)
+        parts[i] = "." + parts[i];
+    return parts;
+}</code></pre>
+
+    <h2 id="template">Choosing the template</h2>
+    <div class="prose">
+      <p>Each check already accepted an <code>errorMessage</code> string. The generator copies <code>ErrorMessage</code> as a literal, or emits a read of the public static resource property named by <code>ErrorMessageResourceName</code>. When neither is set, the generator passes null and the check used a fixed English sentence.</p>
+      <p>That English sentence is the gap <code>FormatMessage</code> closes for hosts. The attribute did not carry a template, and the host still needs to supply one at format time, with the attribute’s arguments. <code>NativeValidator.MessageTemplate</code> is that hook. It is consulted only when the attribute did not set a message.</p>
+    </div>
+    <figure class="figure">
+      <figcaption>One failure, three possible templates</figcaption>
+      <div class="flow">
+        <div class="step">
+          <strong>1. Attribute</strong>
+          <div>
+            <p><code>errorMessage</code> when <code>ErrorMessage</code> or a resource property was set. This wins.</p>
+          </div>
+        </div>
+        <div class="arrow">then</div>
+        <div class="step">
+          <strong>2. Host</strong>
+          <div>
+            <p><code>MessageTemplate(attribute, fallback)</code>. The first argument is the type name, such as <code>StringLengthAttribute</code>. Return null to decline.</p>
+          </div>
+        </div>
+        <div class="arrow">then</div>
+        <div class="step">
+          <strong>3. Built-in</strong>
+          <div>
+            <p>The English sentence for that check. For <code>StringLength</code>, a non-zero minimum selects the sentence that mentions both bounds. For <code>Range</code>, exclusive bounds select their own sentence. The arguments stay the same.</p>
+          </div>
+        </div>
+      </div>
+    </figure>
+    <pre><code>static ValidationResult Result(string attribute, string? errorMessage, string fallback,
+    string memberName, string? displayName, params object?[] args)
+{
+    var template = errorMessage ?? MessageTemplate?.Invoke(attribute, fallback) ?? fallback;
+    return new ValidationResult(
+        FormatMessage(template, displayName ?? memberName, args),
+        new[] { memberName });
+}</code></pre>
+    <div class="prose">
+      <p>The delegate is process-wide. Set it before validation runs on other threads. A resource manager inside the delegate can still follow <code>CurrentUICulture</code>, which is the usual localization pattern: one delegate, many cultures.</p>
+    </div>
+    <pre><code>NativeValidator.MessageTemplate = (attribute, fallback) => attribute switch
+{
+    nameof(StringLengthAttribute) => "len {0} max {1} min {2}",
+    nameof(MaxLengthAttribute) => "max {0} {1}",
+    nameof(FileExtensionsAttribute) => "El campo {0} solo acepta: {1}",
+    _ => null
+};</code></pre>
+
+    <h2 id="generator">Generated checks</h2>
+    <div class="prose">
+      <p>The generator did not change. It already passes the template slot into <code>NativeValidator</code>. A member written like this:</p>
+    </div>
+    <pre><code>public void Rename([Required, StringLength(8, MinimumLength = 2)] string? name, [Range(1, 10)] int attempt)</code></pre>
+    <div class="prose">
+      <p>is emitted as a direct call with a null template:</p>
+    </div>
+    <pre><code>NativeValidator.StringLength(value, 2, 8, "name", null, null);</code></pre>
+    <div class="prose">
+      <p>With the delegate above, a value of <code>"a"</code> fails as <code>len name max 8 min 2</code>. The maximum is <code>{1}</code> because this call is <code>StringLength</code>. An explicit <code>ErrorMessage = "Need {0}"</code> on an attribute is still passed through as the first template and is left as written. <code>MessageTemplate</code> does not replace it.</p>
+      <p><code>Range(typeof(T), minimum, maximum)</code> parses the bounds before formatting. That matches <code>RangeAttribute.FormatMessage</code>, which calls <code>SetupConversion</code> and then formats the <code>Minimum</code> and <code>Maximum</code> properties.</p>
+    </div>
+
+    <h2 id="limits">What stays out</h2>
+    <div class="prose">
+      <p>A custom <code>ValidationAttribute</code> subclass can override <code>FormatMessage</code> on .NET 11. NativeValidation still reports that subclass as <code>NVA001</code> and does not run it. Virtual dispatch would need an instance, and the generator’s rule is that it does not construct an arbitrary attribute to call into it.</p>
+      <p>Cast failures and count failures are not <code>FormatMessage</code> results. They stay as their own sentences. A <code>CustomValidation</code> method that returns its own <code>ValidationResult.ErrorMessage</code> keeps that message. If the message contains <code>{0}</code>, it is formatted with the display name only, which is the base <code>FormatMessage</code> contract. The delegate applies when that method returns an empty message and the attribute itself did not set one. The fallback in that case is <code>{0} is not valid.</code></p>
+    </div>
+
+    <h2 id="evidence">How it was checked</h2>
+    <div class="prose">
+      <p>On the library’s <code>net10.0</code> tests, each helper and each failing check was compared with <code>FormatErrorMessage</code> on the real attribute, using a template that exposes every placeholder. The runtime change keeps that argument order and routes <code>FormatErrorMessage</code> through <code>FormatMessage</code>, so the net10 oracle is the same contract.</p>
+      <p>On the installed .NET 11 RC 2 (<code>11.0.100-rc.2.26504.105</code>), a small program called <code>FormatMessage</code> on the real attributes and compared it with the new helpers. These pairs matched:</p>
+      <ul>
+        <li><code>StringLengthAttribute(4)</code> with minimum 2, template <code>{0}/{1}/{2}</code></li>
+        <li><code>MinLengthAttribute(2)</code> and <code>MaxLengthAttribute(2)</code>, template <code>{0}/{1}</code></li>
+        <li><code>LengthAttribute(2, 4)</code>, template <code>{0}/{1}/{2}</code></li>
+        <li><code>RangeAttribute(1, 10)</code>, template <code>{0}/{1}/{2}</code></li>
+        <li><code>RegularExpressionAttribute("^a+$")</code>, template <code>{0}/{1}</code></li>
+        <li><code>CompareAttribute("Password")</code>, template <code>{0}/{1}</code></li>
+        <li><code>FileExtensionsAttribute</code> for <code> PDF, .TXT </code> and for the default list</li>
+        <li><code>RequiredAttribute</code>, template <code>Need {0}</code></li>
+      </ul>
+      <p>The test project then passed 30 tests, including one that sets <code>MessageTemplate</code> and validates a generated <code>StringLength</code> parameter and a generated <code>MaxLength</code> property. A Release build of the library reported 0 warnings.</p>
+    </div>
+
+    <p class="sources">Sources: <a href="https://github.com/dotnet/runtime/pull/132853">runtime#132853</a>, <a href="https://github.com/dotnet/runtime/pull/132764">runtime#132764</a>, <a href="https://github.com/dotnet/runtime/issues/132605">runtime#132605</a>, and the <code>FormatMessage</code> overrides on <code>release/11.0</code>.</p>
+  </main>
+
+  <script>
+    (function () {
+      var theme = document.getElementById("theme");
+      var select = document.getElementById("attr");
+      var name = document.getElementById("name");
+      var extras = document.getElementById("extra-fields");
+      var template = document.getElementById("template");
+      var result = document.getElementById("result");
+      var args = document.getElementById("args");
+      var note = document.getElementById("lab-note");
+      var demoString = document.getElementById("demo-string");
+      var demoLength = document.getElementById("demo-length");
+
+      var catalog = [
+        { id: "Required", label: "Required", template: "The {0} field is required.", note: "Base FormatMessage. Only the display name is substituted.", fields: [] },
+        { id: "StringLength", label: "StringLength", template: "The field {0} must be a string with a minimum length of {2} and a maximum length of {1}.", note: "{1} is the maximum. {2} is the minimum.", fields: [
+          { key: "maximum", label: "Maximum length", value: "8" },
+          { key: "minimum", label: "Minimum length", value: "2" }
+        ], order: ["maximum", "minimum"] },
+        { id: "MinLength", label: "MinLength", template: "The field {0} must be a string or array type with a minimum length of '{1}'.", note: "{1} is Length.", fields: [
+          { key: "length", label: "Length", value: "2" }
+        ], order: ["length"] },
+        { id: "MaxLength", label: "MaxLength", template: "The field {0} must be a string or array type with a maximum length of '{1}'.", note: "{1} is Length.", fields: [
+          { key: "length", label: "Length", value: "4" }
+        ], order: ["length"] },
+        { id: "Length", label: "Length", template: "The field {0} must be a string or collection type with a minimum length of '{1}' and maximum length of '{2}'.", note: "{1} is the minimum. {2} is the maximum. Opposite of StringLength.", fields: [
+          { key: "minimum", label: "Minimum length", value: "2" },
+          { key: "maximum", label: "Maximum length", value: "8" }
+        ], order: ["minimum", "maximum"] },
+        { id: "Range", label: "Range", template: "The field {0} must be between {1} and {2}.", note: "{1} is Minimum. {2} is Maximum. Exclusive bounds change the sentence, not the argument order.", fields: [
+          { key: "minimum", label: "Minimum", value: "1" },
+          { key: "maximum", label: "Maximum", value: "10" }
+        ], order: ["minimum", "maximum"] },
+        { id: "RegularExpression", label: "RegularExpression", template: "The field {0} must match the regular expression '{1}'.", note: "{1} is the pattern text.", fields: [
+          { key: "pattern", label: "Pattern", value: "^a+$" }
+        ], order: ["pattern"] },
+        { id: "Compare", label: "Compare", template: "'{0}' and '{1}' do not match.", note: "{1} is the other member’s display name, or its property name when it has none.", fields: [
+          { key: "other", label: "Other member", value: "Password" }
+        ], order: ["other"] },
+        { id: "FileExtensions", label: "FileExtensions", template: "The {0} field only accepts files with the following extensions: {1}", note: "{1} is normalized: spaces and dots removed, lowercased, each item dot-prefixed. Blank uses png, jpg, jpeg, gif.", fields: [
+          { key: "extensions", label: "Extensions", value: " PDF, .TXT " }
+        ], order: ["extensions"], files: true }
+      ];
+
+      function current() {
+        return catalog[select.selectedIndex];
+      }
+
+      function parseExtensions(value) {
+        var source = !value || !String(value).trim() ? "png,jpg,jpeg,gif" : String(value);
+        return source.replace(/ /g, "").replace(/\./g, "").toLowerCase().split(",").map(function (part) {
+          return "." + part;
+        }).join(", ");
+      }
+
+      function format(text, values) {
+        return String(text).replace(/\{(\d+)\}/g, function (match, index) {
+          var i = Number(index);
+          if (i >= values.length || values[i] == null) return match;
+          return String(values[i]);
+        });
+      }
+
+      function valuesFor(item) {
+        var bag = {};
+        extras.querySelectorAll("[data-key]").forEach(function (input) {
+          bag[input.getAttribute("data-key")] = input.value;
+        });
+        return (item.order || []).map(function (key) {
+          return item.files && key === "extensions" ? parseExtensions(bag[key]) : bag[key];
+        });
+      }
+
+      function renderFields(item) {
+        extras.innerHTML = item.fields.map(function (field) {
+          return '<label class="block">' + field.label +
+            '<input class="field" data-key="' + field.key + '" value="' + field.value.replace(/"/g, "&quot;") + '">' +
+            "</label>";
+        }).join("");
+        template.value = item.template;
+      }
+
+      function render() {
+        var item = current();
+        var shown = name.value || "name";
+        var rest = valuesFor(item);
+        var all = [shown].concat(rest);
+        result.textContent = format(template.value, all);
+        args.innerHTML = all.map(function (value, index) {
+          return "<li>{" + index + "} " + String(value).replace(/[&<>]/g, function (ch) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch];
+          }) + "</li>";
+        }).join("");
+        note.textContent = item.note;
+        demoString.textContent = format("{0}/{1}/{2}", ["name", "8", "2"]);
+        demoLength.textContent = format("{0}/{1}/{2}", ["name", "2", "8"]);
+      }
+
+      catalog.forEach(function (item) {
+        var option = document.createElement("option");
+        option.value = item.id;
+        option.textContent = item.label;
+        select.appendChild(option);
+      });
+      select.value = "StringLength";
+      renderFields(current());
+      render();
+
+      select.addEventListener("change", function () {
+        renderFields(current());
+        render();
+      });
+      document.querySelector(".lab").addEventListener("input", render);
+
+      function syncThemeButton() {
+        var dark = document.documentElement.classList.contains("dark");
+        theme.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+      }
+
+      theme.addEventListener("click", function () {
+        var dark = document.documentElement.classList.toggle("dark");
+        try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
+        syncThemeButton();
+      });
+      syncThemeButton();
+    })();
+  </script>
+</body>
+</html>
