@@ -63,6 +63,88 @@ window.DRAFTS = {
       ]
     },
     {
+      "path": "jobs-mercadopago-qr.html",
+      "title": "Jobs API — MercadoPago QR Payment",
+      "headings": [
+        {
+          "level": 1,
+          "text": "MercadoPago QR for paid jobs"
+        },
+        {
+          "level": 2,
+          "text": "1. Summary"
+        },
+        {
+          "level": 2,
+          "text": "2. Status model"
+        },
+        {
+          "level": 2,
+          "text": "3. Flows"
+        },
+        {
+          "level": 4,
+          "text": "Free job (no amount)"
+        },
+        {
+          "level": 4,
+          "text": "Paid job (ARS amount)"
+        },
+        {
+          "level": 3,
+          "text": "Paid path in detail"
+        },
+        {
+          "level": 2,
+          "text": "4. API surface"
+        },
+        {
+          "level": 3,
+          "text": "Start job — POST /jobs/{id}"
+        },
+        {
+          "level": 3,
+          "text": "Public status"
+        },
+        {
+          "level": 3,
+          "text": "Webhook — POST /webhooks/mercadopago"
+        },
+        {
+          "level": 3,
+          "text": "MCP gate"
+        },
+        {
+          "level": 2,
+          "text": "5. What shipped in the repo"
+        },
+        {
+          "level": 2,
+          "text": "6. Your MercadoPago checklist"
+        },
+        {
+          "level": 3,
+          "text": "Still on you — not done in code"
+        },
+        {
+          "level": 2,
+          "text": "7. Cloudflare / D1 you still need"
+        },
+        {
+          "level": 2,
+          "text": "8. How to test locally"
+        },
+        {
+          "level": 3,
+          "text": "Manual smoke after deploy"
+        },
+        {
+          "level": 2,
+          "text": "9. Caveats"
+        }
+      ]
+    },
+    {
       "path": "muse-jobs-connector.html",
       "title": "Jobs → Muse Connector — Draft",
       "headings": [
