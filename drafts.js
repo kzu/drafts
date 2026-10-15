@@ -61,6 +61,78 @@ window.DRAFTS = {
           "text": "8 Access"
         }
       ]
+    },
+    {
+      "path": "nativevalidation-format-message.html",
+      "title": "FormatMessage in NativeValidation",
+      "headings": [
+        {
+          "level": 1,
+          "text": "FormatMessage in NativeValidation",
+          "id": "format-message"
+        },
+        {
+          "level": 2,
+          "text": "The runtime method",
+          "id": "runtime"
+        },
+        {
+          "level": 2,
+          "text": "Why NativeValidation does not call it",
+          "id": "why-not-call"
+        },
+        {
+          "level": 2,
+          "text": "The placeholder contract",
+          "id": "contract"
+        },
+        {
+          "level": 3,
+          "text": "StringLength and Length",
+          "id": "length-order"
+        },
+        {
+          "level": 3,
+          "text": "StringLength"
+        },
+        {
+          "level": 3,
+          "text": "Length"
+        },
+        {
+          "level": 3,
+          "text": "File extensions",
+          "id": "extensions"
+        },
+        {
+          "level": 3,
+          "text": "Raw property"
+        },
+        {
+          "level": 3,
+          "text": "What {1} receives"
+        },
+        {
+          "level": 2,
+          "text": "Choosing the template",
+          "id": "template"
+        },
+        {
+          "level": 2,
+          "text": "Generated checks",
+          "id": "generator"
+        },
+        {
+          "level": 2,
+          "text": "What stays out",
+          "id": "limits"
+        },
+        {
+          "level": 2,
+          "text": "How it was checked",
+          "id": "evidence"
+        }
+      ]
     }
   ]
 };
