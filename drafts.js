@@ -190,15 +190,15 @@ window.DRAFTS = {
         },
         {
           "level": 4,
-          "text": "Stripe / Link first (Muse-native)"
+          "text": "Keep Mercado Pago for the web"
         },
         {
           "level": 4,
-          "text": "Guest or prepaid credits"
+          "text": "A second pay rail for Muse"
         },
         {
           "level": 4,
-          "text": "MODO inside Muse"
+          "text": "Paid job, caller finishes the work"
         },
         {
           "level": 2,
@@ -210,11 +210,11 @@ window.DRAFTS = {
         },
         {
           "level": 3,
-          "text": "Phase 1 — Consumer MCP on top of ipcmas3"
+          "text": "Phase 1 — Consumer MCP in front of jobs"
         },
         {
           "level": 3,
-          "text": "Phase 2 — Payment that Muse can finish"
+          "text": "Phase 2 — A pay gate Muse is allowed to finish"
         },
         {
           "level": 3,
