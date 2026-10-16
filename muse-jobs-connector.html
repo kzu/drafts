@@ -384,7 +384,7 @@
         <span class="chip">jobs.chebot.si</span>
         <span class="chip">ipcmas3.ar</span>
         <span class="chip">Meta Muse</span>
-        <span class="chip">Oct 2026</span>
+        <span class="chip">Updated Oct 16</span>
       </div>
     </header>
 
@@ -427,32 +427,37 @@
             <div class="card">
               <h4>Jobs engine</h4>
               <p>
-                Cloudflare Worker at <code>jobs.chebot.si</code>: R2 for bytes, D1 for status,
-                shared <code>JOBS_TOKEN</code>, kickoff to a Cursor automation, agent MCP tools
-                <code>progress</code> / <code>success</code> / <code>fail</code>, public SSE for waiting,
-                presigned downloads when done. Amount and currency are stored on the row — but
-                <strong>payment is not collected here</strong>.
+                Cloudflare Worker at <code>jobs.chebot.si</code> now owns the paid path.
+                An ARS <code>amount</code> creates a Mercado Pago QR order plus a checkout link,
+                holds the job at <code>pending</code>, and starts the automation only after
+                <code>order.processed</code>. Free jobs (no amount) still kick the webhook immediately.
+                USD is rejected.
               </p>
             </div>
             <div class="card">
               <h4>IPC+3 product shell</h4>
               <p>
-                The front-end at ipcmas3 owns the human journey: Google sign-in, tool catalog
-                (<code>intereses-laborales</code>), upload, MODO QR pay-per-file (currently parked),
-                free/beta tiers, then <code>enqueueJob</code> into the jobs service and download the ZIP.
+                ipcmas3 still picks the process (one catalog entry, <code>intereses-laborales</code>),
+                uploads the spreadsheet, and downloads the ZIP. Payment is no longer a parked MODO
+                panel: it sends <code>name: "IPC+3 - 1 Archivo"</code> and <code>amount</code>
+                (env <code>JOB_AMOUNT</code>, default 1500) and shows <code>pay.qr</code> /
+                <code>pay.link</code> until the job leaves <code>pending</code>.
               </p>
             </div>
           </div>
           <p>
-            So the hard compute path — spreadsheet in, agent out, status stream, file download —
-            already exists. What Muse needs is a <em>consumer-facing</em> façade: pick a process,
-            price it, charge for it, and return the result without leaking automation secrets.
+            The compute path and the Argentina checkout now live in one service. A Muse connector
+            can reuse that enqueue. What it still has to invent is a <em>chat-native</em> way to
+            finish payment, because a QR and an external checkout link are exactly the handoff
+            Muse’s review rejects.
           </p>
           <div class="callout good">
-            <strong>Reuse, don’t rebuild</strong>
-            Keep the jobs Worker as the durable run store. Muse should never see
-            <code>AGENT_URL</code> / <code>AGENT_TOKEN</code>. The connector (or ipcmas3 server)
-            owns automation kickoff the same way the web app does today.
+            <strong>Lifecycle the connector can already call</strong>
+            Upload inputs, then <code>POST /jobs/{id}</code> returns <code>201</code> with
+            <code>created</code> before Mercado Pago finishes. Poll until <code>pending</code>
+            exposes <code>pay</code>, or until <code>failed</code>. After payment the status
+            becomes <code>queued</code>. Cancel with <code>DELETE</code> only while
+            <code>created</code> or <code>pending</code>.
           </div>
         </section>
 
@@ -501,23 +506,23 @@
               </tr>
               <tr>
                 <td>Upload</td>
-                <td>App → <code>POST /jobs/{id}/in/…</code></td>
+                <td>App → <code>POST /jobs/{id}/in/…</code> before the row exists</td>
                 <td>Accept Muse file handles / URLs / base64; create job under the user</td>
               </tr>
               <tr>
                 <td>Payment</td>
-                <td>MODO QR in ARS (parked); amount only logged on jobs row</td>
-                <td>In-chat checkout Muse can complete (Link / Stripe) with HITL</td>
+                <td>ARS only. Mercado Pago QR + checkout link on the job. Status <code>pending</code> until <code>order.processed</code></td>
+                <td>In-chat checkout Muse can complete. A QR or “open this link” does not count</td>
               </tr>
               <tr>
                 <td>Kickoff</td>
-                <td>Server holds <code>AGENT_*</code> secrets</td>
-                <td>Same — never expose to Muse tools</td>
+                <td>Automation URL and token stored on the row, then cleared after the webhook is accepted. Optional when the caller will finish a paid job itself (<code>PATCH</code>)</td>
+                <td>Never return those credentials, or <code>pay</code> secrets beyond what the user must see, in tool text meant for the model</td>
               </tr>
               <tr>
                 <td>Status</td>
-                <td>SSE + ETag poll</td>
-                <td>Polling tool Muse can call; long jobs must resume after HITL</td>
+                <td><code>created</code> → <code>pending</code> → <code>queued</code> → <code>running</code> → <code>done</code> / <code>failed</code>. Public snapshot includes <code>pay</code> while pending</td>
+                <td>Polling tool Muse can call; resume after the human approves payment</td>
               </tr>
               <tr>
                 <td>Delivery</td>
@@ -534,9 +539,11 @@
           </div>
           <div class="callout risk">
             <strong>Biggest product tension</strong>
-            IPC+3 prices in ARS via MODO. Muse’s payment story is Stripe Link and currently
-            US-consumer oriented. A Muse launch may need USD pricing + Stripe first, with MODO
-            remaining the Argentina web path — or wait until Muse/Link covers AR markets.
+            Jobs payment is Mercado Pago in ARS: a dynamic QR plus an <code>init_point</code>
+            checkout. That matches ipcmas3.ar. Muse’s transaction rules want the purchase
+            finished inside the chat, and their partner story is Stripe Link. Handing Muse
+            <code>pay.qr</code> or <code>pay.link</code> and waiting is the web flow, not a
+            connector that will pass review.
           </div>
         </section>
 
@@ -566,22 +573,22 @@
               <tr>
                 <td class="mono">quote_job</td>
                 <td class="kind"><span class="tag read">Read</span></td>
-                <td>Given process + file metadata (rows/size), return seller, total, currency, terms. No charge.</td>
+                <td>Given process + file metadata, return seller, ARS total, and terms. No Mercado Pago call yet.</td>
               </tr>
               <tr>
                 <td class="mono">create_job</td>
                 <td class="kind"><span class="tag write">Write</span></td>
-                <td>Accept file (or reference), bind process, create submission + jobs input upload. Status <code>awaiting_payment</code> or <code>queued</code> if free/beta.</td>
+                <td>Upload bytes, then enqueue with <code>name</code>, <code>amount</code>, and the hidden automation. Poll past <code>created</code>.</td>
               </tr>
               <tr>
                 <td class="mono">start_paid_job</td>
                 <td class="kind"><span class="tag sensitive">Sensitive</span></td>
-                <td>Charge the quoted amount via Muse/Stripe path, then enqueue automation. Idempotent on submission id.</td>
+                <td>The Muse-shaped charge. Today the service only knows how to emit <code>pay.qr</code> and <code>pay.link</code> — this tool has to wrap a checkout Muse can complete, or it is just a QR relay.</td>
               </tr>
               <tr>
                 <td class="mono">get_job</td>
                 <td class="kind"><span class="tag read">Read</span></td>
-                <td>Map jobs status (<code>queued</code>/<code>running</code>/<code>done</code>/<code>failed</code>) + progress message. Never return tokens.</td>
+                <td>Pass through status and message. While <code>pending</code>, the snapshot already has <code>pay.qr</code> and <code>pay.link</code>. Hide automation credentials; they are cleared after kickoff anyway.</td>
               </tr>
               <tr>
                 <td class="mono">download_result</td>
@@ -605,15 +612,15 @@
             </li>
             <li>
               <span class="n">Step 2 · Intake</span>
-              User attaches the spreadsheet (or Muse pulls it from Dropbox). <code>create_job</code> stores bytes and returns a quote + job id.
+              User attaches the spreadsheet. <code>create_job</code> uploads it and enqueues with amount. The worker answers <code>created</code> immediately; Mercado Pago order creation continues in the background.
             </li>
             <li>
               <span class="n">Step 3 · Approve pay</span>
-              Muse shows seller, total, terms. User Allow-once on <code>start_paid_job</code>. Charge confirms → enqueue with amount/currency on the jobs row.
+              On the web, the next poll is <code>pending</code> with a QR and a checkout link, and the automation stays parked until Mercado Pago posts <code>order.processed</code>. In Muse that step has to become an in-chat approval, not “scan this QR.”
             </li>
             <li>
               <span class="n">Step 4 · Wait</span>
-              Poll <code>get_job</code> until <code>done</code> / <code>failed</code>. Progress messages from the agent MCP stay internal; surface the public message.
+              After payment, status is <code>queued</code>, then <code>running</code>, then <code>done</code> or <code>failed</code>. A cancel or expiry webhook marks the job <code>failed</code> (“Payment canceled.” / “Payment expired.”). <code>DELETE</code> only works before that, while the job is still <code>created</code> or <code>pending</code>.
             </li>
             <li>
               <span class="n">Step 5 · Deliver</span>
@@ -628,39 +635,44 @@
             <article>
               <div class="num">A</div>
               <div>
-                <h4>Stripe / Link first (Muse-native)</h4>
+                <h4>Keep Mercado Pago for the web</h4>
                 <p>
-                  Add a USD (or multi-currency) price for Muse users. Use Stripe Checkout or PaymentIntents
-                  in a way Muse’s Link wallet can complete in-chat. Matches Meta’s partner story and review
-                  checklist. Web ARS/MODO stays as-is.
+                  This is what shipped. ipcmas3 shows the QR and the checkout link. The jobs webhook
+                  is the source of truth: pay, then automate. Do not ask Muse to scan that QR.
                 </p>
               </div>
             </article>
             <article>
               <div class="num">B</div>
               <div>
-                <h4>Guest or prepaid credits</h4>
+                <h4>A second pay rail for Muse</h4>
                 <p>
-                  Sell packs outside Muse; connector only burns a credit (still a sensitive write, but no card).
-                  Weaker “complete the purchase” story if Muse expects checkout — fine for beta review if disclosed.
+                  Jobs currently accepts only ARS and always opens Mercado Pago when <code>amount</code>
+                  is set. A Muse path needs either a new currency/provider on the worker, or a connector
+                  that charges with Stripe Link and then enqueues with no amount (automation starts at once)
+                  after its own webhook says paid. The second option reintroduces a pay-then-run split
+                  the worker just collapsed.
                 </p>
               </div>
             </article>
             <article>
               <div class="num">C</div>
               <div>
-                <h4>MODO inside Muse</h4>
+                <h4>Paid job, caller finishes the work</h4>
                 <p>
-                  Unlikely to satisfy “finish checkout in Muse” while QR wallets live outside chat.
-                  Keep MODO for ipcmas3.ar; don’t bet the connector on it.
+                  Enqueue may omit <code>automation</code> when <code>amount</code> is set. After
+                  <code>order.processed</code> the status becomes <code>queued</code> and nobody is
+                  called. The caller then <code>PATCH</code>es <code>done</code> or <code>failed</code>.
+                  Useful if Muse’s own tools did the processing — a poor fit for IPC+3, whose value is
+                  the Cursor automation.
                 </p>
               </div>
             </article>
           </div>
           <p>
-            Recommendation: <strong>Track A</strong> for the Muse connector, with clear regional disclosure
-            (“available where Link/Stripe works”). Keep the jobs row’s <code>amount</code>/<code>currency</code>
-            as the ledger Muse and the web both write into after payment confirms.
+            Recommendation: leave Track A as the ipcmas3 path. For Muse, add an explicit paid-without-Mercado-Pago
+            enqueue (or a provider field) so Link can unlock the same automation webhook. Until that exists,
+            the connector cannot both charge in chat and reuse the worker’s payment gate.
           </p>
         </section>
 
@@ -674,19 +686,20 @@
             <li>Generic jobs needs a public process registry API that doesn’t exist yet.</li>
           </ul>
 
-          <h3>Phase 1 — Consumer MCP on top of ipcmas3</h3>
+          <h3>Phase 1 — Consumer MCP in front of jobs</h3>
           <ul class="prose">
-            <li>New hosted MCP with the tools above; OAuth against the same user accounts as the site (or Muse OAuth client → map to user id).</li>
-            <li>Reuse <code>createSubmission</code> / <code>processSubmission</code> / <code>enqueueJob</code> — don’t duplicate kickoff.</li>
-            <li>Map ownership: Muse user ↔ <code>owner_user_id</code> ↔ jobs <code>actor</code>.</li>
+            <li>New hosted MCP with the tools above. OAuth can still be the ipcmas3 account, but enqueue goes to the jobs API the same way <code>enqueueJob</code> does: file, then <code>name</code> + <code>actor</code> + automation + amount.</li>
+            <li>Do not surface the agent MCP (<code>progress</code> / <code>success</code> / <code>fail</code>) or the stored automation token.</li>
+            <li>Map the Muse user to <code>actor</code>. The jobs row has no per-user auth of its own — the shared <code>JOBS_TOKEN</code> stays server-side.</li>
             <li>Lengthen or refresh download URLs so Muse can fetch after the chat round-trip (today’s 300s presign may be tight).</li>
           </ul>
 
-          <h3>Phase 2 — Payment that Muse can finish</h3>
+          <h3>Phase 2 — A pay gate Muse is allowed to finish</h3>
           <ul class="prose">
-            <li>Stripe path for Muse quotes; webhook → mark submission paid → enqueue (idempotent).</li>
-            <li>Document refund/support policy; implement at least status + receipt tools.</li>
-            <li>Sandbox mode for Muse reviewers (no real charges), called out in the test-user notes.</li>
+            <li>Do not expose <code>pay.link</code> as the completion step. Mercado Pago stays the AR web checkout.</li>
+            <li>Add a worker mode that records a paid ARS (or USD) job without creating a Mercado Pago order, unlocked by a connector webhook the same way <code>order.processed</code> unlocks automation today.</li>
+            <li>Keep idempotency: a second pay notification must not double-kick. The current webhook already no-ops once status has left <code>pending</code>.</li>
+            <li>Sandbox credentials for Muse reviewers, with a note on how to reach <code>queued</code> without a real charge.</li>
           </ul>
 
           <h3>Phase 3 — Platform intake</h3>
@@ -706,9 +719,9 @@
 
           <div class="callout">
             <strong>Rough effort (order of magnitude)</strong>
-            For an IPC+3-scoped connector with Stripe sandbox: on the order of days to a couple of weeks
-            if the existing submission/jobs path stays stable — not a greenfield rewrite.
-            The schedule risk is almost all <em>payment + regional policy + Muse review</em>, not R2 uploads.
+            The upload, poll, cancel, and download path is done. What remains for an IPC+3 connector
+            is the Muse MCP plus one pay-unlock that is not Mercado Pago. Review and regional policy
+            still dominate the calendar.
           </div>
         </section>
 
@@ -720,11 +733,11 @@
           </div>
           <div class="q">
             <p class="ask">Where does the Muse MCP live?</p>
-            <p>ipcmas3 already owns auth, catalog, payment, and enqueue. The jobs Worker should stay the run engine — adding Muse tools there would mix agent MCP with consumer MCP under one token model.</p>
+            <p>Payment, status, and kickoff now live on the jobs worker. The Muse MCP should sit in front of that API, not on <code>/mcp</code> — that endpoint is still the agent reporting channel and shares <code>JOBS_TOKEN</code>.</p>
           </div>
           <div class="q">
-            <p class="ask">ARS/MODO vs USD/Stripe?</p>
-            <p>If Muse users are primarily US Link wallets, ship USD. Keep MODO for the Argentine web app.</p>
+            <p class="ask">Second payment provider, or enqueue-after-external-pay?</p>
+            <p>The worker rejects USD and treats any amount as Mercado Pago. Muse needs a way to mark a job paid without a QR. That is a small API change, not a new jobs service.</p>
           </div>
           <div class="q">
             <p class="ask">How does Muse hand us the file?</p>
@@ -737,15 +750,16 @@
 
           <h3>Bottom line</h3>
           <p>
-            The jobs Worker already does the expensive part. Muse is mostly a new <em>front door</em>:
-            a consumer MCP, real in-chat payment, and the paperwork Meta’s review expects.
-            Mirror the ipcmas3 journey in tools, keep the Cursor automation behind the server,
-            and pick Stripe/Link for the connector even if the website keeps MODO.
+            File in, ARS price, Mercado Pago, automation, file out — that loop is live on
+            <code>jobs.chebot.si</code>, and ipcmas3 already speaks it. Muse still needs its own
+            front door: a consumer MCP, a pay signal that is not a QR, and Meta’s review packet.
+            The worker should keep owning “paid, then run.” The connector should not reimplement checkout
+            by pasting <code>pay.link</code> into the chat.
           </p>
         </section>
 
         <footer>
-          Draft · kzu/drafts · sources: jobs worker, ipcmas3, muse.ai/platform/docs
+          Draft · updated for Mercado Pago on the jobs API · kzu/drafts
         </footer>
       </main>
     </div>
