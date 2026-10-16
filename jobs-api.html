@@ -174,10 +174,16 @@
     li { margin: 0.28rem 0; }
     li p { margin: 0; }
 
+    .table-wrap {
+      max-width: 100%;
+      margin: 0.8rem 0 0.2rem;
+      overflow-x: auto;
+    }
+
     table {
       width: 100%;
+      min-width: 34rem;
       border-collapse: collapse;
-      margin: 0.8rem 0 0.2rem;
       font-size: 0.98rem;
       background: rgba(255, 249, 241, 0.55);
     }
@@ -283,6 +289,15 @@
       h1 { font-size: 3.1rem; }
     }
 
+    @media (max-width: 560px) {
+      .wrap { width: calc(100% - 1.5rem); padding-top: 1.5rem; }
+      body { font-size: 1rem; }
+      h1 { font-size: clamp(2.5rem, 14vw, 3.1rem); }
+      h2 { font-size: 1.15rem; }
+      .decision { grid-template-columns: 1fr; gap: 0.5rem; }
+      .note, .decision { padding: 0.75rem; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
     }
@@ -335,6 +350,7 @@
 
         <section id="names">
           <h2><span class="num">2</span> Technical names</h2>
+          <div class="table-wrap">
           <table>
             <thead>
               <tr><th>Name</th><th>Meaning</th></tr>
@@ -356,6 +372,7 @@
               <tr><td>Relative path</td><td>A file name under the job folder. Example: <code>in/notes.txt</code>.</td></tr>
             </tbody>
           </table>
+          </div>
         </section>
 
         <section id="parts">
@@ -374,6 +391,7 @@
         <section id="routes">
           <h2><span class="num">4</span> Routes</h2>
           <p>All paths are on the worker. <code>{filename}</code> is one path segment. The name must not be <code>.</code> or <code>..</code>. The name must not contain <code>/</code> or <code>\</code>.</p>
+          <div class="table-wrap">
           <table>
             <thead>
               <tr><th>Method</th><th>Path</th><th>Sender</th><th>Result</th></tr>
@@ -441,6 +459,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
         </section>
 
         <section id="flows">
@@ -664,6 +683,7 @@
         <section id="row">
           <h2><span class="num">7</span> The row</h2>
           <p>The worker keeps one row for each job. A new status replaces the old status.</p>
+          <div class="table-wrap">
           <table>
             <thead>
               <tr><th>Field</th><th>Content</th></tr>
@@ -680,6 +700,7 @@
               <tr><td><code>started</code></td><td>The time of the first <code>progress</code> call. Otherwise null.</td></tr>
             </tbody>
           </table>
+          </div>
           <p>The public JSON and the event stream contain only <code>id</code>, <code>status</code>, and <code>message</code>.</p>
         </section>
 

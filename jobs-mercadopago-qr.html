@@ -308,10 +308,15 @@
       max-width: none;
     }
 
+    .table-wrap {
+      max-width: 100%;
+      margin: 0.9rem 0;
+      overflow-x: auto;
+    }
     table {
       width: 100%;
+      min-width: 34rem;
       border-collapse: collapse;
-      margin: 0.9rem 0;
       font-size: 0.98rem;
       background: rgba(29, 37, 51, 0.7);
     }
@@ -385,6 +390,12 @@
       .layout, .paths, .states { grid-template-columns: 1fr; }
       nav { position: static; }
       h1 { max-width: none; }
+    }
+    @media (max-width: 560px) {
+      .wrap { width: calc(100% - 2rem); padding-top: 1.5rem; }
+      body { font-size: 1rem; }
+      .scene, .callout, .todo-banner { padding: 0.85rem; }
+      .checklist li { grid-template-columns: 1.25rem minmax(0, 1fr); gap: 0.5rem; padding: 0.75rem; }
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
@@ -537,6 +548,7 @@
           <h2>4. API surface</h2>
 
           <h3>Start job — <code>POST /jobs/{id}</code></h3>
+          <div class="table-wrap">
           <table>
             <thead>
               <tr><th>Body</th><th>Result</th></tr>
@@ -560,6 +572,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
 
           <h3>Public status</h3>
           <p>
@@ -587,6 +600,7 @@
 
         <section id="code">
           <h2>5. What shipped in the repo</h2>
+          <div class="table-wrap">
           <table>
             <thead>
               <tr><th>File</th><th>Change</th></tr>
@@ -610,6 +624,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
           <p>
             Automation credentials are stored until kickoff succeeds, then nulled so they do not
             linger on paid or free jobs.
@@ -773,6 +788,7 @@ X-Idempotency-Key: &lt;job-uuid&gt;
               <div>
                 <strong>Set Worker secrets / vars</strong>
                 <p>In the <code>jobs</code> Worker:</p>
+                <div class="table-wrap">
                 <table>
                   <thead>
                     <tr><th>Name</th><th>Role</th></tr>
@@ -783,6 +799,7 @@ X-Idempotency-Key: &lt;job-uuid&gt;
                     <tr><td class="mono">MP_EXTERNAL_POS_ID</td><td>Caja <code>external_id</code> / POS id</td></tr>
                   </tbody>
                 </table>
+                </div>
                 <p>
                   Example: <code>npx wrangler secret put MP_ACCESS_TOKEN</code> (and the other two)
                   from the <code>jobs/</code> directory. <code>MP_EXTERNAL_POS_ID</code> can be a

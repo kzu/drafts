@@ -139,6 +139,7 @@
 
     .toolbar {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 0.5rem;
       margin-bottom: 1.5rem;
@@ -374,6 +375,12 @@
       .topbar, .page { padding-left: 1rem; padding-right: 1rem; }
       .page { width: 100%; }
       .page-header { align-items: flex-start; flex-direction: column; }
+      .toolbar .search { flex-basis: 100%; }
+      .toolbar .btn { flex: 1 1 auto; }
+      .card { gap: 1rem; padding: 1rem 0; }
+      .card-header { grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+      .card-actions { grid-column: 1; grid-row: auto; }
+      .outline { padding-right: 1rem; padding-left: 1rem; }
     }
   </style>
 </head>
