@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CheBot — galería de conceptos</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  body { background: #0f1115; color: #e9e8e3; min-height: 100vh; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 56px 32px 80px; }
+  .hero h1 { font-size: 46px; margin: 0 0 8px; letter-spacing: -0.02em; }
+  .hero .pay { font-size: 17px; color: #9ca3af; margin: 0 0 20px; font-style: italic; }
+  .hero p { font-size: 16px; color: #a8a8a8; max-width: 680px; margin: 0 0 40px; line-height: 1.65; }
+  .hero .tag { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #1f232a; color: #7dd3c6; font-size: 12px; font-weight: 600; margin-bottom: 20px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .concept {
+    background: #16191f;
+    border: 1px solid #262a32;
+    border-radius: 18px;
+    padding: 24px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s, border-color 0.15s;
+    display: flex; flex-direction: column;
+  }
+  .concept:hover { transform: translateY(-2px); border-color: #3a4049; text-decoration: none; }
+  .concept .num { font-size: 12px; color: #6b7280; font-weight: 600; letter-spacing: 0.08em; }
+  .concept h2 { font-size: 20px; margin: 10px 0 8px; }
+  .concept .persona { color: #7dd3c6; font-size: 13px; margin-bottom: 14px; font-weight: 500; }
+  .concept p { color: #a8a8a8; font-size: 13px; line-height: 1.55; margin: 0 0 16px; flex: 1; }
+  .concept .preview {
+    aspect-ratio: 16/10;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #262a32;
+    margin-bottom: 16px;
+    position: relative;
+    background: #fafaf7;
+  }
+  .concept .preview .mini {
+    position: absolute; inset: 0;
+    transform: scale(0.42); transform-origin: top left;
+    width: 238%; height: 238%;
+    pointer-events: none;
+  }
+  .concept .cta { color: #7dd3c6; font-size: 13px; font-weight: 600; }
+  .section-title { margin: 56px 0 20px; font-size: 14px; color: #6b7280; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
+  .principles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .principle { background: #16191f; border: 1px solid #262a32; border-radius: 14px; padding: 18px; }
+  .principle h3 { margin: 0 0 6px; font-size: 14px; color: #e9e8e3; }
+  .principle p { margin: 0; font-size: 12px; color: #9ca3af; line-height: 1.55; }
+
+  @media (max-width: 760px) {
+    .wrap { padding: 32px 16px 60px; }
+    .hero h1 { font-size: 34px; }
+    .grid { grid-template-columns: 1fr; }
+    .principles { grid-template-columns: 1fr 1fr; }
+    .concept[style*="flex-direction: row"] { flex-direction: column !important; }
+    .concept[style*="flex-direction: row"] .preview { width: 100% !important; margin: 0 0 16px !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <span class="tag">Fork · app de escritorio</span>
+    <h1>CheBot</h1>
+    <p class="pay">"Che, bot, pagá las expensas del mes."</p>
+    <p>Una bifurcación de CodeAlta reimaginada para gente que lleva un negocio, una casa o un side hustle — no para programadores. Un equipo de bots con nombre y cara se ocupa de lo repetitivo; nada en pantalla te habla de código ni de prompts. Todo lo que instalás viene de una tienda pública con puntajes, reseñas y publicadores verificados, y pagás por uso con créditos — no una suscripción por cada bot que apenas usás.</p>
+  </div>
+
+  <div class="section-title">Tres formas de pensar lo mismo — mismo motor</div>
+  <div class="grid">
+    <a class="concept" href="concept-1-helpers.html">
+      <div class="preview"><iframe class="mini" src="concept-1-helpers.html" scrolling="no" style="border:0;"></iframe></div>
+      <span class="num">CONCEPTO 01</span>
+      <h2>La estantería de bots</h2>
+      <div class="persona">Persona: anfitriona de Airbnb en Palermo</div>
+      <p>La app es una estantería de bots con nombre que vos "contratás". Cada uno tiene cara, oficio y un resumen del día. Entrás a uno y le hablás como si fuera parte de tu equipo.</p>
+      <span class="cta">Abrir concepto →</span>
+    </a>
+    <a class="concept" href="concept-2-feed.html">
+      <div class="preview"><iframe class="mini" src="concept-2-feed.html" scrolling="no" style="border:0;"></iframe></div>
+      <span class="num">CONCEPTO 02</span>
+      <h2>El feed del día</h2>
+      <div class="persona">Persona: abogada independiente en CABA</div>
+      <p>Un feed vertical con todo lo que pasó hoy, en orden, y aprobaciones inline para lo que pueda doler. Es más como Instagram + bandeja de entrada que como una herramienta.</p>
+      <span class="cta">Abrir concepto →</span>
+    </a>
+    <a class="concept" href="concept-3-dashboard.html">
+      <div class="preview"><iframe class="mini" src="concept-3-dashboard.html" scrolling="no" style="border:0;"></iframe></div>
+      <span class="num">CONCEPTO 03</span>
+      <h2>Tablero</h2>
+      <div class="persona">Persona: finanzas del hogar (familia Rodríguez)</div>
+      <p>Los números que importan arriba, las rutinas que los mantienen al día en el medio, y "necesitan tu OK" abajo. Un cockpit para lo que te importa.</p>
+      <span class="cta">Abrir concepto →</span>
+    </a>
+  </div>
+
+  <div class="section-title">Tienda y precios</div>
+  <div class="grid" style="grid-template-columns: 1fr 1fr;">
+    <a class="concept" href="marketplace.html" style="flex-direction: row; gap: 24px; align-items: center;">
+      <div class="preview" style="width: 260px; aspect-ratio: 16/10; flex-shrink: 0; margin: 0;"><iframe class="mini" src="marketplace.html" scrolling="no" style="border:0;"></iframe></div>
+      <div style="flex: 1;">
+        <span class="num">TIENDA</span>
+        <h2 style="margin: 10px 0;">Mercado de bots</h2>
+        <p>Catálogo público, por profesión. Puntajes, reseñas escritas, publicadores verificados, señales de confianza ("funciona offline", "no sale nada de tu compu") y el costo en créditos por uso visible antes de instalar.</p>
+        <span class="cta">Abrir tienda →</span>
+      </div>
+    </a>
+    <a class="concept" href="pricing.html" style="flex-direction: row; gap: 24px; align-items: center;">
+      <div class="preview" style="width: 260px; aspect-ratio: 16/10; flex-shrink: 0; margin: 0;"><iframe class="mini" src="pricing.html" scrolling="no" style="border:0;"></iframe></div>
+      <div style="flex: 1;">
+        <span class="num">PRECIOS</span>
+        <h2 style="margin: 10px 0;">Créditos por uso</h2>
+        <p>Cada plan viene con una bolsa mensual de créditos CheBot (1 crédito = 1 centavo de dólar). Cada vez que un bot hace algo, descuenta créditos. Pagás por lo que usás; los publicadores compiten por ser eficientes.</p>
+        <span class="cta">Ver planes →</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="section-title">Comparación</div>
+  <div class="grid" style="grid-template-columns: 1fr;">
+    <a class="concept" href="comparison.html" style="flex-direction: row; gap: 24px; align-items: center;">
+      <div class="preview" style="width: 420px; aspect-ratio: 16/10; flex-shrink: 0; margin: 0;"><iframe class="mini" src="comparison.html" scrolling="no" style="border:0;"></iframe></div>
+      <div style="flex: 1;">
+        <span class="num">VS.</span>
+        <h2 style="margin: 10px 0;">CheBot vs. CodeAlta vs. Claude Cowork</h2>
+        <p>Tres productos sobre el mismo motor, separados por cuánto de ese motor le muestran al usuario, a quién apuntan y cómo cobran. Comparativa dimensión por dimensión con los escenarios en los que uno le gana al otro.</p>
+        <span class="cta">Abrir comparación →</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="section-title">Principios de diseño</div>
+  <div class="principles">
+    <div class="principle"><h3>Cero código en pantalla</h3><p>Nunca aparecen las palabras "agente", "prompt", "sesión", "herramienta" ni "modelo".</p></div>
+    <div class="principle"><h3>Personas, no procesos</h3><p>Cada automatización tiene nombre, cara y se le habla como a un compañero de trabajo.</p></div>
+    <div class="principle"><h3>Aprobación por defecto</h3><p>Todo lo que gasta, manda o firma se frena y te pide el OK.</p></div>
+    <div class="principle"><h3>Tienda primero</h3><p>No configurás bots, los contratás. Publicadores compiten por puntaje y confianza.</p></div>
+  </div>
+</div>
+</body>
+</html>

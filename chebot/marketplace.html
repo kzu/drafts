@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CheBot — tienda de bots</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .search-row { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+  .search-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    display: flex; gap: 10px; align-items: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .search-input input { border: 0; outline: 0; flex: 1; font-size: 14px; background: transparent; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .chip {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--ink-2);
+    font-weight: 500;
+  }
+  .chip:hover { background: var(--surface-2); }
+  .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  .featured {
+    background: linear-gradient(135deg, #0d7f7a 0%, #0ea5a0 100%);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    color: white;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+  .featured .big-avatar {
+    width: 88px; height: 88px; border-radius: 22px;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,0.15);
+    font-weight: 800; font-size: 32px;
+  }
+  .featured .f-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85; font-weight: 700; }
+  .featured h2 { margin: 6px 0 4px; font-size: 24px; letter-spacing: -0.01em; }
+  .featured .by { opacity: 0.85; font-size: 13px; margin-bottom: 8px; }
+  .featured p { margin: 0 0 14px; opacity: 0.92; max-width: 580px; line-height: 1.55; }
+  .featured .stats { display: flex; gap: 20px; font-size: 13px; opacity: 0.95; flex-wrap: wrap; }
+  .featured .btn { background: white; color: var(--primary); border: 0; font-weight: 600; }
+  .featured .btn.ghost { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  .listing {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    display: flex; flex-direction: column; gap: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .listing:hover { box-shadow: var(--shadow); transform: translateY(-1px); border-color: #d6d1c3; }
+  .listing .head { display: flex; align-items: flex-start; gap: 12px; }
+  .listing .head .avatar { width: 48px; height: 48px; border-radius: 12px; font-size: 18px; }
+  .listing .name { font-weight: 700; font-size: 15px; }
+  .listing .role { color: var(--ink-3); font-size: 12px; }
+  .listing .by { color: var(--ink-3); font-size: 12px; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+  .listing .by .verified { color: var(--primary); }
+  .listing .desc { font-size: 13px; color: var(--ink-2); line-height: 1.55; }
+  .listing .stats-row { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-3); flex-wrap: wrap; }
+  .listing .stats-row strong { color: var(--ink); }
+  .listing .trust-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .listing .cost-pill {
+    background: #e0f2fe; color: #075985;
+    padding: 5px 10px; border-radius: 8px;
+    font-size: 12px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+  }
+  .listing .foot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 12px; gap: 10px; flex-wrap: wrap; }
+
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; margin: 28px 0 14px; }
+  .section-head h3 { margin: 0; font-size: 16px; }
+  .section-head a { font-size: 13px; font-weight: 500; }
+
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr !important; }
+    .sidebar { display: none; }
+    .main { padding: 20px 16px !important; }
+    .featured { flex-direction: column; text-align: center; padding: 20px; gap: 16px; }
+    .grid { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; align-items: flex-start !important; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="titlebar">
+    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+    <div style="flex:1; text-align:center;">CheBot — Tienda</div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">cb</div> CheBot</div>
+    <div class="nav-item"><span class="icon">⌂</span> Mis bots</div>
+    <div class="nav-item"><span class="icon">⚑</span> Esperan tu OK</div>
+    <div class="nav-item"><span class="icon">⌛</span> Actividad</div>
+    <div class="nav-item active"><span class="icon">⊞</span> Tienda</div>
+    <div class="section-label">Por rubro</div>
+    <div class="nav-item"><span class="icon">⌂</span> Casa y familia</div>
+    <div class="nav-item"><span class="icon">⌘</span> Airbnb y alquiler temporario</div>
+    <div class="nav-item"><span class="icon">⚖</span> Legales</div>
+    <div class="nav-item"><span class="icon">∑</span> Contabilidad e impuestos</div>
+    <div class="nav-item"><span class="icon">▦</span> Comercio chico</div>
+    <div class="nav-item"><span class="icon">♥</span> Monotributistas</div>
+    <div style="margin-top: auto;">
+      <div class="nav-item"><span class="icon">⚙</span> Ajustes</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <h1>Tienda</h1>
+        <div class="sub">4.218 bots · 912 publicadores · todos revisados</div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <a class="btn" href="index.html">← Galería</a>
+        <button class="btn">Publicar un bot</button>
+      </div>
+    </div>
+
+    <div class="search-row">
+      <div class="search-input">
+        <span style="color: var(--ink-3)">⌕</span>
+        <input placeholder="¿Con qué querés ayuda? ej: 'cobrarle a clientes que no pagan', 'armar el Monotributo'…" />
+      </div>
+    </div>
+
+    <div class="chips">
+      <span class="chip active">Para vos</span>
+      <span class="chip">Mejor puntaje</span>
+      <span class="chip">Nuevos de la semana</span>
+      <span class="chip">Gratis</span>
+      <span class="chip">Funciona offline</span>
+      <span class="chip">Publicador verificado</span>
+      <span class="chip">En español</span>
+      <span class="chip">Lee mi correo</span>
+      <span class="chip">No pisa la nube</span>
+    </div>
+
+    <div class="featured">
+      <div class="big-avatar">T</div>
+      <div style="flex: 1;">
+        <div class="f-label">◆ Elegido por la redacción</div>
+        <h2>Tomás — AFIP y Monotributo</h2>
+        <div class="by">por Alegra · ✓ verificado · ★ 4,8 (2.104 reseñas)</div>
+        <p>Mira tus facturas, las categoriza, prepara el borrador en AFIP y te lleva de la mano al enviarlo. Armado con un contador matriculado. Nunca envía solo.</p>
+        <div class="stats"><span>⬇ 48k usuarios activos</span><span>○ Primero local</span><span>⚑ Jamás firma por vos</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+        <div style="font-size: 14px; font-weight: 500; opacity: 0.9;">Costo típico</div>
+        <div style="font-size: 22px; font-weight: 700;">~310 créditos/mes</div>
+        <div style="font-size: 12px; opacity: 0.85;">1 por factura · 50 por resumen · 14 días gratis</div>
+        <button class="btn">Sumar a Tomás</button>
+        <button class="btn ghost">Ver qué hace →</button>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h3>Popular con anfitriones de Airbnb</h3>
+      <a href="#">Ver los 142 →</a>
+    </div>
+    <div class="grid">
+
+      <div class="listing">
+        <div class="head">
+          <div class="avatar" style="background: linear-gradient(135deg,#f97316,#ea580c); border-radius: 12px;">C</div>
+          <div style="flex: 1;">
+            <div class="name">Clara — Atención a huéspedes</div>
+            <div class="role">Responde en español, inglés, portugués</div>
+            <div class="by">por <strong>HostFlow</strong> <span class="verified">✓</span></div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <span class="star-row">★★★★★</span><strong>4,9</strong> <span>(3.201 reseñas)</span><span>·</span><span>⬇ 22k anfitriones</span>
+        </div>
+        <div class="desc">Contesta dudas del huésped, manda la guía de check-in, te marca lo que requiere decisión tuya. Nunca confirma un reembolso ni un descuento por su cuenta.</div>
+        <div class="trust-row">
+          <span class="pill">Airbnb</span>
+          <span class="pill">Booking</span>
+          <span class="pill ok">○ No sale nada de tu compu</span>
+        </div>
+        <div class="foot">
+          <span class="cost-pill">⊗ 2 créditos / respuesta</span>
+          <button class="btn primary">Sumar a Clara</button>
+        </div>
+      </div>
+
+      <div class="listing">
+        <div class="head">
+          <div class="avatar" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius: 12px;">S</div>
+          <div style="flex: 1;">
+            <div class="name">Sofía — Coordina la limpieza</div>
+            <div class="role">Agenda turnos con tu equipo</div>
+            <div class="by">por <strong>TurnoBot</strong> <span class="verified">✓</span></div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <span class="star-row">★★★★★</span><strong>4,7</strong> <span>(1.088 reseñas)</span><span>·</span><span>⬇ 9,3k anfitriones</span>
+        </div>
+        <div class="desc">Reserva a tu limpiadora para cada check-out, se coordina por WhatsApp, reacomoda si el huésped estira la estadía.</div>
+        <div class="trust-row">
+          <span class="pill">WhatsApp</span>
+          <span class="pill">Google Calendar</span>
+          <span class="pill info">⚑ Necesita internet</span>
+        </div>
+        <div class="foot">
+          <span class="cost-pill">⊗ 5 créditos / turno</span>
+          <button class="btn primary">Sumar a Sofía</button>
+        </div>
+      </div>
+
+      <div class="listing">
+        <div class="head">
+          <div class="avatar" style="background: linear-gradient(135deg,#ef4444,#b91c1c); border-radius: 12px;">P</div>
+          <div style="flex: 1;">
+            <div class="name">Pedro — Precios por noche</div>
+            <div class="role">Sugiere precios, vos aprobás</div>
+            <div class="by">por <strong>WheelHouse LatAm</strong> <span class="verified">✓</span></div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <span class="star-row">★★★★☆</span><strong>4,5</strong> <span>(612 reseñas)</span><span>·</span><span>⬇ 4,1k anfitriones</span>
+        </div>
+        <div class="desc">Mira eventos locales (Lollapalooza, Expo Rural), precios de comparables y ocupación. Nunca cambia un precio sin tu OK.</div>
+        <div class="trust-row">
+          <span class="pill">Airbnb</span>
+          <span class="pill warn">○ Necesita 30 días de datos</span>
+        </div>
+        <div class="foot">
+          <span class="cost-pill">⊗ 8 créditos / día</span>
+          <button class="btn primary">Sumar a Pedro</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h3>Popular con abogadas y abogados independientes</h3>
+      <a href="#">Ver los 86 →</a>
+    </div>
+    <div class="grid">
+
+      <div class="listing">
+        <div class="head">
+          <div class="avatar" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9); border-radius: 12px;">D</div>
+          <div style="flex: 1;">
+            <div class="name">Diana — Redacta documentos</div>
+            <div class="role">Llena tus plantillas desde el formulario de alta</div>
+            <div class="by">por <strong>Lecsi Labs</strong> <span class="verified">✓</span></div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <span class="star-row">★★★★★</span><strong>4,8</strong> <span>(488 reseñas)</span><span>·</span><span>⬇ 3,2k estudios</span>
+        </div>
+        <div class="desc">Usa tus propias plantillas. Nunca manda un documento sin tu OK. Registra de qué campo salió cada dato.</div>
+        <div class="trust-row">
+          <span class="pill ok">○ Los documentos no salen de tu compu</span>
+          <span class="pill">Word · PDF</span>
+        </div>
+        <div class="foot">
+          <span class="cost-pill">⊗ 20 créditos / documento</span>
+          <button class="btn primary">Sumar a Diana</button>
+        </div>
+      </div>
+
+      <div class="listing">
+        <div class="head">
+          <div class="avatar" style="background: linear-gradient(135deg,#ef4444,#b91c1c); border-radius: 12px;">M</div>
+          <div style="flex: 1;">
+            <div class="name">Marco — Plazos y tribunales</div>
+            <div class="role">Sigue expedientes, avisa antes de que corra</div>
+            <div class="by">por <strong>JusWatch</strong> <span class="verified">✓</span></div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <span class="star-row">★★★★★</span><strong>4,9</strong> <span>(911 reseñas)</span><span>·</span><span>⬇ 5,6k estudios</span>
+        </div>
+        <div class="desc">Monitorea el Sistema Lex100 y portales provinciales. Escala la urgencia a medida que se acerca el plazo. Nunca lo descarta solo.</div>
+        <div class="trust-row">
+          <span class="pill">Nación</span><span class="pill">CABA</span><span class="pill">Prov. BA</span>
+        </div>
+        <div class="foot">
+          <span class="cost-pill">⊗ 3 créditos / barrido</span>
+          <button class="btn primary">Sumar a Marco</button>
+        </div>
+      </div>
+
+      <div class="listing">
+        <div class="head">
+          <div class="avatar" style="background: linear-gradient(135deg,#0ea5a0,#0d7f7a); border-radius: 12px;">F</div>
+          <div style="flex: 1;">
+            <div class="name">Felipe — Facturación</div>
+            <div class="role">Convierte tu agenda en facturas</div>
+            <div class="by">por <strong>CheBot Labs</strong> <span class="verified">✓</span></div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <span class="star-row">★★★★★</span><strong>4,7</strong> <span>(2.044 reseñas)</span><span>·</span><span>⬇ 11k usuarios</span>
+        </div>
+        <div class="desc">Carga las horas desde tu calendario, arma las facturas en tu plantilla, chamuya a quien se atrasa con pago.</div>
+        <div class="trust-row">
+          <span class="pill">Google Cal</span><span class="pill">Outlook</span><span class="pill ok">○ Tiene tier gratis</span>
+        </div>
+        <div class="foot">
+          <span class="cost-pill">⊗ 1 / 5 / 3 créditos</span>
+          <button class="btn primary">Sumar a Felipe</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h3>Popular con familias</h3>
+      <a href="#">Ver los 234 →</a>
+    </div>
+    <div class="grid">
+
+      <div class="listing">
+        <div class="head">
+          <div class="avatar" style="background: linear-gradient(135deg,#0d7f7a,#0ea5a0); border-radius: 12px;">B</div>
+          <div style="flex: 1;">
+            <div class="name">Bia — Servicios y expensas</div>
+            <div class="role">Avisa cuando algo viene más caro de lo normal</div>
+            <div class="by">por <strong>Mercado Pago Partners</strong> <span class="verified">✓</span></div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <span class="star-row">★★★★★</span><strong>4,9</strong> <span>(8.203 reseñas)</span><span>·</span><span>⬇ 94k familias</span>
+        </div>
+        <div class="desc">Lee tus boletas (Edesur, Aysa, Metrogas, Movistar, expensas) desde PDF o foto. Marca si vinieron más caras. Nunca paga sin que vos digas.</div>
+        <div class="trust-row">
+          <span class="pill ok">○ Lectura solo lectura al banco</span>
+          <span class="pill">AR · UY · CL</span>
+        </div>
+        <div class="foot">
+          <span class="cost-pill">⊗ 1 crédito / boleta</span>
+          <button class="btn primary">Sumar a Bia</button>
+        </div>
+      </div>
+
+      <div class="listing">
+        <div class="head">
+          <div class="avatar" style="background: linear-gradient(135deg,#f59e0b,#b45309); border-radius: 12px;">R</div>
+          <div style="flex: 1;">
+            <div class="name">Rodri — Admin del colegio</div>
+            <div class="role">Autorizaciones, mails del cole, formularios</div>
+            <div class="by">por <strong>Familia.app</strong></div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <span class="star-row">★★★★☆</span><strong>4,4</strong> <span>(312 reseñas)</span><span>·</span><span>⬇ 1,8k familias</span>
+        </div>
+        <div class="desc">Lee los mails del colegio, arma las respuestas, suma los eventos al calendario familiar. Vos firmás lo que hay que firmar.</div>
+        <div class="trust-row">
+          <span class="pill info">⚐ Nuevo (6 semanas)</span>
+          <span class="pill">Gmail · Outlook</span>
+        </div>
+        <div class="foot">
+          <span class="cost-pill">⊗ 2 créditos / correo</span>
+          <button class="btn primary">Sumar a Rodri</button>
+        </div>
+      </div>
+
+      <div class="listing">
+        <div class="head">
+          <div class="avatar" style="background: linear-gradient(135deg,#06b6d4,#0e7490); border-radius: 12px;">A</div>
+          <div style="flex: 1;">
+            <div class="name">Ana — Mantenimiento del hogar</div>
+            <div class="role">Agenda al plomero, al gasista, al electricista</div>
+            <div class="by">por <strong>CheBot Labs</strong> <span class="verified">✓</span></div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <span class="star-row">★★★★★</span><strong>4,6</strong> <span>(1.422 reseñas)</span><span>·</span><span>⬇ 6,8k familias</span>
+        </div>
+        <div class="desc">Guarda las garantías, te recuerda el service de la caldera, consigue 3 presupuestos cuando algo se rompe.</div>
+        <div class="trust-row">
+          <span class="pill">WhatsApp</span><span class="pill">Iguana Fix</span>
+        </div>
+        <div class="foot">
+          <span class="cost-pill">⊗ 10 créditos / presupuesto</span>
+          <button class="btn primary">Sumar a Ana</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin: 40px 0 20px; padding: 20px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+      <div style="font-size: 32px;">▲</div>
+      <div style="flex: 1; min-width: 240px;">
+        <div style="font-weight: 600; margin-bottom: 4px;">Cada bot pasa por nuestra revisión antes de publicarse</div>
+        <div style="font-size: 13px; color: var(--ink-2);">CheBot Labs chequea qué ve el bot de cada publicador, qué puede hacer sin pedirte permiso, y qué cuenta como "sensible". En cada ficha vas a ver el mismo reporte antes de sumarlo.</div>
+      </div>
+      <button class="btn">Ver los estándares de confianza</button>
+    </div>
+  </main>
+</div>
+</body>
+</html>

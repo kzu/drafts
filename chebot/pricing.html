@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CheBot — precios y créditos</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  body { background: #0f1115; color: #e9e8e3; min-height: 100vh; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 48px 32px 80px; }
+  .back { color: #7dd3c6; font-size: 13px; }
+  h1 { font-size: 36px; margin: 20px 0 6px; letter-spacing: -0.02em; }
+  .lede { font-size: 15px; color: #a8a8a8; max-width: 760px; margin: 0 0 40px; line-height: 1.65; }
+  .lede strong { color: #e9e8e3; }
+
+  .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7280; font-weight: 700; margin: 36px 0 16px; }
+
+  .plans { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .plan {
+    background: #16191f;
+    border: 1px solid #262a32;
+    border-radius: 16px;
+    padding: 24px;
+    display: flex; flex-direction: column;
+    position: relative;
+  }
+  .plan.featured { border-color: #0d7f7a; box-shadow: 0 0 0 3px rgba(13, 127, 122, 0.12); }
+  .plan .badge { position: absolute; top: -10px; left: 24px; background: #0d7f7a; color: white; font-size: 10px; letter-spacing: 0.06em; padding: 3px 10px; border-radius: 999px; font-weight: 700; text-transform: uppercase; }
+  .plan .name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .plan .for { font-size: 12px; color: #9ca3af; margin-bottom: 16px; min-height: 36px; }
+  .plan .price { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+  .plan .price small { font-size: 13px; font-weight: 500; color: #9ca3af; }
+  .plan .credits { color: #7dd3c6; font-size: 13px; margin: 8px 0 18px; font-weight: 600; }
+  .plan ul { margin: 0 0 18px; padding: 0; list-style: none; font-size: 13px; color: #d1d5db; line-height: 1.7; }
+  .plan ul li { padding-left: 18px; position: relative; }
+  .plan ul li::before { content: "✓"; position: absolute; left: 0; color: #16a34a; font-weight: 700; }
+  .plan ul li.no::before { content: "−"; color: #4b5563; }
+  .plan .cta { margin-top: auto; }
+  .plan .cta .btn { width: 100%; justify-content: center; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 14px; border-radius: 10px;
+    border: 1px solid #262a32; background: #1c1f26; color: #e9e8e3;
+    font-weight: 500; font-size: 13px; cursor: pointer; text-decoration: none;
+  }
+  .btn:hover { background: #262a32; }
+  .btn.primary { background: #0d7f7a; border-color: #0d7f7a; color: white; }
+
+  .credits-strip {
+    background: linear-gradient(135deg, #0d7f7a 0%, #0ea5a0 100%);
+    border-radius: 18px;
+    padding: 28px 32px;
+    color: white;
+    display: flex; align-items: center; gap: 32px;
+  }
+  .credits-strip .big {
+    font-size: 72px; font-weight: 900; letter-spacing: -0.03em; line-height: 1;
+  }
+  .credits-strip .big small { font-size: 14px; font-weight: 500; opacity: 0.85; display: block; margin-top: 6px; }
+  .credits-strip h3 { margin: 0 0 6px; font-size: 20px; }
+  .credits-strip p { margin: 0; opacity: 0.94; font-size: 13px; line-height: 1.6; max-width: 540px; }
+
+  .deputies {
+    background: #16191f;
+    border: 1px solid #262a32;
+    border-radius: 18px;
+    padding: 28px 32px;
+    margin-top: 28px;
+  }
+  .deputies h2 { margin: 0 0 6px; font-size: 20px; }
+  .deputies .sub { color: #9ca3af; font-size: 13px; margin: 0 0 20px; }
+  .deputies table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .deputies th, .deputies td { text-align: left; padding: 11px 14px; border-top: 1px solid #262a32; vertical-align: middle; }
+  .deputies thead th { color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; border-top: 0; font-weight: 700; }
+  .deputies .who { display: flex; align-items: center; gap: 10px; }
+  .deputies .av { width: 28px; height: 28px; border-radius: 8px; color: white; font-weight: 700; display: grid; place-items: center; font-size: 12px; }
+  .deputies .name { font-weight: 600; color: #e9e8e3; }
+  .deputies .role { color: #9ca3af; font-size: 11px; }
+  .deputies .credits { font-family: 'JetBrains Mono', Consolas, monospace; color: #7dd3c6; font-weight: 600; }
+  .deputies .cost { color: #d1d5db; }
+  .deputies .month { color: #9ca3af; }
+  .deputies .verdict { color: #86efac; font-weight: 600; font-size: 12px; }
+  .deputies .verdict.yellow { color: #fde68a; }
+
+  .session {
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 18px;
+    padding: 28px 32px;
+    margin-top: 28px;
+    box-shadow: 0 20px 48px rgba(0,0,0,0.2);
+  }
+  .session h2 { margin: 0 0 4px; font-size: 20px; }
+  .session .sub { color: var(--ink-3); font-size: 13px; margin: 0 0 24px; }
+  .session .top { display: flex; align-items: center; gap: 24px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+  .session .top .big { font-size: 42px; font-weight: 800; letter-spacing: -0.02em; }
+  .session .top .big small { font-size: 13px; color: var(--ink-3); font-weight: 500; }
+  .session .bar-wrap { flex: 1; }
+  .session .bar-wrap .label { font-size: 12px; color: var(--ink-3); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .session .bar { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; display: flex; }
+  .session .bar .seg { height: 100%; }
+  .session .bar .seg.used { background: #0d7f7a; }
+  .session .legend { display: flex; gap: 20px; margin-top: 12px; font-size: 12px; color: var(--ink-2); }
+  .session .legend .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 6px; vertical-align: middle; }
+
+  .session table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .session th, .session td { text-align: left; padding: 10px 12px; border-top: 1px solid var(--line); vertical-align: middle; }
+  .session thead th { color: var(--ink-3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; border-top: 0; font-weight: 700; }
+  .session .when { color: var(--ink-3); font-size: 12px; }
+  .session .what { color: var(--ink); }
+  .session .credits-cell { font-family: 'JetBrains Mono', Consolas, monospace; font-weight: 700; color: var(--primary); text-align: right; }
+  .session .av-sm { width: 22px; height: 22px; border-radius: 50%; color: white; font-weight: 700; display: inline-grid; place-items: center; font-size: 10px; vertical-align: middle; margin-right: 8px; }
+
+  .publisher {
+    background: #16191f;
+    border: 1px solid #262a32;
+    border-radius: 18px;
+    padding: 28px 32px;
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+  }
+  .publisher h2 { margin: 0 0 6px; font-size: 20px; }
+  .publisher .sub { color: #9ca3af; font-size: 13px; margin: 0 0 16px; }
+  .publisher p { font-size: 13px; color: #d1d5db; line-height: 1.65; }
+  .publisher .split { font-size: 13px; color: #d1d5db; }
+  .publisher .split .row { display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid #262a32; }
+  .publisher .split .row:first-child { border-top: 0; }
+  .publisher .split .k { color: #9ca3af; }
+  .publisher .split .v { font-weight: 600; }
+  .publisher .split .v.good { color: #86efac; }
+
+  .faq { margin-top: 32px; }
+  .faq .q {
+    background: #16191f; border: 1px solid #262a32; border-radius: 12px;
+    padding: 16px 20px; margin-bottom: 10px;
+  }
+  .faq .q h4 { margin: 0 0 6px; font-size: 14px; color: #e9e8e3; }
+  .faq .q p { margin: 0; color: #9ca3af; font-size: 13px; line-height: 1.65; }
+
+  @media (max-width: 760px) {
+    .wrap { padding: 28px 16px 60px; }
+    h1 { font-size: 28px; }
+    .plans { grid-template-columns: 1fr 1fr; }
+    .credits-strip { flex-direction: column; text-align: center; padding: 24px; gap: 16px; }
+    .credits-strip .big { font-size: 56px; }
+    .publisher { grid-template-columns: 1fr; gap: 20px; }
+    .deputies, .session, .publisher { padding: 20px 18px; }
+    .session .top { flex-direction: column; align-items: flex-start; }
+    table { font-size: 12px !important; }
+    th, td { padding: 8px 10px !important; }
+  }
+  @media (max-width: 480px) {
+    .plans { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Galería</a>
+  <h1>Precios y créditos</h1>
+  <p class="lede">CheBot cobra <em>por uso</em>, no por asiento. Cada plan trae una bolsa mensual de <strong>Créditos CheBot</strong>, y cada vez que un bot hace algo descuenta créditos. Un crédito = un centavo de dólar (USD). Los publicadores ponen el costo en créditos de cada acción y se llevan una parte cuando su bot se usa. Resultado: pagás por lo que usás, los publicadores compiten por ser eficientes, y nada drena en silencio porque el costo de cada acción está publicado antes de que pase.</p>
+
+  <div class="credits-strip">
+    <div class="big">1¢<small>= 1 crédito · $0,01 USD plano</small></div>
+    <div>
+      <h3>Una unidad, igual en toda la tienda</h3>
+      <p>Elegimos la misma unidad que los AI Credits de GitHub Copilot, así ya tenés la cuenta mental. Una acción simple cuesta 1 crédito. Un reporte semanal con 50 mails leídos y 10 slides generadas cuesta ~80. Los créditos no usados se transfieren un mes. Si te pasás, comprás más al mismo $0,01 — nada de precio sorpresa.</p>
+    </div>
+  </div>
+
+  <div class="section-title">Planes</div>
+  <div class="plans">
+    <div class="plan">
+      <div class="name">Gratis</div>
+      <div class="for">Probar uno o dos bots en una cuenta personal.</div>
+      <div class="price">$0</div>
+      <div class="credits">100 créditos / mes</div>
+      <ul>
+        <li>Hasta 3 bots</li>
+        <li>Solo ejecución local</li>
+        <li>Chequeos desde el navegador</li>
+        <li class="no">Sin transferencia de créditos</li>
+        <li class="no">Sin compartir en equipo</li>
+      </ul>
+      <div class="cta"><a href="#" class="btn">Crear cuenta</a></div>
+    </div>
+
+    <div class="plan featured">
+      <div class="badge">Más elegido</div>
+      <div class="name">Casa</div>
+      <div class="for">Una familia o un emprendimiento unipersonal.</div>
+      <div class="price">US$9<small> /mes</small></div>
+      <div class="credits">1.000 créditos / mes <span style="color:#6b7280;">· valor $10</span></div>
+      <ul>
+        <li>Bots ilimitados</li>
+        <li>Local + nube</li>
+        <li>Créditos rueda 30 días</li>
+        <li>Acompañante en el celu</li>
+        <li>Cola prioritaria de aprobaciones</li>
+      </ul>
+      <div class="cta"><a href="#" class="btn primary">Probar 14 días</a></div>
+    </div>
+
+    <div class="plan">
+      <div class="name">Pro</div>
+      <div class="for">Independientes: anfitriones, abogados, contadores.</div>
+      <div class="price">US$29<small> /mes</small></div>
+      <div class="credits">4.000 créditos / mes <span style="color:#6b7280;">· valor $40</span></div>
+      <ul>
+        <li>Todo lo de Casa</li>
+        <li>Hasta 3 espacios</li>
+        <li>Modo solo publicadores verificados</li>
+        <li>Reporte mensual de uso</li>
+        <li>Soporte por mail y chat</li>
+      </ul>
+      <div class="cta"><a href="#" class="btn">Probar 14 días</a></div>
+    </div>
+
+    <div class="plan">
+      <div class="name">Estudio</div>
+      <div class="for">Estudios y comercios chicos. Equipo que comparte bots.</div>
+      <div class="price">US$99<small> /mes</small></div>
+      <div class="credits">15.000 créditos / mes <span style="color:#6b7280;">· valor $150</span></div>
+      <ul>
+        <li>Hasta 10 usuarios</li>
+        <li>Espacios y roles compartidos</li>
+        <li>Auditoría y residencia de datos</li>
+        <li>Topes por bot y por categoría</li>
+        <li>SLA + onboarding con un humano</li>
+      </ul>
+      <div class="cta"><a href="#" class="btn">Hablar con ventas</a></div>
+    </div>
+  </div>
+
+  <div style="margin-top: 14px; font-size: 12px; color: #6b7280;">Precios en USD. Pago con tarjeta argentina en pesos al tipo de cambio del día (Mercado Pago y Visa/Mastercard local), o en USD con tarjeta internacional. Facturación A o C disponible.</div>
+
+  <div class="section-title">Cuánto sale, en la vida real</div>
+  <div class="deputies">
+    <h2>Créditos por acción</h2>
+    <p class="sub">Cada publicador pone su costo y lo muestra en la ficha del bot. Lo que gasta en el mes un uso típico, para que veas si te cierra en el plan Casa.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Bot</th>
+          <th>Qué dispara el uso</th>
+          <th style="text-align:right;">Créditos / uso</th>
+          <th style="text-align:right;">Típico al mes</th>
+          <th>Veredicto en plan Casa</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="who"><div class="av" style="background:#0d7f7a;">B</div><div><div class="name">Bia</div><div class="role">Servicios y expensas</div></div></div></td>
+          <td class="cost">Boleta leída y chequeada (Edesur, Aysa, expensas…)</td>
+          <td class="credits" style="text-align:right;">1</td>
+          <td class="month" style="text-align:right;">~45</td>
+          <td class="verdict">Bárbaro</td>
+        </tr>
+        <tr>
+          <td><div class="who"><div class="av" style="background:#f97316;">C</div><div><div class="name">Clara</div><div class="role">Atención a huéspedes</div></div></div></td>
+          <td class="cost">Respuesta al huésped · guía de check-in</td>
+          <td class="credits" style="text-align:right;">2 · 5</td>
+          <td class="month" style="text-align:right;">~280</td>
+          <td class="verdict">Entra tranqui</td>
+        </tr>
+        <tr>
+          <td><div class="who"><div class="av" style="background:#8b5cf6;">D</div><div><div class="name">Diana</div><div class="role">Redactora de documentos</div></div></div></td>
+          <td class="cost">Cada contrato o NDA armado desde plantilla</td>
+          <td class="credits" style="text-align:right;">20</td>
+          <td class="month" style="text-align:right;">~240</td>
+          <td class="verdict">Entra tranqui</td>
+        </tr>
+        <tr>
+          <td><div class="who"><div class="av" style="background:#06b6d4;">T</div><div><div class="name">Tomás</div><div class="role">AFIP y Monotributo</div></div></div></td>
+          <td class="cost">Factura categorizada · resumen mensual</td>
+          <td class="credits" style="text-align:right;">1 · 50</td>
+          <td class="month" style="text-align:right;">~310</td>
+          <td class="verdict">Pica fuerte en mayo</td>
+        </tr>
+        <tr>
+          <td><div class="who"><div class="av" style="background:#ef4444;">M</div><div><div class="name">Marco</div><div class="role">Plazos y tribunales</div></div></div></td>
+          <td class="cost">Barrido diario de expedientes (Lex100)</td>
+          <td class="credits" style="text-align:right;">3</td>
+          <td class="month" style="text-align:right;">~90</td>
+          <td class="verdict">Bárbaro</td>
+        </tr>
+        <tr>
+          <td><div class="who"><div class="av" style="background:#0ea5a0;">F</div><div><div class="name">Felipe</div><div class="role">Facturación</div></div></div></td>
+          <td class="cost">Hora cargada · factura armada · recordatorio de cobro</td>
+          <td class="credits" style="text-align:right;">1 · 5 · 3</td>
+          <td class="month" style="text-align:right;">~180</td>
+          <td class="verdict">Bárbaro</td>
+        </tr>
+        <tr>
+          <td><div class="who"><div class="av" style="background:#f59e0b;">P</div><div><div class="name">Pedro</div><div class="role">Precios por noche</div></div></div></td>
+          <td class="cost">Análisis diario sobre 20 deptos comparables</td>
+          <td class="credits" style="text-align:right;">8</td>
+          <td class="month" style="text-align:right;">~240</td>
+          <td class="verdict">Bárbaro</td>
+        </tr>
+        <tr>
+          <td><div class="who"><div class="av" style="background:#64748b;">L</div><div><div class="name">Lara</div><div class="role">Jurisprudencia</div></div></div></td>
+          <td class="cost">Cada búsqueda a fondo (CSJN, fallos, Abeledo)</td>
+          <td class="credits" style="text-align:right;">25 – 120</td>
+          <td class="month" style="text-align:right;">~500</td>
+          <td class="verdict yellow">Mirá el plan Pro</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="session">
+    <h2>Lo que ves en tu página de uso</h2>
+    <p class="sub">Clarito, aburrido, honesto — cada cargo rastreable a un bot y a una acción, no a un modelo ni a un conteo de tokens.</p>
+    <div class="top">
+      <div class="big">642<small>créditos usados este mes</small></div>
+      <div class="bar-wrap">
+        <div class="label"><span>Noviembre</span><span>642 / 1.000 créditos (quedan 358 · faltan 20 días)</span></div>
+        <div class="bar">
+          <div class="seg used" style="width: 64.2%;"></div>
+        </div>
+        <div class="legend">
+          <span><span class="dot" style="background: var(--primary);"></span>Usado</span>
+          <span><span class="dot" style="background: var(--surface-2); border: 1px solid var(--line);"></span>Disponible</span>
+          <span style="margin-left:auto;">▲ Terminarías el mes en ~963</span>
+        </div>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Cuándo</th><th>Bot</th><th>Acción</th><th>Resultado</th><th style="text-align:right;">Créditos</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="when">10 nov · 15:22</td>
+          <td><span class="av-sm" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9);">D</span>Diana</td>
+          <td class="what">NDA — Panadería Sol &amp; J. Pereira</td>
+          <td class="what">⚑ Esperando tu OK</td>
+          <td class="credits-cell">20</td>
+        </tr>
+        <tr>
+          <td class="when">10 nov · 14:40</td>
+          <td><span class="av-sm" style="background: linear-gradient(135deg,#0ea5a0,#0d7f7a);">F</span>Felipe</td>
+          <td class="what">Cargó 2 h 15 m desde calendario</td>
+          <td class="what">○ Guardado en factura de noviembre</td>
+          <td class="credits-cell">1</td>
+        </tr>
+        <tr>
+          <td class="when">10 nov · 13:08</td>
+          <td><span class="av-sm" style="background: linear-gradient(135deg,#ef4444,#b91c1c);">M</span>Marco</td>
+          <td class="what">Barrido diario de expedientes (3 causas)</td>
+          <td class="what">⚑ Alertó divorcio Costa</td>
+          <td class="credits-cell">3</td>
+        </tr>
+        <tr>
+          <td class="when">10 nov · 11:15</td>
+          <td><span class="av-sm" style="background: linear-gradient(135deg,#64748b,#334155);">L</span>Lara</td>
+          <td class="what">Fallos sobre multas municipales +$5M</td>
+          <td class="what">○ 3 fallos citados</td>
+          <td class="credits-cell">45</td>
+        </tr>
+        <tr>
+          <td class="when">10 nov · 09:48</td>
+          <td><span class="av-sm" style="background: linear-gradient(135deg,#f59e0b,#b45309);">A</span>Alfonso</td>
+          <td class="what">Respondió consulta de Clara Monteiro</td>
+          <td class="what">○ Mandó "no es lo mío" con 3 derivaciones</td>
+          <td class="credits-cell">2</td>
+        </tr>
+        <tr>
+          <td class="when">10 nov · 09:12</td>
+          <td><span class="av-sm" style="background: linear-gradient(135deg,#0ea5a0,#0d7f7a);">F</span>Felipe</td>
+          <td class="what">Preparó facturas de octubre (3 clientes)</td>
+          <td class="what">⚑ Esperando tu OK</td>
+          <td class="credits-cell">15</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap;">
+      <button class="btn" style="color: var(--ink); background: var(--surface-2); border-color: var(--line);">Bajar CSV</button>
+      <button class="btn" style="color: var(--ink); background: var(--surface-2); border-color: var(--line);">Poner alerta de gasto</button>
+      <button class="btn primary" style="margin-left:auto;">Comprar 500 créditos extra ($5)</button>
+    </div>
+  </div>
+
+  <div class="publisher">
+    <div>
+      <h2>Economía del publicador</h2>
+      <p class="sub">Qué se lleva un publicador cuando su bot se usa.</p>
+      <p>El publicador pone el costo en créditos de cada acción que hace su bot, y aparece en la ficha de la tienda antes de instalar. Cuando un usuario gasta un crédito en tu bot, CheBot Labs se queda una comisión y el resto es tuyo. El costo de modelo/infra sale de tu parte: un bot eficiente deja más margen, así que tenés incentivo directo para elegir el modelo que alcance, no el más grosso.</p>
+      <p>Los publicadores verificados tienen un bump en la comisión y un sello "no sale nada de la compu del usuario" si su bot corre 100% local.</p>
+    </div>
+    <div>
+      <div class="split">
+        <div class="row"><span class="k">1 crédito gastado por el usuario</span><span class="v">US$0,010</span></div>
+        <div class="row"><span class="k">Comisión CheBot Labs</span><span class="v">−$0,003 <span style="color:#6b7280; font-weight:400;">(30%)</span></span></div>
+        <div class="row"><span class="k">Al publicador (bruto)</span><span class="v good">$0,007 <span style="color:#6b7280; font-weight:400;">(70%)</span></span></div>
+        <div class="row"><span class="k">Bump de verificado</span><span class="v">+$0,001 <span style="color:#6b7280; font-weight:400;">(80% efectivo)</span></span></div>
+        <div class="row" style="margin-top: 14px; padding-top: 14px;">
+          <span class="k">Ejemplo: Clara corre 22.000 veces entre todos sus anfitriones, 2 créditos cada uso</span>
+          <span></span>
+        </div>
+        <div class="row" style="border-top: 0;"><span class="k">Bruto mensual a HostFlow</span><span class="v good" style="font-size: 16px;">US$352</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Por qué este modelo (y no suscripción plana)</div>
+  <div class="faq">
+    <div class="q">
+      <h4>El usuario no apuesta "¿me conviene este bot?"</h4>
+      <p>Pagar US$4/mes por un bot que usás dos veces se siente mal. Que esas dos veces te cuesten 4¢ se siente obviamente bien. Sumás más bots porque cada uno es barato de tener; los publicadores ganan por uso agregado, no por capturar asientos.</p>
+    </div>
+    <div class="q">
+      <h4>Los publicadores compiten por eficiencia, no por marketing</h4>
+      <p>Si dos bots de atención hacen lo mismo y uno lo resuelve en 2 créditos y el otro en 4, la ficha los pone lado a lado. El de 2 gana sin tener la marca más grande — y tiene todo el incentivo para elegir un modelo más barato donde alcanza. La suscripción plana de Cowork no le manda esa señal al publicador.</p>
+    </div>
+    <div class="q">
+      <h4>Las aprobaciones son el lugar ideal para mostrar costo</h4>
+      <p>"Mandar este NDA — 20 créditos (≈ 20¢)" aparece directo en la tarjeta de aprobación. Ves el costo en el momento del consentimiento, no en la factura a fin de mes. Eso es único de CheBot: Cowork esconde la economía por acción detrás de "usa más de tu plan".</p>
+    </div>
+    <div class="q">
+      <h4>Los créditos son la unidad justa para avisos del celu</h4>
+      <p>"Bruno gastó 3 créditos en 4 pagos" entra en una notificación del iPhone. "Bruno usó un 0,34% de tu plan Pro" no. La unidad es chica como para describir las cosas que pasan en el día.</p>
+    </div>
+    <div class="q">
+      <h4>Nada drena en silencio</h4>
+      <p>Cada uso descuenta un monto que se mostró antes de empezar. Las rutinas programadas muestran su costo mensual estimado antes de encenderlas, y el chip de créditos del home avisa al 75 / 90 / 100%. Podés poner topes por bot y por categoría.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

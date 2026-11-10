@@ -1,6 +1,44 @@
 window.DRAFTS = {
   "files": [
     {
+      "path": "chebot/index.html",
+      "title": "CheBot — fork de CodeAlta para end-user automations",
+      "headings": [
+        {
+          "level": 1,
+          "text": "CheBot"
+        },
+        {
+          "level": 2,
+          "text": "Concepto 01 — La estantería de bots"
+        },
+        {
+          "level": 2,
+          "text": "Concepto 02 — El feed del día"
+        },
+        {
+          "level": 2,
+          "text": "Concepto 03 — Tablero"
+        },
+        {
+          "level": 2,
+          "text": "Mercado de bots"
+        },
+        {
+          "level": 2,
+          "text": "Créditos por uso"
+        },
+        {
+          "level": 2,
+          "text": "CheBot vs. CodeAlta vs. Claude Cowork"
+        },
+        {
+          "level": 2,
+          "text": "Principios de diseño"
+        }
+      ]
+    },
+    {
       "path": "jobs-api.html",
       "title": "Jobs API — Design",
       "headings": [

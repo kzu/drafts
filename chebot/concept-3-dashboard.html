@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CheBot — tablero de la familia</title>
+<link rel="stylesheet" href="shared.css" />
+<style>
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .kpi .label { font-size: 12px; color: var(--ink-3); font-weight: 500; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .kpi .value { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+  .kpi .delta { font-size: 12px; margin-top: 4px; font-weight: 500; }
+  .kpi .delta.up { color: var(--ok); }
+  .kpi .delta.down { color: var(--danger); }
+  .kpi .spark { margin-top: 10px; height: 36px; }
+
+  .section-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-3); font-weight: 700; margin: 8px 0 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title .count { background: var(--surface); border: 1px solid var(--line); padding: 1px 7px; border-radius: 999px; font-size: 11px; color: var(--ink-2); }
+
+  .two-col { display: grid; grid-template-columns: 1.1fr 1fr; gap: 20px; }
+
+  .routines { display: flex; flex-direction: column; gap: 10px; }
+  .routine {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .routine .avatar { width: 34px; height: 34px; font-size: 12px; }
+  .routine .name { font-weight: 600; font-size: 14px; }
+  .routine .desc { font-size: 12px; color: var(--ink-3); line-height: 1.45; }
+  .routine .status { margin-left: auto; text-align: right; }
+  .routine .status .when { font-size: 12px; color: var(--ink-3); }
+  .routine .status .pill { margin-top: 4px; }
+
+  .review-list { display: flex; flex-direction: column; gap: 10px; }
+  .review {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+  }
+  .review.urgent { border-color: #fde68a; background: #fffbeb; }
+  .review .top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 12px; color: var(--ink-3); flex-wrap: wrap; }
+  .review .top .avatar { width: 22px; height: 22px; font-size: 10px; }
+  .review .what { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .review .details { color: var(--ink-2); font-size: 12px; line-height: 1.55; }
+  .review .cost { font-size: 11px; color: var(--ink-3); margin-top: 8px; }
+  .review .cost strong { color: var(--primary); font-family: 'JetBrains Mono', Consolas, monospace; }
+  .review .acts { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .review .btn { padding: 5px 10px; font-size: 12px; }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 20px;
+  }
+  .chart-card h4 { margin: 0 0 4px; font-size: 14px; }
+  .chart-card .sub { color: var(--ink-3); font-size: 12px; margin-bottom: 14px; }
+
+  @media (max-width: 1020px) {
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr !important; }
+    .sidebar { display: none; }
+    .main { padding: 20px 16px !important; }
+    .page-header { flex-direction: column; align-items: flex-start !important; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="titlebar">
+    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+    <div style="flex:1; text-align:center;">CheBot — Finanzas del hogar (Rodríguez)</div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">cb</div> CheBot</div>
+    <div class="nav-item active"><span class="icon">▦</span> Panorama</div>
+    <div class="nav-item"><span class="icon">⚑</span> Esperan tu OK <span class="badge" style="background: var(--warn);">2</span></div>
+    <div class="nav-item"><span class="icon">⌛</span> Historial</div>
+    <div class="nav-item"><span class="icon">⊞</span> Tienda</div>
+    <div class="nav-item"><span class="icon">⊗</span> Créditos</div>
+    <div class="section-label">Espacios</div>
+    <div class="nav-item active"><span class="icon">⌂</span> Finanzas del hogar</div>
+    <div class="nav-item"><span class="icon">⚒</span> Mantenimiento</div>
+    <div class="nav-item"><span class="icon">♥</span> Agenda familiar</div>
+    <div class="nav-item"><span class="icon">+</span> Nuevo espacio</div>
+    <div style="margin-top: auto;">
+      <div class="nav-item"><span class="icon">⚙</span> Ajustes</div>
+      <div class="nav-item"><span class="avatar" style="width:22px;height:22px;background:#059669;font-size:10px;">J</span> Javier y Rita</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <h1>Finanzas del hogar · noviembre</h1>
+        <div class="sub">4 bots cuidando · último chequeo hace 8 minutos</div>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <a class="btn" href="index.html">← Galería</a>
+        <button class="btn">Resumen mensual</button>
+        <button class="btn primary">+ Sumar un bot</button>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="label">○ En la cuenta</div>
+        <div class="value">US$8.214</div>
+        <div class="delta up">▲ US$620 esta semana</div>
+        <svg class="spark" viewBox="0 0 100 36" preserveAspectRatio="none"><polyline points="0,28 10,26 20,24 30,22 40,24 50,20 60,18 70,16 80,14 90,12 100,10" fill="none" stroke="#16a34a" stroke-width="2"/></svg>
+      </div>
+      <div class="kpi">
+        <div class="label">⚐ Gastado hasta hoy</div>
+        <div class="value">US$3.480</div>
+        <div class="delta down">▼ 14% vs. el mismo día del mes pasado</div>
+        <svg class="spark" viewBox="0 0 100 36" preserveAspectRatio="none"><polyline points="0,8 10,12 20,16 30,20 40,22 50,18 60,20 70,22 80,24 90,26 100,28" fill="none" stroke="#dc2626" stroke-width="2"/></svg>
+      </div>
+      <div class="kpi">
+        <div class="label">⚑ Vencimientos en 7 días</div>
+        <div class="value">US$1.240</div>
+        <div class="delta" style="color: var(--ink-3)">4 boletas agendadas</div>
+        <svg class="spark" viewBox="0 0 100 36" preserveAspectRatio="none">
+          <rect x="4" y="14" width="10" height="22" fill="#0d7f7a" opacity="0.4"/>
+          <rect x="22" y="22" width="10" height="14" fill="#0d7f7a" opacity="0.4"/>
+          <rect x="40" y="8" width="10" height="28" fill="#0d7f7a"/>
+          <rect x="58" y="18" width="10" height="18" fill="#0d7f7a" opacity="0.4"/>
+          <rect x="76" y="4" width="10" height="32" fill="#0d7f7a"/>
+        </svg>
+      </div>
+      <div class="kpi">
+        <div class="label">○ Ahorrado este mes</div>
+        <div class="value">US$1.120</div>
+        <div class="delta up">▲ bien encaminado al objetivo de $1.500</div>
+        <svg class="spark" viewBox="0 0 100 36" preserveAspectRatio="none">
+          <rect x="0" y="12" width="100" height="24" fill="var(--line)" rx="4"/>
+          <rect x="0" y="12" width="75" height="24" fill="#0d7f7a" rx="4"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="section-title">⚑ Necesitan tu ojo <span class="count">2</span></div>
+        <div class="review-list">
+          <div class="review urgent">
+            <div class="top">
+              <div class="avatar" style="background: linear-gradient(135deg,#0ea5a0,#0d7f7a);">B</div>
+              <span>Bia · Servicios y expensas</span>
+              <span class="pill warn">⚑ Raro</span>
+            </div>
+            <div class="what">Las expensas vinieron $34.000 más caras que el mes pasado</div>
+            <div class="details">Veníamos en ~$68.000 — este mes $102.400. En el detalle aparece una extraordinaria por el arreglo del ascensor. ¿Pago igual o lo consulto en la administración?</div>
+            <div class="cost">⊗ Pagar consume <strong>1 crédito</strong> · consultar consume <strong>2 créditos</strong></div>
+            <div class="acts">
+              <button class="btn primary">Dale, pagar $102.400</button>
+              <button class="btn">Consultar en administración</button>
+              <button class="btn">Ver la boleta</button>
+            </div>
+          </div>
+          <div class="review urgent">
+            <div class="top">
+              <div class="avatar" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9);">S</div>
+              <span>Sara · Suscripciones</span>
+              <span class="pill info">○ Sugerencia</span>
+            </div>
+            <div class="what">Hace 2 meses que no tocan Spotify Family</div>
+            <div class="details">US$17,99/mes · la última escuchada fue en septiembre · lo usaba más el celular de Rita. ¿Cancelo, bajamos a Duo, o lo dejamos?</div>
+            <div class="acts">
+              <button class="btn">Bajar a Duo (-US$8)</button>
+              <button class="btn">Cancelar</button>
+              <button class="btn ghost">Dejar por ahora</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 24px;">⌛ Rutinas <span class="count">5 activas</span></div>
+        <div class="routines">
+          <div class="routine">
+            <div class="avatar" style="background: linear-gradient(135deg,#0ea5a0,#0d7f7a);">B</div>
+            <div>
+              <div class="name">Pagar servicios recurrentes</div>
+              <div class="desc">Expensas el 1 · Edesur el 5 · Fibertel el 12</div>
+            </div>
+            <div class="status"><div class="when">Próximo: jueves</div><span class="pill ok">○ Al día</span></div>
+          </div>
+          <div class="routine">
+            <div class="avatar" style="background: linear-gradient(135deg,#f97316,#ea580c);">C</div>
+            <div>
+              <div class="name">Chequeo semanal del super</div>
+              <div class="desc">Compara Jumbo + Coto con tu objetivo de US$150/semana</div>
+            </div>
+            <div class="status"><div class="when">Domingos 18:00</div><span class="pill ok">○ En target</span></div>
+          </div>
+          <div class="routine">
+            <div class="avatar" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9);">S</div>
+            <div>
+              <div class="name">Revisión de suscripciones</div>
+              <div class="desc">Encuentra suscripciones olvidadas mirando el resumen del banco</div>
+            </div>
+            <div class="status"><div class="when">Cada 15</div><span class="pill warn">⚑ 1 sugerencia</span></div>
+          </div>
+          <div class="routine">
+            <div class="avatar" style="background: linear-gradient(135deg,#06b6d4,#0e7490);">T</div>
+            <div>
+              <div class="name">Carpeta AFIP / Ganancias</div>
+              <div class="desc">Clasifica recibos: salud, educación, hogar, donaciones</div>
+            </div>
+            <div class="status"><div class="when">Corre diario</div><span class="pill ok">○ 48 recibos archivados</span></div>
+          </div>
+          <div class="routine">
+            <div class="avatar" style="background: linear-gradient(135deg,#f59e0b,#b45309);">P</div>
+            <div>
+              <div class="name">Alerta de precios — útiles del colegio</div>
+              <div class="desc">Avisa cuando Fravega o Musimundo bajan 3 ítems guardados</div>
+            </div>
+            <div class="status"><div class="when">Pausada desde 30/10</div><span class="pill">○ Pausada</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title">○ A dónde se fue la plata</div>
+        <div class="chart-card">
+          <h4>Gastos por rubro — noviembre</h4>
+          <div class="sub">Lee 3 cuentas bancarias y 2 tarjetas</div>
+          <svg viewBox="0 0 320 180" style="width: 100%; height: 180px;">
+            <g>
+              <rect x="0" y="20" width="220" height="20" fill="#0d7f7a" rx="3"/>
+              <text x="10" y="35" fill="white" font-size="11" font-weight="600">Super y almacén · US$980</text>
+              <rect x="0" y="48" width="170" height="20" fill="#0ea5a0" rx="3"/>
+              <text x="10" y="63" fill="white" font-size="11" font-weight="600">Alquiler · US$780</text>
+              <rect x="0" y="76" width="110" height="20" fill="#06b6d4" rx="3"/>
+              <text x="10" y="91" fill="white" font-size="11" font-weight="600">Servicios · US$520</text>
+              <rect x="0" y="104" width="85" height="20" fill="#8b5cf6" rx="3"/>
+              <text x="10" y="119" fill="white" font-size="11" font-weight="600">Chicos · US$410</text>
+              <rect x="0" y="132" width="55" height="20" fill="#f59e0b" rx="3"/>
+              <text x="60" y="147" fill="var(--ink-2)" font-size="11" font-weight="600">Transporte · US$260</text>
+              <rect x="0" y="160" width="30" height="20" fill="#ef4444" rx="3"/>
+              <text x="36" y="175" fill="var(--ink-2)" font-size="11" font-weight="600">Otros · US$150</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="section-title">⌂ Bots que trabajan para ustedes</div>
+        <div class="routines">
+          <div class="routine">
+            <div class="avatar" style="background: linear-gradient(135deg,#0ea5a0,#0d7f7a);">B</div>
+            <div>
+              <div class="name">Bia — Servicios y expensas</div>
+              <div class="desc">★ 4,9 · por Mercado Pago Partners</div>
+            </div>
+            <span class="pill ok" style="margin-left:auto;">○ Al día</span>
+          </div>
+          <div class="routine">
+            <div class="avatar" style="background: linear-gradient(135deg,#8b5cf6,#6d28d9);">S</div>
+            <div>
+              <div class="name">Sara — Suscripciones</div>
+              <div class="desc">★ 4,7 · por Rocket Money</div>
+            </div>
+            <span class="pill warn" style="margin-left:auto;">⚑ 1 pendiente</span>
+          </div>
+          <div class="routine">
+            <div class="avatar" style="background: linear-gradient(135deg,#06b6d4,#0e7490);">T</div>
+            <div>
+              <div class="name">Tomás — Monotributo / Ganancias</div>
+              <div class="desc">★ 4,8 · por Alegra</div>
+            </div>
+            <span class="pill ok" style="margin-left:auto;">○ Al día</span>
+          </div>
+          <div class="routine">
+            <div class="avatar" style="background: linear-gradient(135deg,#f97316,#ea580c);">C</div>
+            <div>
+              <div class="name">Carla — Coach del super</div>
+              <div class="desc">★ 4,6 · por PlataConYasí</div>
+            </div>
+            <span class="pill ok" style="margin-left:auto;">○ Al día</span>
+          </div>
+        </div>
+
+        <div class="chart-card" style="margin-top: 20px;">
+          <h4>Créditos CheBot — este mes</h4>
+          <div class="sub">Plan Casa (US$9/mes, 1.000 créditos)</div>
+          <div style="font-size: 28px; font-weight: 800; letter-spacing: -0.01em;">187 <span style="color: var(--ink-3); font-size: 15px; font-weight: 500;">/ 1.000</span></div>
+          <div style="height: 8px; background: var(--surface-2); border-radius: 999px; margin-top: 10px; overflow: hidden;"><div style="height: 100%; width: 18.7%; background: var(--primary);"></div></div>
+          <div style="font-size: 12px; color: var(--ink-3); margin-top: 8px;">Bia 45 · Carla 60 · Sara 22 · Tomás 60</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
