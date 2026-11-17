@@ -2,13 +2,19 @@
    data-screen / href="#name"   one screen at a time, chosen by the URL hash
    data-tabs, data-tab, data-panel   tabs
    data-run, data-step, data-when, data-live   the simulated run
-   data-guest="start|review|result"   a panel the task brings (same in every concept)
+   data-guest="start|review|result"   a screen the task brings, made of UI SDK components (same in every concept)
+   data-look on <html>   who styles those screens: "app" (Cowork) or "own" (the task)
    data-market, data-f, data-tags, data-search   marketplace filters
    data-install, data-installable, data-installed   install button */
 (() => {
   const d = document;
   const $$ = (s, r = d) => [...r.querySelectorAll(s)];
-  if (window.self !== window.top) d.documentElement.classList.add('embedded');
+  const root = d.documentElement;
+  if (window.self !== window.top) root.classList.add('embedded');
+  // Who styles the task's screens. The bar sets it; ?look=own in a link does too.
+  let look = new URLSearchParams(location.search).get('look');
+  try { look ||= localStorage.getItem('cowork-look'); } catch { /* storage can be off for local files */ }
+  root.dataset.look = look = look === 'own' ? 'own' : 'app';
 
   // ---- Icons -------------------------------------------------------------
   const P = {
@@ -65,53 +71,92 @@
       <a href="index.html">All mockups</a><b>${n} of 4: ${CONCEPTS[n - 1][1]}</b>
       ${SCREENS.map(([id, name]) => `<a href="#${id}">${name}</a>`).join('')}
       <span class="grow"></span>
+      <span class="look" data-solo>Task screens:<button type="button" data-set-look="app" aria-pressed="${look === 'app'}">App's styles</button><button type="button" data-set-look="own" aria-pressed="${look === 'own'}">Task's own</button></span>
       <a data-file="${prev[0]}" href="${prev[0]}">Previous: ${prev[1]}</a>
       <a data-file="${next[0]}" href="${next[0]}">Next: ${next[1]}</a></nav>`);
   }
 
-  // ---- Panels the task brings (Invoice Intake) ---------------------------
-  let uid = 0;
+  // ---- Screens the task brings (Invoice Intake) --------------------------
+  // Their controls are UI SDK web components (github.com/vercel-labs/ui), written as a task would
+  // write them: no classes for looks, only parts. shared.css styles the parts by their data-slot.
+  const TASK = 'Invoice Intake';
+  const MATCHED = { count: 12, total: 11580.5 };
+  const ODD = [
+    { who: 'Northwind Paper Co.', no: 'INV-2291', total: 6840, why: 'Over $5,000. The last three from this vendor were $6,200 to $7,100.', suggest: 'approve' },
+    { who: 'Halvorsen Freight', no: '88-1042', total: 1215.5, why: 'No matching order. Closest is PO-7731 for $1,190.00.', suggest: 'hold' },
+  ];
+  const money = n => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2 });
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const button = (text, attrs = '') => `<ui-button><button type="button" ${attrs}>${text}</button></ui-button>`;
+  const select = (label, items) => `<ui-field><ui-field-label>${label}</ui-field-label>
+    <ui-select default-value="0"><ui-select-trigger><button type="button"><ui-select-value>${items[0]}</ui-select-value>${ic('chevd')}</button></ui-select-trigger>
+      <ui-select-content>${items.map((t, i) => `<ui-select-item value="${i}">${t}</ui-select-item>`).join('')}</ui-select-content></ui-select></ui-field>`;
   const G = {
     start: () => `<h3>New batch</h3>
       <p class="g-muted">Choose the invoices to process. PDFs and scans both work.</p>
       <div class="g-stack">
-        <div class="g-drop">${ic('folder')}<div><b>14 files in Invoices/Inbox</b><div class="g-muted">Added since the last run</div></div><button type="button" class="g-btn g-btn-out" style="margin-left:auto">Change</button></div>
-        <label class="g-label">Match against<select class="g-input"><option>Purchase orders Q4.xlsx</option></select></label>
-        <label class="g-label">Stop and ask me about<select class="g-input"><option>Anything over $5,000 or without a matching order</option><option>Only invoices without a matching order</option><option>Nothing, file everything</option></select></label>
-        <label class="g-check"><input type="checkbox" checked> Add each filed invoice to Invoices 2026.xlsx</label>
-        <div class="g-row"><button type="button" class="g-btn" data-run-start>Process 14 invoices</button></div>
+        <div class="g-drop">${ic('folder')}<div><b>14 files in Invoices/Inbox</b><div class="g-muted">Added since the last run</div></div><span class="grow"></span>${button('Change', 'data-variant="outline"')}</div>
+        ${select('Match against', ['Purchase orders Q4.xlsx', 'Purchase orders Q3.xlsx'])}
+        ${select('Stop and ask me about', ['Anything over $5,000 or without a matching order', 'Only invoices without a matching order', 'Nothing, file everything'])}
+        <label class="g-check"><ui-checkbox default-checked><ui-checkbox-indicator aria-hidden="true">${ic('check')}</ui-checkbox-indicator></ui-checkbox>Add each filed invoice to Invoices 2026.xlsx</label>
+        <div class="g-row">${button('Process 14 invoices', 'data-run-start')}</div>
       </div>`,
-    review: () => {
-      const seg = (pick) => { const name = 'g' + uid++; return `<span class="g-seg"><label><input type="radio" name="${name}" ${pick ? 'checked' : ''}>Approve</label><label><input type="radio" name="${name}" ${pick ? '' : 'checked'}>Hold</label></span>`; };
-      return `<h3>2 invoices need a decision</h3>
+    // In a run the decisions start empty and the task fills them in through the bridge; a preview shows them filled.
+    review: preview => `<h3>2 invoices need a decision</h3>
       <p class="g-muted">The other 12 matched a purchase order and are ready to file.</p>
       <table class="g-table">
         <thead><tr><th>Vendor</th><th>Invoice</th><th class="g-num">Total</th><th>Why it stopped</th><th>Decision</th></tr></thead>
-        <tbody>
-          <tr><td>Northwind Paper Co.</td><td>INV-2291</td><td class="g-num">$6,840.00</td><td>Over $5,000</td><td>${seg(true)}</td></tr>
-          <tr><td>Halvorsen Freight</td><td>88-1042</td><td class="g-num">$1,215.50</td><td>No matching order. Closest is PO-7731 for $1,190.00.</td><td>${seg(false)}</td></tr>
-        </tbody>
+        <tbody>${ODD.map(o => `<tr><td>${o.who}</td><td>${o.no}</td><td class="g-num">${money(o.total)}</td><td>${o.why}</td>
+          <td><ui-segmented-control aria-label="Decision for ${o.who}"${preview ? ` default-value="${o.suggest}"` : ''}><ui-segmented-control-indicator></ui-segmented-control-indicator><ui-segmented-control-item value="approve">Approve</ui-segmented-control-item><ui-segmented-control-item value="hold">Hold</ui-segmented-control-item></ui-segmented-control></td></tr>`).join('')}</tbody>
       </table>
-      <div class="g-row" style="margin-top:18px"><button type="button" class="g-btn" data-run-continue>File 13 and hold 1</button><button type="button" class="g-btn g-btn-out">Open both PDFs</button></div>`;
-    },
-    result: () => `<h3>13 invoices filed</h3>
+      <div class="g-row" style="margin-top:18px"><ui-button data-agent-confirm="Files the approved invoices and moves their PDFs"><button type="button" data-run-continue data-r="go">File 13 and hold 1</button></ui-button>${button('Open both PDFs', 'data-variant="outline"')}<span class="g-muted" data-r="hint"></span></div>`,
+    result: () => `<h3><span data-r="filed">13</span> invoices filed</h3>
       <p class="g-muted">Finished in 1 minute 48 seconds.</p>
       <div class="g-stats">
-        <div class="g-stat"><b>13</b><span>Filed</span></div>
-        <div class="g-stat"><b>1</b><span>Held for later</span></div>
-        <div class="g-stat"><b>$18,420.50</b><span>Total filed</span></div>
+        <div class="g-stat"><b data-r="filed">13</b><span>Filed</span></div>
+        <div class="g-stat"><b data-r="held">1</b><span>Held for later</span></div>
+        <div class="g-stat"><b data-r="total">$18,420.50</b><span>Total filed</span></div>
       </div>
       <ul class="g-list">
-        <li>${ic('folder')}Moved 13 PDFs to Invoices/Filed/2026-11</li>
-        <li>${ic('table')}Added 13 rows to Invoices 2026.xlsx</li>
-        <li>${ic('info')}Halvorsen Freight 88-1042 is waiting in Invoices/Held</li>
+        <li>${ic('folder')}<span>Moved <span data-r="filed">13</span> PDFs to Invoices/Filed/2026-11</span></li>
+        <li>${ic('table')}<span>Added <span data-r="filed">13</span> rows to Invoices 2026.xlsx</span></li>
+        <li data-r="heldline">${ic('info')}<span data-r="heldtext">Halvorsen Freight 88-1042 is waiting in Invoices/Held</span></li>
       </ul>
-      <div class="g-row" style="margin-top:18px"><button type="button" class="g-btn g-btn-out">Open folder</button><button type="button" class="g-btn g-btn-out">Open spreadsheet</button><button type="button" class="g-btn" data-run-reset>Run again</button></div>`,
+      <div class="g-row" style="margin-top:18px">${button('Open folder', 'data-variant="outline"')}${button('Open spreadsheet', 'data-variant="outline"')}${button('Run again', 'data-run-reset')}</div>`,
   };
+  // Under the review screen of a run, Cowork's own strip: what the task did on the screen, and what it may do.
+  const FOOT = `<div class="guest-foot">
+      <div class="row"><span class="bymark" data-foot-mark></span><span data-foot-text></span><span class="grow"></span><button type="button" class="btn btn-sm" data-foot-undo>Undo its changes</button></div>
+      <details><summary>What ${TASK} can do on this screen</summary><ul data-foot-can></ul><h4>Changes so far</h4><ol data-foot-log></ol></details>
+    </div>`;
   $$('[data-guest]').forEach(el => {
+    const kind = el.dataset.guest, preview = el.classList.contains('mini');
     el.classList.add('guest');
-    el.innerHTML = `<div class="guest-bar"><span class="ticon ticon-sm" data-c="fin">${ic('doc')}</span><b>Invoice Intake</b><span>This panel comes from the task</span></div><div class="guest-body">${G[el.dataset.guest]()}</div>`;
+    if (preview) el.dataset.agentHidden = ''; // a picture of the screen: nothing for the task to read or use
+    el.innerHTML = `<div class="guest-bar"><span class="ticon ticon-sm" data-c="fin">${ic('doc')}</span><b>${TASK}</b><span>This screen comes from the task</span></div>
+      <div class="guest-body">${G[kind](preview)}</div>${kind === 'review' && !preview ? FOOT : ''}`;
   });
+
+  // The decisions made on the review screen decide what the rest of the run says.
+  const settle = run => {
+    const picks = $$('[data-guest="review"]:not(.mini) ui-segmented-control', run).map(s => s.value);
+    const open = picks.filter(v => !v).length;
+    const held = ODD.filter((o, i) => picks[i] === 'hold'), approved = ODD.filter((o, i) => picks[i] === 'approve');
+    const filed = MATCHED.count + approved.length;
+    const text = {
+      go: open ? 'File invoices' : held.length ? `File ${filed} and hold ${held.length}` : `File all ${filed}`,
+      hint: open ? `Decide ${open} more first` : '', filed, held: held.length, total: money(approved.reduce((sum, o) => sum + o.total, MATCHED.total)),
+      heldtext: held.map(o => `${o.who} ${o.no}`).join(' and ') + (held.length > 1 ? ' are' : ' is') + ' waiting in Invoices/Held',
+    };
+    $$('[data-r]', run).forEach(e => { if (e.dataset.r in text) e.textContent = text[e.dataset.r]; });
+    $$('[data-r="go"]', run).forEach(b => { b.disabled = open > 0; });
+    $$('[data-r="heldline"]', run).forEach(e => { e.hidden = !held.length; });
+    const ask = $$('[data-step]', run).find(e => 'wait' in e.dataset);
+    if (!ask) return;
+    ask.dataset.done = `${approved.length} approved, ${held.length} held`;
+    const last = $$('[data-step]', run).find(e => +e.dataset.step === +ask.dataset.step + 1);
+    if (last) last.dataset.done = held.length ? `${filed} filed, ${held.length} held` : `${filed} filed`;
+  };
 
   // ---- Simulated run -----------------------------------------------------
   // Steps are [data-step="0..n"]; the first element of each number carries
@@ -138,6 +183,7 @@
       const live = { name: c.label || '', note: c.note || '', count: on ? `Step ${at + 1} of ${count}` : '' };
       $$('[data-live]', run).forEach(e => { if (e.dataset.live in live) e.textContent = live[e.dataset.live]; });
       $$('[data-stick]', run).forEach(e => { e.scrollTop = e.scrollHeight; }); // keep the newest message in view
+      run.dispatchEvent(new CustomEvent('phase', { detail: phase }));
     };
     const go = i => {
       clearTimeout(timer); at = i;
@@ -162,6 +208,63 @@
     reset();
   });
 
+  // ---- UI SDK: the components, and the bridge the task's agent uses ------
+  // Loaded at a pinned version from a CDN, so the pages stay plain HTML with no build step.
+  // The bridge is how a task works on its own screen: it reads the components, sets their values,
+  // and is refused on a control marked data-agent-confirm. Cowork reads the same bridge to show
+  // what the task filled in and to undo it.
+  const SDK = 'https://esm.sh/@ui-sdk/web@0.1.0-beta.6';
+  Promise.all(['agent', 'history', 'observe', 'field', 'select', 'checkbox', 'segmented-control', 'button'].map(m => import(`${SDK}/${m}`)))
+    .then(([{ createAgent }, { createHistory, describeEntry, stageChanges }, { elementOf }]) => {
+      const agent = createAgent();
+      root.classList.add('sdk-ready');
+      $$('[data-run] [data-guest="review"]:not(.mini)').forEach(panel => {
+        const run = panel.closest('[data-run]'), body = panel.querySelector('.guest-body');
+        const part = name => panel.querySelector(`[data-foot-${name}]`);
+        const history = createHistory(agent, { within: body });
+        let phase, timer, thinking = false;
+        const render = () => {
+          settle(run);
+          const entries = history.entries(), latest = new Map();
+          entries.forEach(e => { if (!e.reverted) latest.set(e.ref, e); });
+          const byTask = [...latest.values()].filter(e => e.source === 'agent');
+          $$('[data-by]', body).forEach(e => e.removeAttribute('data-by'));
+          byTask.forEach(e => elementOf(e.ref)?.setAttribute('data-by', 'task'));
+          part('mark').hidden = part('undo').hidden = !byTask.length;
+          part('text').textContent = thinking && !byTask.length ? `${TASK} is filling in what it would decide…`
+            : byTask.length ? `${TASK} filled in ${byTask.length} of ${ODD.length} decisions. Change any you disagree with.`
+            : entries.some(e => !e.reverted) ? 'Every decision on this screen is yours.' : 'Decide both invoices to continue.';
+          part('log').innerHTML = entries.map(e => `<li${e.reverted ? ' class="undone"' : ''}>${esc(describeEntry(e).replace(/^Agent\b/, TASK))}</li>`).join('') || '<li>Nothing yet</li>';
+          part('can').innerHTML = agent.snapshot().filter(c => c.ref && body.contains(elementOf(c.ref))).map(c => {
+            const name = `<b>${esc(c.label || c.component)}</b>`;
+            return `<li>${c.confirm ? `Only you can press ${name}. It ${esc(c.confirm[0].toLowerCase() + c.confirm.slice(1))}.`
+              : c.items ? `It can set ${name} to ${c.items.map(i => esc(i.label)).join(' or ')}.`
+              : c.actions?.includes('press') ? `It can press ${name}.` : `It can change ${name}.`}</li>`;
+          }).join('');
+        };
+        const enter = now => {
+          if (now === phase) return;
+          phase = now; clearTimeout(timer);
+          if (now !== 'wait') return;
+          $$('ui-segmented-control', body).forEach(s => { s.value = null; });
+          history.clear(); thinking = true; render();
+          timer = setTimeout(async () => {
+            await stageChanges(agent, ODD.map(o => ({ ref: `Decision for ${o.who}`, value: o.suggest })));
+            thinking = false; render();
+          }, 900);
+        };
+        part('undo').addEventListener('click', () => history.undoSource('agent').then(render));
+        history.subscribe(render);
+        run.addEventListener('phase', e => enter(e.detail));
+        enter(run.dataset.phase);
+      });
+    })
+    .catch(error => {
+      console.error(error);
+      root.classList.add('no-sdk');
+      $$('.guest-bar > span:last-child').forEach(s => { s.textContent = 'UI SDK did not load, so these controls do nothing'; });
+    });
+
   // ---- Pressable chips, tabs, install ------------------------------------
   d.addEventListener('click', e => {
     const chip = e.target.closest('button[aria-pressed]');
@@ -170,6 +273,10 @@
       if (solo) $$('button[aria-pressed]', solo).forEach(x => x.setAttribute('aria-pressed', x === chip));
       else chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') !== 'true');
       chip.closest('[data-market]')?.dispatchEvent(new Event('filter'));
+      if (chip.dataset.setLook) {
+        root.dataset.look = chip.dataset.setLook;
+        try { localStorage.setItem('cowork-look', chip.dataset.setLook); } catch { /* not kept */ }
+      }
     }
     const tab = e.target.closest('[data-tab]');
     if (tab) {
@@ -222,7 +329,7 @@
     // ?at=3 opens the Run screen already at that step (5 = finished): handy for links and screenshots.
     const jump = new URLSearchParams(location.search).get('at');
     runs.forEach(r => name === 'run' && jump !== null ? r.jump(+jump) : r.reset());
-    if (jump !== null && !d.documentElement.classList.contains('embedded')) history.replaceState(null, '', location.pathname + location.hash);
+    if (jump !== null && !root.classList.contains('embedded')) history.replaceState(null, '', location.pathname + location.hash);
   };
   addEventListener('hashchange', route);
   route();

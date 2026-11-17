@@ -128,7 +128,9 @@
       <h3>Shared decisions</h3>
       <ul>
         <li>One sample task, Invoice Intake, with five steps. Step 4 needs the person, so every run pauses there.</li>
-        <li>A panel that the task draws has a dashed edge under a caption naming the task. The app draws everything else.</li>
+        <li>A screen that the task brings sits under a caption naming the task. The app draws everything else.</li>
+        <li>The task's screens are real <a href="https://github.com/vercel-labs/ui">UI SDK</a> web components. They come without styles, so Cowork's stylesheet gives them the app's look. The bar above each concept switches to a look the task ships itself.</li>
+        <li>At the review step the task fills in the decisions it would make, through UI SDK's agent bridge. Cowork outlines what the task filled in, can undo it, and lists what the task may do on that screen. The button that files the invoices is marked as needing a person, so the task cannot press it.</li>
         <li>Green means running or done, amber means it is waiting for you, red means it failed.</li>
         <li>A run that starts on its own uses answers saved for the task's start screen.</li>
         <li>Screens are snapshots, not one continuous session: the marketplace shows Invoice Intake as not yet installed.</li>
@@ -137,8 +139,9 @@
     <div class="card">
       <h3>Still open</h3>
       <ul>
-        <li>Task panels are styled like <a href="https://github.com/vercel-labs/json-render">json-render</a>'s shadcn components, on the assumption that it is the Vercel UI SDK meant. Should the app theme them instead?</li>
-        <li>What a scheduled run does at a step that needs you: wait and notify, hold those items, or not start at all. Every schedule screen offers the choice.</li>
+        <li>Whether a task may ship its own styles or always gets Cowork's. UI SDK allows both.</li>
+        <li>A task's screen is code that runs inside Cowork, not data that Cowork draws. Where that code runs, and who checks it before it reaches the marketplace, is undecided.</li>
+        <li>What a scheduled run does at a step that needs you: wait and notify, hold those items, or not start at all. Every schedule screen offers the choice. With UI SDK, it is the answer Cowork gives when the task reaches a control marked as needing a person.</li>
         <li>Whether the task's start screen is a step of the workflow or a form in front of it. Canvas and Thread treat it as part of the run; Shelf and Launchpad as a form.</li>
       </ul>
     </div>
