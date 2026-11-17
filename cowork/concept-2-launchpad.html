@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cowork concept 2: Launchpad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* Launchpad: no sidebar. One search box finds installed and new tasks; a run takes the whole window. */
+  .win { display: flex; flex-direction: column; height: calc(100vh - var(--bar)); background: var(--chrome); }
+  .top { display: flex; align-items: center; gap: 14px; height: 56px; padding: 0 20px; background: var(--paper); border-bottom: 1px solid var(--line); flex: none; }
+  .top .searchbox { flex: 0 1 440px; margin: 0 auto; }
+  .top kbd, .bigcmd kbd { font: 500 12px var(--font); color: var(--ink-3); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
+  body[data-at="tasks"] .top .searchbox, body[data-at="market"] .top .searchbox { visibility: hidden; }
+  body[data-at="run"] .top { display: none; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+  .main { flex: 1; overflow: auto; }
+  .screen { max-width: 1040px; margin: 0 auto; padding: 40px 24px 56px; }
+  .screen > h2 { margin: 36px 0 12px; }
+
+  h1.big { font-size: 34px; text-align: center; margin-bottom: 18px; }
+  .bigcmd { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 18px; max-width: 640px; margin: 0 auto; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); color: var(--ink-3); font-size: 16px; box-shadow: 0 8px 24px #14213D14; }
+  .bigcmd .i { width: 20px; height: 20px; }
+  .bigcmd input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: 16px; color: var(--ink); }
+  .bigcmd:focus-within { border-color: var(--live); }
+
+  .needs { display: flex; align-items: center; gap: 14px; margin-top: 32px; padding: 14px 16px; border-radius: 14px; background: var(--wait-soft); border: 1px solid #F3D89B; }
+  .needs p { color: var(--wait-ink); font-size: 13px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+  .tile { position: relative; display: grid; justify-items: center; align-content: start; gap: 10px; padding: 22px 10px 16px; border-radius: 16px; background: var(--paper); border: 1px solid var(--line); text-align: center; }
+  .tile:hover { border-color: var(--ink-3); }
+  .tile b { font-size: 13.5px; line-height: 1.25; }
+  .tile small { color: var(--ink-3); font-size: 12px; line-height: 1.3; }
+  .tile .dot { position: absolute; top: 12px; left: 12px; }
+  .tile .play { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; background: var(--go); color: #fff; display: grid; place-items: center; opacity: 0; }
+  .tile:hover .play, .tile:focus-visible .play { opacity: 1; }
+  .tile .play .i { width: 12px; height: 12px; }
+  .tile-add { border-style: dashed; background: none; color: var(--ink-2); align-content: center; }
+
+  .week { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 14px; background: var(--paper); overflow: hidden; }
+  .day { padding: 12px 14px 16px; border-left: 1px solid var(--line-2); min-height: 132px; display: grid; gap: 9px; align-content: start; }
+  .day:first-child { border-left: 0; background: #F8FAFD; }
+  .day h3 { font-size: 12.5px; color: var(--ink-3); }
+  .day:first-child h3 { color: var(--ink); }
+  .ev { font-size: 12.5px; line-height: 1.35; }
+  .ev .status { display: flex; font-weight: 500; color: var(--ink-2); }
+  .ev b { display: block; font-weight: 600; padding-left: 14px; }
+  .always { margin-top: 10px; font-size: 13px; color: var(--ink-2); display: flex; gap: 8px; }
+
+  .chipsrow { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 18px 0 6px; }
+  .chipsrow + .chipsrow { margin-top: 6px; margin-bottom: 22px; }
+  .res { border: 1px solid var(--line); border-radius: 14px; background: var(--paper); margin-bottom: 8px; }
+  .res summary { display: grid; grid-template-columns: 36px minmax(0, 1.1fr) minmax(0, 2fr) auto auto; gap: 14px; align-items: center; padding: 12px 16px; cursor: pointer; list-style: none; }
+  .res summary::-webkit-details-marker { display: none; }
+  .res summary p { color: var(--ink-2); font-size: 13px; }
+  .res summary .by { color: var(--ink-3); font-size: 12.5px; }
+  .res summary .rate { margin: 0; }
+  .res summary .state { width: 92px; text-align: right; font-size: 12.5px; font-weight: 600; color: var(--ink-3); }
+  .res[open] { border-color: var(--ink); }
+  .res[open] summary { border-bottom: 1px solid var(--line-2); }
+  .resbody { padding: 16px; display: grid; gap: 16px; }
+  .resbody.slim { grid-template-columns: 1fr auto; align-items: center; }
+  .film { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .film figcaption { font-size: 12.5px; font-weight: 600; margin-bottom: 6px; }
+  .film .mini { height: 470px; }
+  .flowline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; }
+  .flowline .i { color: var(--ink-3); width: 13px; height: 13px; }
+  .resfoot { display: flex; gap: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .facts { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); }
+  .facts span { display: inline-flex; gap: 6px; align-items: center; }
+
+  .hero { display: flex; align-items: center; gap: 18px; }
+  .hero .grow p { color: var(--ink-3); font-size: 13px; margin-top: 3px; }
+  .lede { font-size: 16px; line-height: 1.6; max-width: 68ch; margin-top: 18px; color: var(--ink-2); }
+  .strip { list-style: none; margin: 0; padding: 18px 20px 20px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+  .strip li { position: relative; padding-right: 16px; }
+  .strip li::before { content: ""; position: absolute; left: 30px; right: 6px; top: 11.25px; height: 1.5px; background: var(--line); }
+  .strip li:last-child::before { display: none; }
+  .strip b { display: block; margin-top: 10px; }
+  .strip p { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+  .strip .tag { margin-top: 6px; }
+  .history { border: 1px solid var(--line); border-radius: 14px; background: var(--paper); padding: 16px 20px 6px; }
+  .pulse { display: flex; gap: 3px; align-items: flex-end; height: 30px; }
+  .pulse i { flex: 1; height: 100%; border-radius: 2px; background: var(--go); }
+  .pulse i.f { background: var(--fail); }
+  .pulse i.w { background: var(--wait); }
+  .pulse i.s { height: 35%; background: var(--line); }
+  .history > p { font-size: 12.5px; color: var(--ink-3); margin: 8px 0 6px; }
+  .runrow { display: grid; grid-template-columns: 160px 140px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line-2); font-size: 13.5px; }
+  .runrow .sub { font-size: 13px; }
+  .halves { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 36px; }
+  .halves h2 { margin-bottom: 12px; }
+  .onrule { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line-2); font-size: 13.5px; }
+  .onrule .i { color: var(--ink-3); }
+
+  /* Run: focus mode */
+  .screen[data-screen="run"] { max-width: none; padding: 0; height: 100%; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; background: var(--paper); }
+  .focusbar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; }
+  .focusbar h1 { font-size: 16px; letter-spacing: -0.01em; }
+  .trackwrap { padding: 10px 20px 18px; border-bottom: 1px solid var(--line-2); }
+  .track { list-style: none; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); max-width: 900px; position: relative; }
+  .track::before, .track::after { content: ""; position: absolute; top: 11px; left: 10%; height: 2px; border-radius: 1px; }
+  .track::before { right: 10%; background: var(--line); }
+  .track::after { width: calc(var(--p, 0) * 80%); background: var(--go); transition: width 0.5s; }
+  .track li { display: grid; justify-items: center; gap: 8px; text-align: center; position: relative; z-index: 1; font-size: 13px; font-weight: 600; }
+  .track li[data-state="todo"] { color: var(--ink-3); }
+  .track li[data-state="wait"] { color: var(--wait-ink); }
+  .stage { overflow: auto; padding: 32px 20px; display: grid; justify-items: center; align-content: start; background: var(--chrome); }
+  .stage > * { width: min(760px, 100%); }
+  .stage .working { text-align: center; padding: 48px 24px; }
+  .stage .working h2 { font-size: 22px; }
+  .stage .working .bar { max-width: 320px; margin: 22px auto 0; }
+  .foot { display: flex; gap: 12px; align-items: center; padding: 10px 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); min-height: 50px; }
+  .foot b { color: var(--ink); }
+
+  /* Schedule: rules as sentences */
+  .sent { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); margin-bottom: 10px; }
+  .sent p { font-size: 19px; line-height: 1.75; letter-spacing: -0.01em; }
+  .sent .switch { margin-top: 7px; }
+  .sent small { display: block; font-size: 13px; color: var(--ink-3); letter-spacing: 0; margin-top: 4px; }
+  .tok { position: relative; display: inline-flex; align-items: center; gap: 6px; font: inherit; font-weight: 600; color: var(--ink); background: var(--live-soft); border: 0; border-radius: 7px; padding: 0 9px; cursor: pointer; line-height: 1.5; }
+  .tok:hover { background: #CDDBFA; }
+  .tok .i { width: 15px; height: 15px; color: var(--live); }
+  .menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 5; min-width: 230px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); box-shadow: 0 12px 28px #14213D26; display: grid; font-size: 14px; font-weight: 500; letter-spacing: 0; text-align: left; line-height: 1.4; }
+  .menu span { padding: 7px 10px; border-radius: 6px; display: flex; justify-content: space-between; gap: 12px; }
+  .menu span:hover { background: var(--chrome); }
+  .menu .on { background: var(--chrome); font-weight: 600; }
+  .addrule { display: flex; gap: 10px; align-items: center; padding: 14px 20px; border: 1px dashed var(--line); border-radius: 14px; color: var(--ink-2); margin-bottom: 10px; }
+  .next7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+  .next7 div { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 9px 10px; font-size: 12.5px; min-height: 62px; }
+  .next7 b { display: block; font-size: 12.5px; }
+  .next7 .off { background: none; color: var(--ink-3); }
+
+  @media (max-width: 900px) {
+    .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .week { grid-template-columns: minmax(0, 1fr); }
+    .day { border-left: 0; border-top: 1px solid var(--line-2); min-height: 0; }
+    .res summary { grid-template-columns: 36px minmax(0, 1fr) auto; }
+    .res summary p, .res summary .rate { display: none; }
+    .film, .halves { grid-template-columns: minmax(0, 1fr); }
+    .strip { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    .strip li::before { display: none; }
+    .runrow { grid-template-columns: 1fr auto; }
+    .next7 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .win { height: auto; min-height: calc(100vh - var(--bar)); }
+    .track li { font-size: 0; }
+    .hero { flex-wrap: wrap; }
+    .sent p { font-size: 16px; }
+  }
+</style>
+</head>
+<body data-concept="2" data-start="tasks">
+<div class="win">
+  <header class="top">
+    <a class="brand" href="#tasks"><span class="logo"></span>Cowork</a>
+    <a class="searchbox" href="#market"><svg class="i"><use href="#i-search"/></svg><span class="grow">Run a task, or look for a new one</span><kbd>Ctrl K</kbd></a>
+    <a class="btn btn-sm" href="?at=3#run"><span class="dot" data-s="wait"></span>1 needs you</a>
+    <span class="avatar">DW</span>
+  </header>
+
+  <main class="main">
+
+    <!-- Home: search, what needs you, tiles, the week -->
+    <section class="screen is-on" data-screen="tasks">
+      <h1 class="big">Run a task</h1>
+      <a class="bigcmd" href="#market"><svg class="i"><use href="#i-search"/></svg><span class="grow">Type a task name, or what you need done</span><kbd>Ctrl K</kbd></a>
+
+      <div class="needs">
+        <span class="ticon" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span>
+        <div class="grow"><b>Invoice Intake is waiting at Review exceptions</b><p>2 invoices from the 9:42 AM run need a decision before the other 12 are filed.</p></div>
+        <a class="btn btn-ink" href="?at=3#run">Review 2 invoices</a>
+      </div>
+
+      <h2>Your tasks</h2>
+      <div class="tiles">
+        <a class="tile" href="#task"><span class="dot" data-s="wait" title="Needs you"></span><span class="play"><svg class="i solid"><use href="#i-play"/></svg></span><span class="ticon ticon-lg" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><b>Invoice Intake</b><small>Folder, and weekdays 8:30 AM</small></a>
+        <a class="tile"><span class="play"><svg class="i solid"><use href="#i-play"/></svg></span><span class="ticon ticon-lg"><svg class="i"><use href="#i-chart"/></svg></span><b>Weekly Status Digest</b><small>Fridays 4:00 PM</small></a>
+        <a class="tile"><span class="play"><svg class="i solid"><use href="#i-play"/></svg></span><span class="ticon ticon-lg" data-c="files"><svg class="i"><use href="#i-file"/></svg></span><b>Receipt Renamer</b><small>When files reach Scans</small></a>
+        <a class="tile"><span class="play"><svg class="i solid"><use href="#i-play"/></svg></span><span class="ticon ticon-lg" data-c="meet"><svg class="i"><use href="#i-mic"/></svg></span><b>Meeting Notes to Actions</b><small>Only when you run it</small></a>
+        <a class="tile"><span class="dot" data-s="failed" title="Last run failed"></span><span class="play"><svg class="i solid"><use href="#i-play"/></svg></span><span class="ticon ticon-lg" data-c="data"><svg class="i"><use href="#i-table"/></svg></span><b>CSV Cleaner</b><small>Last run failed</small></a>
+        <a class="tile tile-add" href="#market"><svg class="i" style="width:24px;height:24px"><use href="#i-plus"/></svg><b>Add a task</b></a>
+      </div>
+
+      <h2>This week</h2>
+      <div class="week">
+        <div class="day"><h3>Today, Tue 17</h3>
+          <div class="ev"><span class="status" data-s="done">8:31 AM</span><b>Invoice Intake</b></div>
+          <div class="ev"><span class="status" data-s="done">9:05 AM</span><b>Receipt Renamer</b></div>
+          <div class="ev"><span class="status" data-s="wait">9:42 AM, waiting</span><b>Invoice Intake</b></div>
+        </div>
+        <div class="day"><h3>Wed 18</h3><div class="ev"><span class="status" data-s="next">8:30 AM</span><b>Invoice Intake</b></div></div>
+        <div class="day"><h3>Thu 19</h3><div class="ev"><span class="status" data-s="next">8:30 AM</span><b>Invoice Intake</b></div></div>
+        <div class="day"><h3>Fri 20</h3>
+          <div class="ev"><span class="status" data-s="next">8:30 AM</span><b>Invoice Intake</b></div>
+          <div class="ev"><span class="status" data-s="next">4:00 PM</span><b>Weekly Status Digest</b></div>
+        </div>
+        <div class="day"><h3>Sat 21</h3><p class="small dim">Nothing planned</p></div>
+      </div>
+      <p class="always"><svg class="i"><use href="#i-folder"/></svg>Any time files arrive: Invoice Intake watches Invoices/Inbox, Receipt Renamer watches Scans.</p>
+    </section>
+
+    <!-- Marketplace: one list for installed and new, preview opens in place -->
+    <section class="screen" data-screen="market" data-market>
+      <h1 class="big">Find a task</h1>
+      <label class="bigcmd"><svg class="i"><use href="#i-search"/></svg><input data-search type="search" placeholder="Try invoices, rename, weekly update" aria-label="Search tasks"></label>
+      <div class="chipsrow" data-solo>
+        <button class="chip" data-f="cat:*" aria-pressed="true">Everything</button>
+        <button class="chip" data-f="cat:finance" aria-pressed="false">Finance</button>
+        <button class="chip" data-f="cat:files" aria-pressed="false">Files</button>
+        <button class="chip" data-f="cat:meetings" aria-pressed="false">Meetings</button>
+        <button class="chip" data-f="cat:reporting" aria-pressed="false">Reporting</button>
+        <button class="chip" data-f="cat:legal" aria-pressed="false">Legal</button>
+        <button class="chip" data-f="cat:email" aria-pressed="false">Email</button>
+        <button class="chip" data-f="cat:data" aria-pressed="false">Data</button>
+      </div>
+      <div class="chipsrow">
+        <button class="chip" data-f="start:folder" aria-pressed="false"><svg class="i"><use href="#i-folder"/></svg>Starts when files arrive</button>
+        <button class="chip" data-f="start:schedule" aria-pressed="false"><svg class="i"><use href="#i-clock"/></svg>Starts on a schedule</button>
+        <button class="chip" data-f="net:local" aria-pressed="false"><svg class="i"><use href="#i-wifioff"/></svg>Works without internet</button>
+        <button class="chip" data-f="pub:verified" aria-pressed="false"><svg class="i"><use href="#i-shield"/></svg>Checked publisher</button>
+        <button class="chip" data-f="price:free" aria-pressed="false">Free</button>
+      </div>
+
+      <details class="res" name="res" open data-tags="finance folder manual local verified free">
+        <summary><span class="ticon" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><span><b>Invoice Intake</b><br><span class="by">Ledgerline <svg class="i verified"><use href="#i-shield"/></svg></span></span><p>Reads invoices, matches them to purchase orders, files them and logs the totals.</p><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.8</span><span class="state">Free</span></summary>
+        <div class="resbody" data-installable>
+          <div class="film">
+            <figure><figcaption>You start a batch</figcaption><div class="mini" data-guest="start" inert></div></figure>
+            <figure><figcaption>It asks about the odd ones</figcaption><div class="mini" data-guest="review" inert></div></figure>
+            <figure><figcaption>You get a summary</figcaption><div class="mini" data-guest="result" inert></div></figure>
+          </div>
+          <p class="flowline">Read the files<svg class="i"><use href="#i-chev"/></svg>Pull out the details<svg class="i"><use href="#i-chev"/></svg>Match to purchase orders<svg class="i"><use href="#i-chev"/></svg><span class="tag tag-you">Review exceptions, asks you</span><svg class="i"><use href="#i-chev"/></svg>File and log</p>
+          <div class="resfoot">
+            <p class="facts"><span><svg class="i"><use href="#i-folder"/></svg>Folders you choose</span><span><svg class="i"><use href="#i-table"/></svg>Two spreadsheets</span><span><svg class="i"><use href="#i-wifioff"/></svg>No internet</span><span>Version 2.3, 2,140 installs</span></p>
+            <span class="row"><button class="btn btn-ink btn-lg" data-install><svg class="i"><use href="#i-down"/></svg>Install</button><a class="btn btn-go btn-lg" href="#run" data-installed><svg class="i solid"><use href="#i-play"/></svg>Run it now</a></span>
+          </div>
+        </div>
+      </details>
+      <details class="res" name="res" data-tags="files folder local free">
+        <summary><span class="ticon" data-c="files"><svg class="i"><use href="#i-file"/></svg></span><span><b>Receipt Renamer</b><br><span class="by">Tidyfolder</span></span><p>Renames receipts and scans by date, shop and amount.</p><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.6</span><span class="state">Installed</span></summary>
+        <div class="resbody slim"><p class="flowline">Read the scan<svg class="i"><use href="#i-chev"/></svg>Find date, shop and amount<svg class="i"><use href="#i-chev"/></svg>Rename and move</p><button class="btn">Open</button></div>
+      </details>
+      <details class="res" name="res" data-tags="meetings manual folder online verified paid">
+        <summary><span class="ticon" data-c="meet"><svg class="i"><use href="#i-mic"/></svg></span><span><b>Meeting Notes to Actions</b><br><span class="by">Minutely <svg class="i verified"><use href="#i-shield"/></svg></span></span><p>Turns a recording or transcript into decisions, owners and due dates.</p><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.7</span><span class="state">Installed</span></summary>
+        <div class="resbody slim"><p class="flowline">Transcribe<svg class="i"><use href="#i-chev"/></svg>Find decisions and owners<svg class="i"><use href="#i-chev"/></svg><span class="tag tag-you">Confirm the list, asks you</span><svg class="i"><use href="#i-chev"/></svg>Send to your notes</p><button class="btn">Open</button></div>
+      </details>
+      <details class="res" name="res" data-tags="reporting schedule online verified free">
+        <summary><span class="ticon"><svg class="i"><use href="#i-chart"/></svg></span><span><b>Weekly Status Digest</b><br><span class="by">Northbeam <svg class="i verified"><use href="#i-shield"/></svg></span></span><p>Collects what changed in your project folders and drafts the weekly update.</p><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.5</span><span class="state">Installed</span></summary>
+        <div class="resbody slim"><p class="flowline">Scan project folders<svg class="i"><use href="#i-chev"/></svg>Group changes<svg class="i"><use href="#i-chev"/></svg>Draft the update<svg class="i"><use href="#i-chev"/></svg>Save the draft</p><button class="btn">Open</button></div>
+      </details>
+      <details class="res" name="res" data-tags="legal manual local verified paid">
+        <summary><span class="ticon" data-c="legal"><svg class="i"><use href="#i-scale"/></svg></span><span><b>Contract Clause Check</b><br><span class="by">Paragraph &amp; Co <svg class="i verified"><use href="#i-shield"/></svg></span></span><p>Flags missing or unusual clauses against your own checklist.</p><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.4</span><span class="state">$9 a month</span></summary>
+        <div class="resbody slim" data-installable><p class="flowline">Read the contract<svg class="i"><use href="#i-chev"/></svg>Compare with your checklist<svg class="i"><use href="#i-chev"/></svg><span class="tag tag-you">Review flags, asks you</span><svg class="i"><use href="#i-chev"/></svg>Save the report</p><button class="btn btn-ink" data-install>Install</button><button class="btn" data-installed>Open</button></div>
+      </details>
+      <details class="res" name="res" data-tags="email schedule online free">
+        <summary><span class="ticon" data-c="mail"><svg class="i"><use href="#i-mail"/></svg></span><span><b>Inbox Triage</b><br><span class="by">Postmark Lane</span></span><p>Sorts new mail into reply today, waiting and reference.</p><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.2</span><span class="state">Free</span></summary>
+        <div class="resbody slim" data-installable><p class="flowline">Fetch new mail<svg class="i"><use href="#i-chev"/></svg>Sort into three piles<svg class="i"><use href="#i-chev"/></svg>Label in your mailbox</p><button class="btn btn-ink" data-install>Install</button><button class="btn" data-installed>Open</button></div>
+      </details>
+      <details class="res" name="res" data-tags="data manual folder local free">
+        <summary><span class="ticon" data-c="data"><svg class="i"><use href="#i-table"/></svg></span><span><b>CSV Cleaner</b><br><span class="by">Rowhouse</span></span><p>Fixes dates, duplicates and broken columns in exported spreadsheets.</p><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.6</span><span class="state">Installed</span></summary>
+        <div class="resbody slim"><p class="flowline">Open the file<svg class="i"><use href="#i-chev"/></svg>Fix dates and duplicates<svg class="i"><use href="#i-chev"/></svg>Save a clean copy</p><button class="btn">Open</button></div>
+      </details>
+      <details class="res" name="res" data-tags="finance schedule manual local verified paid">
+        <summary><span class="ticon" data-c="fin"><svg class="i"><use href="#i-calendar"/></svg></span><span><b>Expense Report Builder</b><br><span class="by">Ledgerline <svg class="i verified"><use href="#i-shield"/></svg></span></span><p>Builds the monthly expense report from a folder of receipts.</p><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.3</span><span class="state">$6 a month</span></summary>
+        <div class="resbody slim" data-installable><p class="flowline">Collect the month's receipts<svg class="i"><use href="#i-chev"/></svg>Sort by category<svg class="i"><use href="#i-chev"/></svg><span class="tag tag-you">Check totals, asks you</span><svg class="i"><use href="#i-chev"/></svg>Build the report</p><button class="btn btn-ink" data-install>Install</button><button class="btn" data-installed>Open</button></div>
+      </details>
+      <details class="res" name="res" data-tags="files folder local free">
+        <summary><span class="ticon" data-c="files"><svg class="i"><use href="#i-image"/></svg></span><span><b>Screenshot Sorter</b><br><span class="by">Tidyfolder</span></span><p>Moves screenshots into folders by app and week.</p><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.1</span><span class="state">Free</span></summary>
+        <div class="resbody slim" data-installable><p class="flowline">Spot new screenshots<svg class="i"><use href="#i-chev"/></svg>Work out the app<svg class="i"><use href="#i-chev"/></svg>Move to its folder</p><button class="btn btn-ink" data-install>Install</button><button class="btn" data-installed>Open</button></div>
+      </details>
+      <p class="empty" data-empty hidden>No task matches. Clear a filter, or try another word.</p>
+    </section>
+
+    <!-- One task on one page -->
+    <section class="screen" data-screen="task">
+      <header class="hero">
+        <span class="ticon ticon-lg" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span>
+        <div class="grow"><h1>Invoice Intake</h1><p>Ledgerline, version 2.3</p></div>
+        <a class="btn btn-lg" href="#schedule"><svg class="i"><use href="#i-clock"/></svg>Schedule</a>
+        <a class="btn btn-go btn-lg" href="#run"><svg class="i solid"><use href="#i-play"/></svg>Run now</a>
+      </header>
+      <p class="lede">Drop invoices in a folder. Invoice Intake reads each one, matches it to a purchase order, asks you about the odd ones, then files the PDFs and adds a row per invoice to your spreadsheet.</p>
+
+      <h2>How it works</h2>
+      <ol class="strip">
+        <li><span class="mark">1</span><b>Read the files</b><p>Opens each PDF or scan.</p></li>
+        <li><span class="mark">2</span><b>Pull out the details</b><p>Vendor, number, date, total.</p></li>
+        <li><span class="mark">3</span><b>Match to purchase orders</b><p>Looks each one up in your spreadsheet.</p></li>
+        <li><span class="mark">4</span><b>Review exceptions</b><p>Shows you the ones that did not match.</p><span class="tag tag-you">Asks you</span></li>
+        <li><span class="mark">5</span><b>File and log</b><p>Moves the PDFs, adds the rows.</p></li>
+      </ol>
+
+      <h2>Previous runs</h2>
+      <div class="history">
+        <div class="pulse" role="img" aria-label="48 runs: 45 finished, 2 failed, 1 waiting"><i></i><i></i><i></i><i class="s"></i><i></i><i></i><i></i><i></i><i class="f"></i><i></i><i></i><i></i><i class="s"></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="s"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="s"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="f"></i><i></i><i class="s"></i><i></i><i></i><i class="w"></i></div>
+        <p>48 runs since Sep 2. Short bars found nothing new in the folder.</p>
+        <a class="runrow" href="?at=3#run"><b>Today 9:42 AM</b><span class="tag" style="justify-self:start"><svg class="i"><use href="#i-user"/></svg>You</span><span class="sub">Waiting for your review of 2 invoices</span><span class="status" data-s="wait">Needs you</span></a>
+        <div class="runrow"><b>Today 8:31 AM</b><span class="tag" style="justify-self:start"><svg class="i"><use href="#i-folder"/></svg>3 files arrived</span><span class="sub">3 filed in 1m 12s</span><span class="status" data-s="done">Finished</span></div>
+        <div class="runrow"><b>Yesterday 4:02 PM</b><span class="tag" style="justify-self:start"><svg class="i"><use href="#i-user"/></svg>You</span><span class="sub">11 filed, 1 held in 2m 40s</span><span class="status" data-s="done">Finished</span></div>
+        <div class="runrow"><b>Mon Nov 16, 8:30 AM</b><span class="tag" style="justify-self:start"><svg class="i"><use href="#i-clock"/></svg>Schedule</span><span class="sub">Nothing new in the folder</span><span class="status" data-s="done">Finished</span></div>
+        <div class="runrow"><b>Thu Nov 12, 2:15 PM</b><span class="tag" style="justify-self:start"><svg class="i"><use href="#i-user"/></svg>You</span><span class="sub">Stopped at Match to purchase orders: the spreadsheet was open in Excel</span><span class="status" data-s="failed">Failed</span></div>
+      </div>
+
+      <div class="halves">
+        <div><h2>Starts on its own</h2>
+          <div class="onrule"><svg class="i"><use href="#i-folder"/></svg><span class="grow">When files land in Invoices/Inbox</span><input type="checkbox" class="switch" checked aria-label="Folder rule on"></div>
+          <div class="onrule"><svg class="i"><use href="#i-clock"/></svg><span class="grow">Every weekday at 8:30 AM</span><input type="checkbox" class="switch" checked aria-label="Time rule on"></div>
+          <a class="btn btn-quiet btn-sm" href="#schedule" style="margin-top:8px"><svg class="i"><use href="#i-plus"/></svg>Add or change a rule</a>
+        </div>
+        <div><h2>What it can touch</h2>
+          <ul class="can">
+            <li><svg class="i"><use href="#i-folder"/></svg>Documents/Invoices and its subfolders</li>
+            <li><svg class="i"><use href="#i-table"/></svg>Purchase orders Q4.xlsx (read), Invoices 2026.xlsx (add rows)</li>
+            <li><svg class="i"><use href="#i-wifioff"/></svg>No internet access</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Run: the whole window -->
+    <section class="screen" data-screen="run" data-run>
+      <div class="focusbar">
+        <a class="btn btn-quiet btn-icon" href="#task" aria-label="Leave this run. It keeps going."><svg class="i"><use href="#i-x"/></svg></a>
+        <span class="ticon ticon-sm" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span>
+        <h1>Invoice Intake, run 48</h1>
+        <span class="grow"></span>
+        <span class="dim small" data-when="running wait done">Leaving keeps the run going</span>
+      </div>
+      <div class="trackwrap">
+        <ol class="track">
+          <li data-step="0" data-label="Read the files" data-note="Reading 14 files from Invoices/Inbox" data-done="14 files read" data-ms="1600"><span class="mark">1</span>Read the files</li>
+          <li data-step="1" data-label="Pull out the details" data-note="Vendor, number, date and total" data-done="14 invoices recognized" data-ms="2000"><span class="mark">2</span>Pull out the details</li>
+          <li data-step="2" data-label="Match to purchase orders" data-note="Checking Purchase orders Q4.xlsx" data-done="12 matched, 2 need a look" data-ms="1800"><span class="mark">3</span>Match to purchase orders</li>
+          <li data-step="3" data-label="Review exceptions" data-note="Waiting for you: 2 invoices" data-done="1 approved, 1 held" data-wait><span class="mark">4</span>Review exceptions</li>
+          <li data-step="4" data-label="File and log" data-note="Moving files and adding rows" data-done="13 filed, 1 held" data-ms="1800"><span class="mark">5</span>File and log</li>
+        </ol>
+      </div>
+      <div class="stage">
+        <div data-guest="start" data-when="idle"></div>
+        <div class="working" data-when="running"><h2 data-live="name"></h2><p data-live="note"></p><div class="bar"></div></div>
+        <div data-guest="review" data-when="wait"></div>
+        <div data-guest="result" data-when="done"></div>
+      </div>
+      <div class="foot">
+        <span data-when="idle">Fill in the task's screen above to start.</span>
+        <span data-when="running wait"><b data-live="count"></b> <span data-live="name"></span></span>
+        <span class="status" data-s="wait" data-when="wait">Needs you</span>
+        <span class="status" data-s="done" data-when="done">Finished</span>
+        <span class="grow"></span>
+        <span data-live="clock">0:00</span>
+        <button class="btn btn-sm" data-run-stop data-when="running wait"><svg class="i solid"><use href="#i-stop"/></svg>Stop run</button>
+        <a class="btn btn-sm btn-ink" href="#task" data-when="done">Done</a>
+      </div>
+    </section>
+
+    <!-- Schedule: rules written as sentences -->
+    <section class="screen" data-screen="schedule">
+      <p class="crumb"><a href="#task">Invoice Intake</a> / Starts on its own</p>
+      <h1 style="margin-bottom:22px">When should Invoice Intake start?</h1>
+
+      <div class="sent">
+        <input type="checkbox" class="switch" checked aria-label="Rule on">
+        <p>When <button class="tok">PDFs or images</button> land in <button class="tok"><svg class="i"><use href="#i-folder"/></svg>Documents/Invoices/Inbox</button>, wait until the folder is quiet for <button class="tok">2 minutes</button>, then run on the new files.</p>
+        <button class="btn btn-quiet btn-icon" aria-label="Remove rule"><svg class="i"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="sent">
+        <input type="checkbox" class="switch" checked aria-label="Rule on">
+        <p>Every <span class="tok" style="background:#CDDBFA">weekday<svg class="i"><use href="#i-chevd"/></svg>
+            <span class="menu"><span>day</span><span class="on">weekday <svg class="i"><use href="#i-check"/></svg></span><span>week on…</span><span>month on the…</span><span>once, on a date…</span></span>
+          </span> at <button class="tok">8:30 AM</button>, run on whatever is in <button class="tok"><svg class="i"><use href="#i-folder"/></svg>Invoices/Inbox</button>.
+          <small>Next: tomorrow, Wed Nov 18 at 8:30 AM</small></p>
+        <button class="btn btn-quiet btn-icon" aria-label="Remove rule"><svg class="i"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="addrule"><svg class="i"><use href="#i-plus"/></svg>Add a rule: <button class="btn btn-sm"><svg class="i"><use href="#i-folder"/></svg>When files land in a folder</button><button class="btn btn-sm"><svg class="i"><use href="#i-clock"/></svg>At a set time</button></div>
+
+      <h2>When nobody is at the computer</h2>
+      <div class="sent" style="grid-template-columns:minmax(0,1fr)">
+        <p>Fill in its New batch screen with <button class="tok">the answers I saved</button>. If a step needs me, <button class="tok">wait there and notify me</button>.</p>
+      </div>
+
+      <h2>The next 7 days</h2>
+      <div class="next7">
+        <div><b>Wed 18</b>8:30 AM</div><div><b>Thu 19</b>8:30 AM</div><div><b>Fri 20</b>8:30 AM</div>
+        <div class="off"><b>Sat 21</b>Only if files arrive</div><div class="off"><b>Sun 22</b>Only if files arrive</div>
+        <div><b>Mon 23</b>8:30 AM</div><div><b>Tue 24</b>8:30 AM</div>
+      </div>
+      <div class="row" style="margin-top:28px"><a class="btn btn-ink btn-lg" href="#task">Save rules</a><a class="btn btn-lg" href="#task">Cancel</a></div>
+    </section>
+
+  </main>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cowork concept 3: Thread</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* Thread: each task is a conversation. Runs post into it, and the task's own screens appear in the flow. */
+  .win { display: grid; grid-template-columns: 268px minmax(0, 1fr); height: calc(100vh - var(--bar)); background: var(--paper); }
+  .list { background: var(--chrome); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; padding: 16px 10px 10px; overflow: auto; }
+  .list .brand { padding: 2px 10px 14px; }
+  .chan { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 0 10px; align-items: center; padding: 8px 10px; border-radius: 10px; }
+  .chan:hover { background: #14213D0A; }
+  .chan .ticon { grid-row: 1 / 3; }
+  .chan b { font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chan small { grid-column: 2; color: var(--ink-3); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chan .badge, .chan .dot { grid-row: 1 / 3; grid-column: 3; }
+  .chan[aria-current],
+  body[data-at="run"] .chan[href="#task"],
+  body[data-at="schedule"] .chan[href="#task"] { background: var(--paper); box-shadow: 0 0 0 1px var(--line); }
+  .badge { min-width: 20px; height: 20px; border-radius: 10px; background: var(--wait); color: #3D2500; font-size: 11.5px; font-weight: 700; display: grid; place-items: center; padding: 0 6px; }
+  .list .add { margin-top: auto; }
+
+  .main { min-width: 0; min-height: 0; }
+  .screen { display: grid; grid-template-columns: minmax(0, 1fr) 330px; height: 100%; min-height: 0; }
+  .screen.solo { grid-template-columns: minmax(0, 1fr); }
+  .center { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-height: 0; min-width: 0; }
+  .chead { display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--line); min-height: 61px; }
+  .chead h1 { font-size: 18px; letter-spacing: -0.01em; }
+  .chead p { font-size: 12.5px; color: var(--ink-3); }
+  .stream { overflow: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .stream > * { max-width: 780px; width: 100%; flex: none; }
+  .stream > :first-child { margin-top: auto; }
+  .composer { border-top: 1px solid var(--line); padding: 14px 24px; }
+  .composer > * { max-width: 780px; }
+  .about { border-left: 1px solid var(--line); overflow: auto; padding: 20px; display: grid; gap: 22px; align-content: start; }
+  .about h2 { font-size: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+  .about h2 a { font-weight: 500; color: var(--live); font-size: 13px; }
+  .about .top { display: flex; gap: 14px; align-items: center; }
+  .about .top h2 { font-size: 18px; margin: 0; }
+  .rule { display: flex; gap: 9px; align-items: flex-start; font-size: 13px; margin-bottom: 7px; }
+  .rule .i { color: var(--ink-3); margin-top: 2px; }
+
+  .daydiv { display: flex; align-items: center; gap: 12px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); margin-top: 8px; }
+  .daydiv::after { content: ""; flex: 1; height: 1px; background: var(--line-2); }
+  .runcard { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 11px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+  .runcard .when { font-size: 12.5px; color: var(--ink-3); padding-top: 2px; white-space: nowrap; }
+  .about .mini { zoom: 0.42; }
+  .runcard p { color: var(--ink-2); font-size: 13px; }
+  .runcard .who { display: flex; gap: 8px; align-items: center; }
+  .runcard.ghost { border-style: dashed; background: none; }
+  .runcard.ghost b { font-weight: 600; }
+  a.runcard:hover { border-color: var(--ink-3); }
+  .quick { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .quick .chip { height: 34px; padding: 0 12px 0 6px; font-size: 13px; }
+
+  /* The live run */
+  .live { display: flex; flex-direction: column; gap: 12px; }
+  .said { align-self: flex-end; max-width: 440px; background: var(--ink); color: #fff; border-radius: 14px 14px 4px 14px; padding: 10px 14px; font-size: 13.5px; }
+  .said small { display: block; color: #AEB9D1; font-size: 12px; margin-bottom: 2px; }
+  .msg { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 0 12px; }
+  .msg[data-state="todo"] { display: none; }
+  .msg b { line-height: 24px; }
+  .msg p { color: var(--ink-2); font-size: 13px; }
+  .msg[data-state="wait"] b { color: var(--wait-ink); }
+  .live .guest { margin-left: 36px; }
+  .nowline { display: flex; align-items: center; gap: 12px; font-size: 13.5px; color: var(--ink-2); }
+  .nowline b { color: var(--ink); }
+
+  /* Marketplace shelves */
+  .tools { padding: 14px 24px 0; display: flex; gap: 6px; flex-wrap: wrap; }
+  .shelves { overflow: auto; padding: 8px 24px 28px; }
+  .shelf h2 { margin: 18px 0 10px; }
+  .shelf:not(:has(.mcard:not([hidden]))) { display: none; }
+  .shelf .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+
+  /* Schedule: "run later" composer */
+  .later { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; max-width: none; align-items: start; }
+  .later [data-run-start] { display: none; }
+  .later .guest-body { padding-bottom: 8px; }
+  .when-panel { display: grid; gap: 12px; }
+  .when-panel h2 { font-size: 15px; }
+  .opt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 9px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 13.5px; }
+  .opt input { accent-color: var(--ink); margin: 3px 0 0; }
+  .opt:has(input:checked) { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+  .opt .more { grid-column: 2; display: none; gap: 8px; margin-top: 6px; }
+  .opt:has(input:checked) .more { display: grid; }
+  .days { display: flex; gap: 4px; }
+  .days .chip { width: 30px; height: 26px; padding: 0; justify-content: center; }
+  .standing { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 14px; border: 1px solid var(--line); border-radius: 12px; }
+  .standing p { font-size: 13px; color: var(--ink-2); }
+  .standing .i { color: var(--ink-3); }
+
+  @media (max-width: 1100px) {
+    .screen { grid-template-columns: minmax(0, 1fr); height: auto; }
+    .about { border-left: 0; border-top: 1px solid var(--line); }
+    .later { grid-template-columns: minmax(0, 1fr); }
+    .shelf .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 720px) {
+    .win { grid-template-columns: minmax(0, 1fr); height: auto; }
+    .list { display: none; }
+    .shelf .cards { grid-template-columns: minmax(0, 1fr); }
+    .runcard { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+    .stream, .composer, .chead { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body data-concept="3" data-start="tasks">
+<div class="win">
+  <aside class="list">
+    <a class="brand" href="#tasks"><span class="logo"></span>Cowork</a>
+    <a class="chan" href="#tasks"><span class="ticon" style="background:var(--paper);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)"><svg class="i"><use href="#i-history"/></svg></span><b>Activity</b><small>3 runs today, 1 waiting</small></a>
+    <a class="chan" href="#task"><span class="ticon" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><b>Invoice Intake</b><small>Waiting for you: 2 invoices</small><span class="badge">1</span></a>
+    <a class="chan"><span class="ticon"><svg class="i"><use href="#i-chart"/></svg></span><b>Weekly Status Digest</b><small>Fri Nov 13: draft saved</small></a>
+    <a class="chan"><span class="ticon" data-c="files"><svg class="i"><use href="#i-file"/></svg></span><b>Receipt Renamer</b><small>9:05 AM: 2 renamed</small></a>
+    <a class="chan"><span class="ticon" data-c="meet"><svg class="i"><use href="#i-mic"/></svg></span><b>Meeting Notes to Actions</b><small>Tue Nov 10: 6 actions</small></a>
+    <a class="chan"><span class="ticon" data-c="data"><svg class="i"><use href="#i-table"/></svg></span><b>CSV Cleaner</b><small>Failed: the file was open in Excel</small><span class="dot" data-s="failed"></span></a>
+    <a class="btn add" href="#market"><svg class="i"><use href="#i-plus"/></svg>Add tasks</a>
+  </aside>
+
+  <main class="main">
+
+    <!-- Activity: every run, from every task -->
+    <section class="screen solo is-on" data-screen="tasks">
+      <div class="center">
+        <header class="chead"><div><h1>Activity</h1><p>Every run from every task, oldest at the top</p></div></header>
+        <div class="stream">
+          <p class="daydiv">Yesterday</p>
+          <article class="runcard"><span class="when">4:02 PM</span><div><span class="who"><span class="ticon ticon-sm" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><b>Invoice Intake</b></span><p>You started it. 11 filed, 1 held.</p></div><span class="status" data-s="done">Finished</span></article>
+          <article class="runcard"><span class="when">6:12 PM</span><div><span class="who"><span class="ticon ticon-sm" data-c="files"><svg class="i"><use href="#i-file"/></svg></span><b>Receipt Renamer</b></span><p>4 files arrived in Scans. 4 renamed.</p></div><span class="status" data-s="done">Finished</span></article>
+          <p class="daydiv">Today</p>
+          <article class="runcard"><span class="when">8:31 AM</span><div><span class="who"><span class="ticon ticon-sm" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><b>Invoice Intake</b></span><p>3 files arrived in Invoices/Inbox. 3 filed.</p></div><span class="status" data-s="done">Finished</span></article>
+          <article class="runcard"><span class="when">9:05 AM</span><div><span class="who"><span class="ticon ticon-sm" data-c="files"><svg class="i"><use href="#i-file"/></svg></span><b>Receipt Renamer</b></span><p>2 files arrived in Scans. 2 renamed.</p></div><span class="status" data-s="done">Finished</span></article>
+          <a class="runcard" href="?at=3#run" style="border-color:#F3D89B;background:var(--wait-soft)"><span class="when">9:42 AM</span><div><span class="who"><span class="ticon ticon-sm" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><b>Invoice Intake</b></span><p style="color:var(--wait-ink)">You started it. It stopped at Review exceptions: 2 invoices need a decision.</p></div><span class="btn btn-ink btn-sm">Open</span></a>
+          <p class="daydiv">Coming up</p>
+          <article class="runcard ghost"><span class="when">Wed 8:30 AM</span><div><span class="who"><span class="ticon ticon-sm" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><b>Invoice Intake</b></span><p>Every weekday</p></div><span class="status" data-s="next">Scheduled</span></article>
+          <article class="runcard ghost"><span class="when">Fri 4:00 PM</span><div><span class="who"><span class="ticon ticon-sm"><svg class="i"><use href="#i-chart"/></svg></span><b>Weekly Status Digest</b></span><p>Every Friday</p></div><span class="status" data-s="next">Scheduled</span></article>
+        </div>
+        <div class="composer">
+          <div class="quick"><b>Start a run</b>
+            <a class="chip" href="#run"><span class="ticon ticon-sm" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span>Invoice Intake</a>
+            <a class="chip"><span class="ticon ticon-sm"><svg class="i"><use href="#i-chart"/></svg></span>Weekly Status Digest</a>
+            <a class="chip"><span class="ticon ticon-sm" data-c="files"><svg class="i"><use href="#i-file"/></svg></span>Receipt Renamer</a>
+            <a class="chip"><span class="ticon ticon-sm" data-c="meet"><svg class="i"><use href="#i-mic"/></svg></span>Meeting Notes to Actions</a>
+            <a class="chip"><span class="ticon ticon-sm" data-c="data"><svg class="i"><use href="#i-table"/></svg></span>CSV Cleaner</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- One task: its runs in the middle, what it is on the right -->
+    <section class="screen" data-screen="task">
+      <div class="center">
+        <header class="chead"><span class="ticon" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><div class="grow"><h1>Invoice Intake</h1><p>48 runs since Sep 2</p></div></header>
+        <div class="stream">
+          <p class="daydiv">Thu Nov 12</p>
+          <article class="runcard"><span class="when">2:15 PM</span><div><b>Run 43</b><p>You started it. Stopped at Match to purchase orders: the spreadsheet was open in Excel.</p></div><span class="status" data-s="failed">Failed</span></article>
+          <p class="daydiv">Fri Nov 13</p>
+          <article class="runcard"><span class="when">8:30 AM</span><div><b>Run 44</b><p>Started on schedule. Waited 3 hours for your review, then 9 filed, 2 held.</p></div><span class="status" data-s="done">Finished</span></article>
+          <p class="daydiv">Mon Nov 16</p>
+          <article class="runcard"><span class="when">8:30 AM</span><div><b>Run 45</b><p>Started on schedule. Nothing new in the folder.</p></div><span class="status" data-s="done">Finished</span></article>
+          <article class="runcard"><span class="when">4:02 PM</span><div><b>Run 46</b><p>You started it. 11 filed, 1 held.</p></div><span class="status" data-s="done">Finished</span></article>
+          <p class="daydiv">Today</p>
+          <article class="runcard"><span class="when">8:31 AM</span><div><b>Run 47</b><p>3 files arrived in Invoices/Inbox. 3 filed in 1m 12s.</p></div><span class="status" data-s="done">Finished</span></article>
+          <a class="runcard" href="?at=3#run" style="border-color:#F3D89B;background:var(--wait-soft)"><span class="when">9:42 AM</span><div><b>Run 48</b><p style="color:var(--wait-ink)">You started it. It stopped at Review exceptions: 2 invoices need a decision.</p></div><span class="btn btn-ink btn-sm">Open</span></a>
+        </div>
+        <div class="composer">
+          <div class="quick"><a class="btn btn-go" href="#run"><svg class="i solid"><use href="#i-play"/></svg>Start a run</a><a class="btn" href="#schedule"><svg class="i"><use href="#i-clock"/></svg>Run later or repeat</a></div>
+        </div>
+      </div>
+      <aside class="about">
+        <div><h2>About this task</h2><p class="sub">Drop invoices in a folder. Invoice Intake reads each one, matches it to a purchase order, asks you about the odd ones, then files the PDFs and adds a row per invoice to your spreadsheet.</p><p class="small dim" style="margin-top:8px">Ledgerline, checked publisher. Version 2.3.</p></div>
+        <div><h2>Workflow</h2>
+          <ol class="steps">
+            <li class="step"><span class="mark">1</span><b>Read the files</b></li>
+            <li class="step"><span class="mark">2</span><b>Pull out the details</b></li>
+            <li class="step"><span class="mark">3</span><b>Match to purchase orders</b></li>
+            <li class="step"><span class="mark">4</span><div><b>Review exceptions</b> <span class="tag tag-you">Asks you</span></div></li>
+            <li class="step"><span class="mark">5</span><b>File and log</b></li>
+          </ol>
+        </div>
+        <div><h2>Starts <a href="#schedule">Change</a></h2>
+          <p class="rule"><svg class="i"><use href="#i-folder"/></svg>When files are added to Invoices/Inbox</p>
+          <p class="rule"><svg class="i"><use href="#i-clock"/></svg>Weekdays at 8:30 AM</p>
+          <p class="rule"><svg class="i"><use href="#i-play"/></svg>Whenever you start a run</p>
+        </div>
+        <div><h2>What it can touch</h2>
+          <ul class="can">
+            <li><svg class="i"><use href="#i-folder"/></svg>Documents/Invoices and its subfolders</li>
+            <li><svg class="i"><use href="#i-table"/></svg>Purchase orders Q4.xlsx (read)</li>
+            <li><svg class="i"><use href="#i-table"/></svg>Invoices 2026.xlsx (add rows)</li>
+            <li><svg class="i"><use href="#i-wifioff"/></svg>No internet access</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+
+    <!-- A run: steps post into the conversation, the task's screens appear in the flow -->
+    <section class="screen" data-screen="run" data-run>
+      <div class="center">
+        <header class="chead"><span class="ticon" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><div class="grow"><h1>Invoice Intake</h1><p>Run 48</p></div>
+          <span class="status" data-s="running" data-when="running">Running</span>
+          <span class="status" data-s="wait" data-when="wait">Needs you</span>
+          <span class="status" data-s="done" data-when="done">Finished</span>
+        </header>
+        <div class="stream" data-stick>
+          <p class="daydiv">Today</p>
+          <article class="runcard"><span class="when">8:31 AM</span><div><b>Run 47</b><p>3 files arrived in Invoices/Inbox. 3 filed in 1m 12s.</p></div><span class="status" data-s="done">Finished</span></article>
+          <div class="live" data-when="running wait done">
+            <p class="said"><small>You, 9:42 AM</small>Process 14 invoices from Invoices/Inbox. Match against Purchase orders Q4.xlsx. Ask me about anything over $5,000 or without an order.</p>
+            <div class="msg" data-step="0" data-label="Read the files" data-note="Reading 14 files from Invoices/Inbox" data-done="14 files read" data-ms="1600"><span class="mark">1</span><div><b>Read the files</b><p data-step-text></p></div></div>
+            <div class="msg" data-step="1" data-label="Pull out the details" data-note="Vendor, number, date and total" data-done="14 invoices recognized" data-ms="2000"><span class="mark">2</span><div><b>Pull out the details</b><p data-step-text></p></div></div>
+            <div class="msg" data-step="2" data-label="Match to purchase orders" data-note="Checking Purchase orders Q4.xlsx" data-done="12 matched, 2 need a look" data-ms="1800"><span class="mark">3</span><div><b>Match to purchase orders</b><p data-step-text></p></div></div>
+            <div class="msg" data-step="3" data-label="Review exceptions" data-note="Waiting for you: 2 invoices" data-done="1 approved, 1 held" data-wait><span class="mark">4</span><div><b>Review exceptions</b><p data-step-text></p></div></div>
+            <div data-guest="review" data-when="wait"></div>
+            <div class="msg" data-step="4" data-label="File and log" data-note="Moving files and adding rows" data-done="13 filed, 1 held" data-ms="1800"><span class="mark">5</span><div><b>File and log</b><p data-step-text></p></div></div>
+            <div data-guest="result" data-when="done"></div>
+          </div>
+        </div>
+        <div class="composer">
+          <div data-guest="start" data-when="idle"></div>
+          <div class="nowline" data-when="running"><span data-state="doing"><span class="mark"></span></span><span class="grow"><b data-live="count"></b> <span data-live="note"></span></span><span data-live="clock">0:00</span><button class="btn btn-sm" data-run-stop><svg class="i solid"><use href="#i-stop"/></svg>Stop run</button></div>
+          <div class="nowline" data-when="wait"><span class="status" data-s="wait">Answer in the panel above to continue</span><span class="grow"></span><span data-live="clock">0:00</span><button class="btn btn-sm" data-run-stop><svg class="i solid"><use href="#i-stop"/></svg>Stop run</button></div>
+          <div class="quick" data-when="done"><button class="btn btn-go" data-run-reset><svg class="i solid"><use href="#i-play"/></svg>Start another run</button><a class="btn" href="#schedule"><svg class="i"><use href="#i-clock"/></svg>Run later or repeat</a></div>
+        </div>
+      </div>
+      <aside class="about">
+        <div><h2>Steps in this run</h2>
+          <ol class="steps">
+            <li class="step" data-step="0"><span class="mark">1</span><b>Read the files</b></li>
+            <li class="step" data-step="1"><span class="mark">2</span><b>Pull out the details</b></li>
+            <li class="step" data-step="2"><span class="mark">3</span><b>Match to purchase orders</b></li>
+            <li class="step" data-step="3"><span class="mark">4</span><div><b>Review exceptions</b> <span class="tag tag-you">Asks you</span></div></li>
+            <li class="step" data-step="4"><span class="mark">5</span><b>File and log</b></li>
+          </ol>
+        </div>
+        <div><h2>This run</h2><dl class="kv"><dt>Started by</dt><dd>You</dd><dt>Files</dt><dd>14 in Invoices/Inbox</dd><dt>Time</dt><dd data-live="clock">0:00</dd></dl></div>
+      </aside>
+    </section>
+
+    <!-- Marketplace: shelves in the middle, preview where "About" usually is -->
+    <section class="screen" data-screen="market" data-market>
+      <div class="center">
+        <header class="chead"><div class="grow"><h1>Add tasks</h1><p>A new task joins the list on the left</p></div><label class="searchbox" style="width:260px"><svg class="i"><use href="#i-search"/></svg><input data-search type="search" placeholder="Search tasks" aria-label="Search tasks"></label></header>
+        <div style="display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0">
+          <div class="tools">
+            <button class="chip" data-f="cat:finance" aria-pressed="false">Finance</button>
+            <button class="chip" data-f="cat:files" aria-pressed="false">Files</button>
+            <button class="chip" data-f="cat:meetings" aria-pressed="false">Meetings</button>
+            <button class="chip" data-f="cat:reporting" aria-pressed="false">Reporting</button>
+            <button class="chip" data-f="cat:legal" aria-pressed="false">Legal</button>
+            <button class="chip" data-f="cat:email" aria-pressed="false">Email</button>
+            <button class="chip" data-f="cat:data" aria-pressed="false">Data</button>
+            <button class="chip" data-f="net:local" aria-pressed="false"><svg class="i"><use href="#i-wifioff"/></svg>Works without internet</button>
+            <button class="chip" data-f="pub:verified" aria-pressed="false"><svg class="i"><use href="#i-shield"/></svg>Checked publisher</button>
+            <button class="chip" data-f="price:free" aria-pressed="false">Free</button>
+          </div>
+          <div class="shelves">
+            <div class="shelf"><h2>Start when files arrive</h2>
+              <div class="cards">
+                <article class="mcard is-picked" data-tags="finance folder manual local verified free"><span class="ticon" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><div><h3>Invoice Intake</h3><p class="by">Ledgerline <svg class="i verified"><use href="#i-shield"/></svg></p></div><p class="what">Reads invoices, matches them to purchase orders, files them and logs the totals.</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.8</span><span class="tag">Free</span></footer></article>
+                <article class="mcard" data-tags="files folder local free"><span class="ticon" data-c="files"><svg class="i"><use href="#i-file"/></svg></span><div><h3>Receipt Renamer</h3><p class="by">Tidyfolder</p></div><p class="what">Renames receipts and scans by date, shop and amount.</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.6</span><span class="tag">Installed</span></footer></article>
+                <article class="mcard" data-tags="files folder local free"><span class="ticon" data-c="files"><svg class="i"><use href="#i-image"/></svg></span><div><h3>Screenshot Sorter</h3><p class="by">Tidyfolder</p></div><p class="what">Moves screenshots into folders by app and week.</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.1</span><span class="tag">Free</span></footer></article>
+              </div>
+            </div>
+            <div class="shelf"><h2>Run on a schedule</h2>
+              <div class="cards">
+                <article class="mcard" data-tags="reporting schedule online verified free"><span class="ticon"><svg class="i"><use href="#i-chart"/></svg></span><div><h3>Weekly Status Digest</h3><p class="by">Northbeam <svg class="i verified"><use href="#i-shield"/></svg></p></div><p class="what">Collects what changed in your project folders and drafts the weekly update.</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.5</span><span class="tag">Installed</span></footer></article>
+                <article class="mcard" data-tags="email schedule online free"><span class="ticon" data-c="mail"><svg class="i"><use href="#i-mail"/></svg></span><div><h3>Inbox Triage</h3><p class="by">Postmark Lane</p></div><p class="what">Sorts new mail into reply today, waiting and reference.</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.2</span><span class="tag">Free</span></footer></article>
+                <article class="mcard" data-tags="finance schedule manual local verified paid"><span class="ticon" data-c="fin"><svg class="i"><use href="#i-calendar"/></svg></span><div><h3>Expense Report Builder</h3><p class="by">Ledgerline <svg class="i verified"><use href="#i-shield"/></svg></p></div><p class="what">Builds the monthly expense report from a folder of receipts.</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.3</span><span class="tag">$6 a month</span></footer></article>
+              </div>
+            </div>
+            <div class="shelf"><h2>Start them yourself</h2>
+              <div class="cards">
+                <article class="mcard" data-tags="meetings manual folder online verified paid"><span class="ticon" data-c="meet"><svg class="i"><use href="#i-mic"/></svg></span><div><h3>Meeting Notes to Actions</h3><p class="by">Minutely <svg class="i verified"><use href="#i-shield"/></svg></p></div><p class="what">Turns a recording or transcript into decisions, owners and due dates.</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.7</span><span class="tag">Installed</span></footer></article>
+                <article class="mcard" data-tags="legal manual local verified paid"><span class="ticon" data-c="legal"><svg class="i"><use href="#i-scale"/></svg></span><div><h3>Contract Clause Check</h3><p class="by">Paragraph &amp; Co <svg class="i verified"><use href="#i-shield"/></svg></p></div><p class="what">Flags missing or unusual clauses against your own checklist.</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.4</span><span class="tag">$9 a month</span></footer></article>
+                <article class="mcard" data-tags="data manual folder local free"><span class="ticon" data-c="data"><svg class="i"><use href="#i-table"/></svg></span><div><h3>CSV Cleaner</h3><p class="by">Rowhouse</p></div><p class="what">Fixes dates, duplicates and broken columns in exported spreadsheets.</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.6</span><span class="tag">Installed</span></footer></article>
+              </div>
+            </div>
+            <p class="empty" data-empty hidden style="margin-top:18px">No task matches. Clear a filter, or try another word.</p>
+          </div>
+        </div>
+      </div>
+      <aside class="about" data-installable aria-label="Preview of Invoice Intake">
+        <div class="top"><span class="ticon ticon-lg" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><div><h2>Invoice Intake</h2><p class="small dim">Ledgerline <svg class="i verified"><use href="#i-shield"/></svg> checked publisher</p></div></div>
+        <div class="row"><button class="btn btn-ink grow" data-install><svg class="i"><use href="#i-down"/></svg>Install</button><a class="btn btn-ink grow" href="#task" data-installed>Open its conversation</a></div>
+        <p class="sub">Drop invoices in a folder. Invoice Intake reads each one, matches it to a purchase order, asks you about the odd ones, then files the PDFs and adds a row per invoice to your spreadsheet.</p>
+        <div><h2>What a run looks like</h2>
+          <div style="display:grid;gap:10px">
+            <div class="mini" data-guest="start" inert></div>
+            <div class="mini" data-guest="review" inert></div>
+          </div>
+        </div>
+        <div><h2>Workflow</h2>
+          <ol class="steps">
+            <li class="step"><span class="mark">1</span><b>Read the files</b></li>
+            <li class="step"><span class="mark">2</span><b>Pull out the details</b></li>
+            <li class="step"><span class="mark">3</span><b>Match to purchase orders</b></li>
+            <li class="step"><span class="mark">4</span><div><b>Review exceptions</b> <span class="tag tag-you">Asks you</span></div></li>
+            <li class="step"><span class="mark">5</span><b>File and log</b></li>
+          </ol>
+        </div>
+        <div><h2>What it can touch</h2>
+          <ul class="can">
+            <li><svg class="i"><use href="#i-folder"/></svg>Read and move files in folders you choose</li>
+            <li><svg class="i"><use href="#i-table"/></svg>Read one spreadsheet, add rows to another</li>
+            <li><svg class="i"><use href="#i-wifioff"/></svg>Works without internet</li>
+          </ul>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Schedule: fill in the task's screen once, then choose when it is sent -->
+    <section class="screen solo" data-screen="schedule">
+      <div class="center">
+        <header class="chead"><span class="ticon" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><div class="grow"><h1>Invoice Intake</h1><p>Run later or repeat</p></div><a class="btn btn-quiet btn-icon" href="#task" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></a></header>
+        <div class="stream">
+          <p class="daydiv">Starts on its own</p>
+          <div class="standing"><svg class="i"><use href="#i-folder"/></svg><div><b>When files are added to Invoices/Inbox</b><p>After the folder is quiet for 2 minutes. Last started a run today at 8:31 AM.</p></div><input type="checkbox" class="switch" checked aria-label="Folder rule on"></div>
+          <div class="standing"><svg class="i"><use href="#i-clock"/></svg><div><b>Weekdays at 8:30 AM</b><p>Uses the answers saved below.</p></div><input type="checkbox" class="switch" checked aria-label="Time rule on"></div>
+          <p class="daydiv">Coming up</p>
+          <article class="runcard ghost"><span class="when">Wed 8:30 AM</span><div><b>Run 49</b><p>Weekday schedule</p></div><span class="status" data-s="next">Scheduled</span></article>
+          <article class="runcard ghost"><span class="when">Thu 8:30 AM</span><div><b>Run 50</b><p>Weekday schedule</p></div><span class="status" data-s="next">Scheduled</span></article>
+        </div>
+        <div class="composer">
+          <div class="later">
+            <div data-guest="start"></div>
+            <div class="when-panel">
+              <h2>Send this run</h2>
+              <label class="opt"><input type="radio" name="when"><span>Now</span></label>
+              <label class="opt"><input type="radio" name="when"><span>When files are added to a folder</span>
+                <span class="more"><span class="path"><svg class="i"><use href="#i-folder"/></svg>Documents/Invoices/Inbox</span><select class="input"><option>After the folder is quiet for 2 minutes</option><option>As soon as a file arrives</option></select></span></label>
+              <label class="opt"><input type="radio" name="when" checked><span>At a time, repeating</span>
+                <span class="more">
+                  <span class="row"><select class="input grow"><option>Every week</option><option>Every day</option><option>Every month</option><option>Once</option></select><input class="input" type="time" value="08:30" aria-label="Time"></span>
+                  <span class="days"><button class="chip" aria-pressed="true">M</button><button class="chip" aria-pressed="true">T</button><button class="chip" aria-pressed="true">W</button><button class="chip" aria-pressed="true">T</button><button class="chip" aria-pressed="true">F</button><button class="chip" aria-pressed="false">S</button><button class="chip" aria-pressed="false">S</button></span>
+                </span></label>
+              <label class="field">If a step needs me<select class="input"><option>Wait there and notify me</option><option>Hold those items and finish</option></select></label>
+              <a class="btn btn-ink" href="#task">Save as a rule</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>

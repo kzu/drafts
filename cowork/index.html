@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cowork task app: four UX mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { padding: 0; }
+  .page { max-width: 1260px; margin: 0 auto; padding: 44px 28px 80px; }
+  .page > header h1 { font-size: 42px; letter-spacing: -0.03em; line-height: 1.05; max-width: 20ch; margin-top: 30px; }
+  .lede { font-size: 17px; line-height: 1.6; max-width: 66ch; color: var(--ink-2); margin-top: 16px; }
+
+  .concept { display: grid; grid-template-columns: 290px minmax(0, 1fr) minmax(0, 1fr); gap: 22px; padding: 28px 0; border-top: 1px solid var(--line); align-items: start; }
+  .concept:first-of-type { margin-top: 40px; }
+  .concept h2 { font-size: 26px; letter-spacing: -0.02em; }
+  .concept h2 a:hover { text-decoration: underline; }
+  .concept .n { font-size: 13px; font-weight: 600; color: var(--ink-3); }
+  .concept p { color: var(--ink-2); margin-top: 8px; }
+  .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+  .links .chip:hover { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .shot { display: block; position: relative; aspect-ratio: 16 / 10; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--paper); box-shadow: 0 10px 30px #14213D14; }
+  .shot:hover { border-color: var(--ink); }
+  .shot iframe { position: absolute; inset: 0 auto auto 0; width: 1440px; height: 900px; border: 0; transform-origin: 0 0; transform: scale(var(--k, 0.3)); pointer-events: none; }
+  figcaption { font-size: 12.5px; color: var(--ink-3); margin-top: 8px; }
+
+  .page > h2 { font-size: 22px; letter-spacing: -0.02em; margin: 56px 0 14px; }
+  .cmp-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+  .cmp { width: 100%; min-width: 900px; border-collapse: collapse; font-size: 13.5px; }
+  .cmp th, .cmp td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--line-2); }
+  .cmp thead th { font-size: 15px; border-bottom-color: var(--line); }
+  .cmp tbody th { width: 150px; font-weight: 600; color: var(--ink-2); }
+  .cmp td { color: var(--ink-2); width: 21%; }
+  .cmp tr:last-child th, .cmp tr:last-child td { border-bottom: 0; }
+  .notes { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .notes .card { padding: 20px 22px; }
+  .notes h3 { font-size: 16px; margin-bottom: 10px; }
+  .notes ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: var(--ink-2); }
+  .notes a { color: var(--live); }
+
+  @media (max-width: 980px) {
+    .concept { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .concept > div { grid-column: 1 / -1; }
+    .notes { grid-template-columns: minmax(0, 1fr); }
+    .page > header h1 { font-size: 32px; }
+  }
+  @media (max-width: 560px) {
+    .concept { grid-template-columns: minmax(0, 1fr); }
+    .page { padding: 28px 16px 56px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <span class="brand"><span class="logo"></span>Cowork</span>
+    <h1>Four ways to find, run and schedule tasks</h1>
+    <p class="lede">Cowork lets people add tasks from a marketplace, run them by hand or on a schedule, and use whatever screen each task brings with it. The four mockups below are the same app with the same sample task, organised four different ways. Each one is clickable: filter the marketplace, install, start a run and watch its steps advance.</p>
+  </header>
+
+  <section class="concept">
+    <div>
+      <span class="n">1 of 4</span>
+      <h2><a href="concept-1-shelf.html">Shelf</a></h2>
+      <p>A sidebar of installed tasks, with one open beside it. During a run the window splits: the task's own screen on the left, its steps down the right.</p>
+      <p class="links"><a class="chip" href="concept-1-shelf.html#market">Marketplace</a><a class="chip" href="concept-1-shelf.html#tasks">My tasks</a><a class="chip" href="concept-1-shelf.html#task">Task</a><a class="chip" href="concept-1-shelf.html#run">Run</a><a class="chip" href="concept-1-shelf.html#schedule">Schedule</a></p>
+    </div>
+    <figure><a class="shot" href="concept-1-shelf.html#tasks"><iframe src="concept-1-shelf.html#tasks" title="Shelf: My tasks" loading="lazy" tabindex="-1"></iframe></a><figcaption>My tasks</figcaption></figure>
+    <figure><a class="shot" href="concept-1-shelf.html?at=3#run"><iframe src="concept-1-shelf.html?at=3#run" title="Shelf: a run waiting for a decision" loading="lazy" tabindex="-1"></iframe></a><figcaption>A run, stopped at the step that needs you</figcaption></figure>
+  </section>
+
+  <section class="concept">
+    <div>
+      <span class="n">2 of 4</span>
+      <h2><a href="concept-2-launchpad.html">Launchpad</a></h2>
+      <p>No sidebar. One search box finds installed tasks and new ones alike, tiles start a run, and a run takes over the whole window with its steps as a track across the top.</p>
+      <p class="links"><a class="chip" href="concept-2-launchpad.html#market">Marketplace</a><a class="chip" href="concept-2-launchpad.html#tasks">My tasks</a><a class="chip" href="concept-2-launchpad.html#task">Task</a><a class="chip" href="concept-2-launchpad.html#run">Run</a><a class="chip" href="concept-2-launchpad.html#schedule">Schedule</a></p>
+    </div>
+    <figure><a class="shot" href="concept-2-launchpad.html#tasks"><iframe src="concept-2-launchpad.html#tasks" title="Launchpad: home" loading="lazy" tabindex="-1"></iframe></a><figcaption>Home</figcaption></figure>
+    <figure><a class="shot" href="concept-2-launchpad.html?at=3#run"><iframe src="concept-2-launchpad.html?at=3#run" title="Launchpad: a run waiting for a decision" loading="lazy" tabindex="-1"></iframe></a><figcaption>A run, stopped at the step that needs you</figcaption></figure>
+  </section>
+
+  <section class="concept">
+    <div>
+      <span class="n">3 of 4</span>
+      <h2><a href="concept-3-thread.html">Thread</a></h2>
+      <p>Each task is a conversation. Its runs are the history, steps post into it one by one, and the task's screens appear in the flow where they are needed.</p>
+      <p class="links"><a class="chip" href="concept-3-thread.html#market">Marketplace</a><a class="chip" href="concept-3-thread.html#tasks">My tasks</a><a class="chip" href="concept-3-thread.html#task">Task</a><a class="chip" href="concept-3-thread.html#run">Run</a><a class="chip" href="concept-3-thread.html#schedule">Schedule</a></p>
+    </div>
+    <figure><a class="shot" href="concept-3-thread.html#task"><iframe src="concept-3-thread.html#task" title="Thread: one task and its runs" loading="lazy" tabindex="-1"></iframe></a><figcaption>One task and its runs</figcaption></figure>
+    <figure><a class="shot" href="concept-3-thread.html?at=3#run"><iframe src="concept-3-thread.html?at=3#run" title="Thread: a run waiting for a decision" loading="lazy" tabindex="-1"></iframe></a><figcaption>A run, stopped at the step that needs you</figcaption></figure>
+  </section>
+
+  <section class="concept">
+    <div>
+      <span class="n">4 of 4</span>
+      <h2><a href="concept-4-canvas.html">Canvas</a></h2>
+      <p>The workflow is the screen. Tasks open as tabs, every way a task can start is a box on the left of its map, and a run lights the boxes up as it goes.</p>
+      <p class="links"><a class="chip" href="concept-4-canvas.html#market">Marketplace</a><a class="chip" href="concept-4-canvas.html#tasks">My tasks</a><a class="chip" href="concept-4-canvas.html#task">Task</a><a class="chip" href="concept-4-canvas.html#run">Run</a><a class="chip" href="concept-4-canvas.html#schedule">Schedule</a></p>
+    </div>
+    <figure><a class="shot" href="concept-4-canvas.html#task"><iframe src="concept-4-canvas.html#task" title="Canvas: one task as a map" loading="lazy" tabindex="-1"></iframe></a><figcaption>One task as a map</figcaption></figure>
+    <figure><a class="shot" href="concept-4-canvas.html?at=3#run"><iframe src="concept-4-canvas.html?at=3#run" title="Canvas: a run waiting for a decision" loading="lazy" tabindex="-1"></iframe></a><figcaption>A run, stopped at the step that needs you</figcaption></figure>
+  </section>
+
+  <h2>How they differ</h2>
+  <div class="cmp-wrap">
+    <table class="cmp">
+      <thead><tr><th></th><th><a href="concept-1-shelf.html">Shelf</a></th><th><a href="concept-2-launchpad.html">Launchpad</a></th><th><a href="concept-3-thread.html">Thread</a></th><th><a href="concept-4-canvas.html">Canvas</a></th></tr></thead>
+      <tbody>
+        <tr><th>You start from</th><td>A table of installed tasks</td><td>A search box, tiles and this week's runs</td><td>A feed of every run</td><td>A wall of tasks, each drawn as its steps</td></tr>
+        <tr><th>Finding new tasks</th><td>Filters down the side, cards, a preview pane</td><td>The same search box; a result opens in place and shows the task's real screens</td><td>Shelves grouped by how tasks start; the preview sits where About usually is</td><td>Cards show how many steps and where the task asks you; the preview is a read-only map</td></tr>
+        <tr><th>The task's own screen</th><td>Left of the step list</td><td>Centre of the window, nothing else around it</td><td>In the conversation, at the step that needs it</td><td>In a panel beside the map, so it has to work when narrow</td></tr>
+        <tr><th>Progress</th><td>A vertical list with a note per step</td><td>A track across the top</td><td>One message per step, as it happens</td><td>Boxes on the map change colour</td></tr>
+        <tr><th>Previous runs</th><td>A tab on the task</td><td>A strip of bars and a short list, on the task's page</td><td>They are the conversation</td><td>A drawer under the map, showing how far each run got</td></tr>
+        <tr><th>Scheduling</th><td>A form with a card per kind of start</td><td>Rules written as sentences with editable words</td><td>Run later: fill in the task's screen once, then choose when it is sent</td><td>Starts are boxes on the map; select one to edit it</td></tr>
+        <tr><th>Fits best when</th><td>People want a familiar app and manage a handful of tasks</td><td>Tasks are mostly run by hand, several times a day</td><td>Runs go back and forth with the person, and history matters</td><td>Workflows are long, and seeing them is the point</td></tr>
+        <tr><th>Weak spot</th><td>No one place shows what is coming up across all tasks</td><td>A run takes the window, so you watch one at a time</td><td>A long start form crowds the conversation</td><td>The map adds little to a three-step task</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>The same in all four</h2>
+  <div class="notes">
+    <div class="card">
+      <h3>Shared decisions</h3>
+      <ul>
+        <li>One sample task, Invoice Intake, with five steps. Step 4 needs the person, so every run pauses there.</li>
+        <li>A panel that the task draws has a dashed edge under a caption naming the task. The app draws everything else.</li>
+        <li>Green means running or done, amber means it is waiting for you, red means it failed.</li>
+        <li>A run that starts on its own uses answers saved for the task's start screen.</li>
+        <li>Screens are snapshots, not one continuous session: the marketplace shows Invoice Intake as not yet installed.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Still open</h3>
+      <ul>
+        <li>Task panels are styled like <a href="https://github.com/vercel-labs/json-render">json-render</a>'s shadcn components, on the assumption that it is the Vercel UI SDK meant. Should the app theme them instead?</li>
+        <li>What a scheduled run does at a step that needs you: wait and notify, hold those items, or not start at all. Every schedule screen offers the choice.</li>
+        <li>Whether the task's start screen is a step of the workflow or a form in front of it. Canvas and Thread treat it as part of the run; Shelf and Launchpad as a form.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<script>
+  const fit = new ResizeObserver(entries => entries.forEach(e => e.target.style.setProperty('--k', e.contentRect.width / 1440)));
+  document.querySelectorAll('.shot').forEach(shot => fit.observe(shot));
+</script>
+</body>
+</html>

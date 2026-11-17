@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cowork concept 4: Canvas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* Canvas: the workflow is the screen. Tasks open as tabs; starts and steps are boxes on a map. */
+  .win { display: grid; grid-template-rows: auto minmax(0, 1fr); height: calc(100vh - var(--bar)); background: var(--paper); }
+  .tabsbar { display: flex; align-items: flex-end; gap: 2px; padding: 8px 12px 0; background: var(--chrome); border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .tabsbar .brand { padding: 0 14px 9px 6px; }
+  .dtab { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid transparent; border-bottom: 0; border-radius: 9px 9px 0 0; font-weight: 500; font-size: 13px; color: var(--ink-2); white-space: nowrap; margin-bottom: -1px; }
+  .dtab:hover { background: #14213D0A; }
+  .dtab[aria-current],
+  body[data-at="run"] .dtab[href="#task"],
+  body[data-at="schedule"] .dtab[href="#task"] { background: var(--paper); border-color: var(--line); color: var(--ink); font-weight: 600; }
+  .main { min-height: 0; min-width: 0; }
+  .screen { height: 100%; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+
+  .modebar { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--line); min-height: 55px; }
+  .modebar h1 { font-size: 18px; letter-spacing: -0.01em; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg a { padding: 5px 12px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+  .seg a + a { border-left: 1px solid var(--line); }
+  .seg a[aria-current] { background: var(--ink); color: #fff; }
+
+  .board { display: grid; grid-template-columns: minmax(0, 1fr) 350px; min-height: 0; }
+  .canvas { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; background-color: #F6F8FB; background-image: radial-gradient(#C9D1DE 1px, transparent 1px); background-size: 20px 20px; }
+  .scroll { overflow: auto; display: grid; align-items: center; }
+  .flow { display: flex; align-items: center; padding: 32px 28px; min-width: max-content; }
+  .starts { display: grid; gap: 10px; justify-items: end; }
+  .start { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 13px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--paper); font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+  .start .i { color: var(--ink-3); }
+  .start[aria-selected="true"], .start.is-on { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+  .start-add { border-style: dashed; background: none; color: var(--ink-2); }
+  .join { width: 16px; align-self: stretch; margin: 17px 0; border: 1.5px solid #B9C2D2; border-left: 0; border-radius: 0 12px 12px 0; position: relative; flex: none; }
+  .join::before, .join.four::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1.5px; background: #B9C2D2; }
+  .join.four::before { top: 33.33%; }
+  .join.four::after { top: 66.66%; }
+  .join.one { border: 0; }
+  .edge { width: 22px; height: 1.5px; background: #B9C2D2; flex: none; }
+  .node { width: 132px; height: 112px; padding: 12px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--paper); display: grid; gap: 8px; align-content: start; justify-items: start; text-align: left; font: inherit; cursor: pointer; }
+  .node b { font-size: 13px; line-height: 1.25; }
+  .node small { font-size: 12px; color: var(--ink-3); line-height: 1.3; }
+  .node[aria-selected="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+  .node[data-state="doing"] { border-color: var(--live); box-shadow: 0 0 0 3px var(--live-soft); }
+  .node[data-state="wait"] { border-color: var(--wait); box-shadow: 0 0 0 3px var(--wait-soft); }
+  .node[data-state="done"] { border-color: var(--go); }
+  .node[data-state="done"] + .edge { background: var(--go); }
+  .node[data-state="todo"] b { color: var(--ink-3); }
+  .flow.tight .node { width: 120px; height: 146px; cursor: default; }
+  .flow.dimmed .node, .flow.dimmed .edge { opacity: 0.45; }
+
+  .side { border-left: 1px solid var(--line); overflow: auto; padding: 18px; display: grid; gap: 18px; align-content: start; background: var(--paper); }
+  .side h2 { display: flex; justify-content: space-between; align-items: center; }
+  .side h3 { margin-bottom: 8px; }
+  .side .back { border: 0; background: none; padding: 0; font-size: 13px; font-weight: 500; color: var(--live); cursor: pointer; }
+  .side-panel { display: grid; gap: 16px; align-content: start; }
+  .side.wide { padding: 16px; }
+  .board.live { grid-template-columns: minmax(0, 1fr) 470px; }
+
+  .drawer { border-top: 1px solid var(--line); background: var(--paper); max-height: 250px; overflow: auto; }
+  .drawer h2 { padding: 12px 16px 4px; font-size: 14px; }
+  .pipe { display: inline-flex; gap: 3px; align-items: center; }
+  .pipe i { width: 18px; height: 6px; border-radius: 3px; background: var(--line); }
+  .pipe i.d { background: var(--go); }
+  .pipe i.f { background: var(--fail); }
+  .pipe i.w { background: var(--wait); }
+  .statusbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--paper); font-size: 13px; color: var(--ink-2); min-height: 48px; }
+  .statusbar b { color: var(--ink); }
+
+  /* All tasks: one lane per task */
+  .lanes { overflow: auto; padding: 8px 20px 28px; }
+  .lane { display: grid; grid-template-columns: 36px 250px minmax(0, 1fr) 200px auto; gap: 16px; align-items: center; padding: 14px 4px; border-bottom: 1px solid var(--line-2); }
+  .lane small { display: block; font-size: 12.5px; color: var(--ink-3); }
+  .lpipe { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; overflow: hidden; }
+  .lpipe li { position: relative; padding: 5px 10px; border: 1.5px solid var(--line); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--ink-3); background: var(--paper); white-space: nowrap; margin-left: 14px; }
+  .lpipe li:first-child { margin-left: 0; }
+  .lpipe li + li::before { content: ""; position: absolute; right: calc(100% + 1.5px); top: 50%; width: 14px; height: 1.5px; background: #B9C2D2; }
+  .lpipe .d { border-color: var(--go); color: var(--go); background: var(--go-soft); }
+  .lpipe .w { border-color: var(--wait); color: var(--wait-ink); background: var(--wait-soft); }
+  .lpipe .f { border-color: var(--fail); color: var(--fail); background: var(--fail-soft); }
+
+  /* Marketplace */
+  .mk { display: grid; grid-template-columns: minmax(0, 1fr) 500px; min-height: 0; }
+  .mk-list { overflow: auto; padding: 14px 20px 28px; }
+  .mk-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .mk .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .wfline { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--ink-3); }
+  .mk-preview { overflow: auto; padding: 20px; border-left: 1px solid var(--line); background-color: #F6F8FB; background-image: radial-gradient(#C9D1DE 1px, transparent 1px); background-size: 20px 20px; }
+  .sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 18px; }
+  .sheet .top { display: flex; gap: 14px; align-items: center; }
+  .sheet .step .mini { margin-top: 8px; }
+  .sheet .step p { color: var(--ink-2); font-size: 13px; }
+  .pillrow { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .days { display: flex; gap: 5px; }
+  .days .chip { width: 32px; padding: 0; justify-content: center; }
+
+  @media (max-width: 1100px) {
+    .board, .board.live, .mk { grid-template-columns: minmax(0, 1fr); }
+    .screen, .win { height: auto; }
+    .side, .mk-preview { border-left: 0; border-top: 1px solid var(--line); }
+    .lane { grid-template-columns: 36px minmax(0, 1fr) auto; }
+    .lane .lpipe { grid-column: 1 / -1; order: 5; }
+    .lane .last { grid-column: 2; }
+    .mk .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .mk .cards { grid-template-columns: minmax(0, 1fr); }
+    .modebar { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body data-concept="4" data-start="tasks">
+<div class="win">
+  <nav class="tabsbar" aria-label="Open tasks">
+    <a class="brand" href="#tasks"><span class="logo"></span>Cowork</a>
+    <a class="dtab" href="#tasks"><svg class="i"><use href="#i-grid"/></svg>All tasks</a>
+    <a class="dtab" href="#task"><span class="ticon ticon-sm" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span>Invoice Intake<span class="dot" data-s="wait" title="Needs you"></span></a>
+    <a class="dtab"><span class="ticon ticon-sm"><svg class="i"><use href="#i-chart"/></svg></span>Weekly Status Digest</a>
+    <a class="dtab"><span class="ticon ticon-sm" data-c="files"><svg class="i"><use href="#i-file"/></svg></span>Receipt Renamer</a>
+    <a class="dtab"><span class="ticon ticon-sm" data-c="meet"><svg class="i"><use href="#i-mic"/></svg></span>Meeting Notes to Actions</a>
+    <a class="dtab"><span class="ticon ticon-sm" data-c="data"><svg class="i"><use href="#i-table"/></svg></span>CSV Cleaner<span class="dot" data-s="failed" title="Last run failed"></span></a>
+    <a class="dtab" href="#market"><svg class="i"><use href="#i-plus"/></svg>Marketplace</a>
+  </nav>
+
+  <main class="main">
+
+    <!-- All tasks: each row shows the last run moving through that task's steps -->
+    <section class="screen is-on" data-screen="tasks">
+      <div class="modebar"><h1>All tasks</h1><span class="sub small grow">Each row is a task, with its last run drawn across its steps</span><a class="btn btn-sm" href="#market"><svg class="i"><use href="#i-plus"/></svg>Add from Marketplace</a></div>
+      <div class="lanes">
+        <div class="lane">
+          <span class="ticon" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span>
+          <a href="#task"><b>Invoice Intake</b><small>Invoices/Inbox, and weekdays 8:30 AM</small></a>
+          <ol class="lpipe"><li class="d">Read the files</li><li class="d">Pull out the details</li><li class="d">Match to purchase orders</li><li class="w">Review exceptions</li><li>File and log</li></ol>
+          <a class="last" href="?at=3#run"><span class="status" data-s="wait">Needs you</span><small>Run 48, today 9:42 AM</small></a>
+          <a class="btn btn-go btn-sm" href="#run"><svg class="i solid"><use href="#i-play"/></svg>Run</a>
+        </div>
+        <div class="lane">
+          <span class="ticon"><svg class="i"><use href="#i-chart"/></svg></span>
+          <div><b>Weekly Status Digest</b><small>Fridays 4:00 PM</small></div>
+          <ol class="lpipe"><li>Scan project folders</li><li>Group changes</li><li>Draft the update</li><li>Save the draft</li></ol>
+          <div class="last"><span class="status" data-s="next">Next: Fri Nov 20, 4:00 PM</span><small>Last finished Fri Nov 13</small></div>
+          <button class="btn btn-go btn-sm"><svg class="i solid"><use href="#i-play"/></svg>Run</button>
+        </div>
+        <div class="lane">
+          <span class="ticon" data-c="files"><svg class="i"><use href="#i-file"/></svg></span>
+          <div><b>Receipt Renamer</b><small>When files reach Scans</small></div>
+          <ol class="lpipe"><li class="d">Read the scan</li><li class="d">Find date, shop and amount</li><li class="d">Rename and move</li></ol>
+          <div class="last"><span class="status" data-s="done">Finished</span><small>Today 9:05 AM, 2 renamed</small></div>
+          <button class="btn btn-go btn-sm"><svg class="i solid"><use href="#i-play"/></svg>Run</button>
+        </div>
+        <div class="lane">
+          <span class="ticon" data-c="meet"><svg class="i"><use href="#i-mic"/></svg></span>
+          <div><b>Meeting Notes to Actions</b><small>Only when you run it</small></div>
+          <ol class="lpipe"><li class="d">Transcribe</li><li class="d">Find decisions and owners</li><li class="d">Confirm the list</li><li class="d">Send to your notes</li></ol>
+          <div class="last"><span class="status" data-s="done">Finished</span><small>Tue Nov 10, 6 actions</small></div>
+          <button class="btn btn-go btn-sm"><svg class="i solid"><use href="#i-play"/></svg>Run</button>
+        </div>
+        <div class="lane">
+          <span class="ticon" data-c="data"><svg class="i"><use href="#i-table"/></svg></span>
+          <div><b>CSV Cleaner</b><small>Only when you run it</small></div>
+          <ol class="lpipe"><li class="d">Open the file</li><li class="f">Fix dates and duplicates</li><li>Save a clean copy</li></ol>
+          <div class="last"><span class="status" data-s="failed">Failed</span><small>Thu Nov 12, the file was open in Excel</small></div>
+          <button class="btn btn-go btn-sm"><svg class="i solid"><use href="#i-play"/></svg>Run</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- One task as a map: starts on the left, steps to the right, runs below -->
+    <section class="screen" data-screen="task">
+      <div class="modebar">
+        <span class="ticon" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><h1>Invoice Intake</h1>
+        <span class="seg"><a href="#task">Map</a><a href="#run">Live run</a><a href="#schedule">Starts</a></span>
+        <span class="grow"></span>
+        <a class="btn btn-go" href="#run"><svg class="i solid"><use href="#i-play"/></svg>Run now</a>
+      </div>
+      <div class="board" data-tabs>
+        <div class="canvas">
+          <div class="scroll">
+            <div class="flow">
+              <div class="starts">
+                <a class="start" href="#schedule"><svg class="i"><use href="#i-folder"/></svg>Files in Invoices/Inbox</a>
+                <a class="start" href="#schedule"><svg class="i"><use href="#i-clock"/></svg>Weekdays 8:30 AM</a>
+                <a class="start" href="#run"><svg class="i"><use href="#i-play"/></svg>Run now</a>
+              </div>
+              <span class="join"></span><span class="edge"></span>
+              <button class="node" data-tab="s1" aria-selected="false"><span class="mark">1</span><b>Read the files</b><small>On its own</small></button><span class="edge"></span>
+              <button class="node" data-tab="s2" aria-selected="false"><span class="mark">2</span><b>Pull out the details</b><small>On its own</small></button><span class="edge"></span>
+              <button class="node" data-tab="s3" aria-selected="false"><span class="mark">3</span><b>Match to purchase orders</b><small>On its own</small></button><span class="edge"></span>
+              <button class="node" data-tab="s4" aria-selected="false"><span class="mark">4</span><b>Review exceptions</b><span class="tag tag-you">Asks you</span></button><span class="edge"></span>
+              <button class="node" data-tab="s5" aria-selected="false"><span class="mark">5</span><b>File and log</b><small>On its own</small></button>
+            </div>
+          </div>
+          <div class="drawer">
+            <h2>Previous runs</h2>
+            <table class="tbl">
+              <thead><tr><th>Run</th><th>Started</th><th>By</th><th>How far it got</th><th>Result</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><b>48</b></td><td>Today 9:42 AM</td><td>You</td><td><span class="pipe"><i class="d"></i><i class="d"></i><i class="d"></i><i class="w"></i><i></i></span></td><td>Waiting for your review of 2 invoices</td><td><a class="status" data-s="wait" href="?at=3#run">Needs you</a></td></tr>
+                <tr><td><b>47</b></td><td>Today 8:31 AM</td><td>3 files arrived</td><td><span class="pipe"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i></span></td><td>3 filed in 1m 12s</td><td><span class="status" data-s="done">Finished</span></td></tr>
+                <tr><td><b>46</b></td><td>Yesterday 4:02 PM</td><td>You</td><td><span class="pipe"><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i><i class="d"></i></span></td><td>11 filed, 1 held in 2m 40s</td><td><span class="status" data-s="done">Finished</span></td></tr>
+                <tr><td><b>45</b></td><td>Mon Nov 16, 8:30 AM</td><td>Schedule</td><td><span class="pipe"><i class="d"></i><i></i><i></i><i></i><i></i></span></td><td>Nothing new in the folder</td><td><span class="status" data-s="done">Finished</span></td></tr>
+                <tr><td><b>43</b></td><td>Thu Nov 12, 2:15 PM</td><td>You</td><td><span class="pipe"><i class="d"></i><i class="d"></i><i class="f"></i><i></i><i></i></span></td><td>The spreadsheet was open in Excel</td><td><span class="status" data-s="failed">Failed</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <aside class="side">
+          <div class="side-panel" data-panel="overview">
+            <h2>Overview</h2>
+            <p class="sub">Drop invoices in a folder. Invoice Intake reads each one, matches it to a purchase order, asks you about the odd ones, then files the PDFs and adds a row per invoice to your spreadsheet.</p>
+            <p class="small dim">Select a step on the map to see what it does.</p>
+            <div><h3>What it can touch</h3>
+              <ul class="can">
+                <li><svg class="i"><use href="#i-folder"/></svg>Documents/Invoices and its subfolders</li>
+                <li><svg class="i"><use href="#i-table"/></svg>Purchase orders Q4.xlsx (read)</li>
+                <li><svg class="i"><use href="#i-table"/></svg>Invoices 2026.xlsx (add rows)</li>
+                <li><svg class="i"><use href="#i-wifioff"/></svg>No internet access</li>
+              </ul>
+            </div>
+            <dl class="kv"><dt>Publisher</dt><dd>Ledgerline, checked</dd><dt>Version</dt><dd>2.3, updated Nov 4, 2026</dd><dt>Installed</dt><dd>Sep 2, 2026</dd><dt>Runs so far</dt><dd>48</dd></dl>
+          </div>
+          <div class="side-panel" data-panel="s1" hidden>
+            <h2>1. Read the files <button class="back" data-tab="overview">Overview</button></h2>
+            <p class="sub">Opens each PDF or scan in the batch.</p>
+            <dl class="kv"><dt>Reads</dt><dd>The files in the batch</dd><dt>Changes</dt><dd>Nothing</dd><dt>Usually takes</dt><dd>A few seconds per file</dd></dl>
+          </div>
+          <div class="side-panel" data-panel="s2" hidden>
+            <h2>2. Pull out the details <button class="back" data-tab="overview">Overview</button></h2>
+            <p class="sub">Finds the vendor, invoice number, date, total and any purchase order number printed on the invoice.</p>
+            <dl class="kv"><dt>Reads</dt><dd>The opened invoices</dd><dt>Changes</dt><dd>Nothing</dd></dl>
+          </div>
+          <div class="side-panel" data-panel="s3" hidden>
+            <h2>3. Match to purchase orders <button class="back" data-tab="overview">Overview</button></h2>
+            <p class="sub">Looks each invoice up in your purchase order spreadsheet.</p>
+            <dl class="kv"><dt>Reads</dt><dd>Purchase orders Q4.xlsx</dd><dt>Changes</dt><dd>Nothing</dd><dt>Can fail when</dt><dd>The spreadsheet is open in Excel (run 43)</dd></dl>
+          </div>
+          <div class="side-panel" data-panel="s4" hidden>
+            <h2>4. Review exceptions <button class="back" data-tab="overview">Overview</button></h2>
+            <p class="sub">Shows its own screen with the invoices that did not match or are over your limit. The run waits here until you decide.</p>
+            <div class="mini" data-guest="review" inert></div>
+            <dl class="kv"><dt>Waits for</dt><dd>You</dd><dt>Skipped when</dt><dd>Every invoice matches</dd></dl>
+          </div>
+          <div class="side-panel" data-panel="s5" hidden>
+            <h2>5. File and log <button class="back" data-tab="overview">Overview</button></h2>
+            <p class="sub">Renames and moves the PDFs, adds a row per invoice, then shows a summary.</p>
+            <div class="mini" data-guest="result" inert></div>
+            <dl class="kv"><dt>Moves files to</dt><dd>Invoices/Filed, by month</dd><dt>Adds rows to</dt><dd>Invoices 2026.xlsx</dd></dl>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Live run: the map lights up, the task's screen opens beside the step that needs it -->
+    <section class="screen" data-screen="run" data-run>
+      <div class="modebar">
+        <span class="ticon" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><h1>Invoice Intake</h1>
+        <span class="seg"><a href="#task">Map</a><a href="#run">Live run</a><a href="#schedule">Starts</a></span>
+        <span class="grow"></span>
+        <span class="status" data-s="next" data-when="idle">Run 48 not started</span>
+        <span class="status" data-s="running" data-when="running">Run 48 running</span>
+        <span class="status" data-s="wait" data-when="wait">Run 48 needs you</span>
+        <span class="status" data-s="done" data-when="done">Run 48 finished</span>
+      </div>
+      <div class="board live">
+        <div class="canvas">
+          <div class="scroll">
+            <div class="flow tight">
+              <div class="starts"><span class="start is-on"><svg class="i"><use href="#i-play"/></svg>Run now</span></div>
+              <span class="join one"></span><span class="edge"></span>
+              <div class="node" data-step="0" data-label="Read the files" data-note="Reading 14 files" data-done="14 files read" data-ms="1600"><span class="mark">1</span><b>Read the files</b><small data-step-text></small></div><span class="edge"></span>
+              <div class="node" data-step="1" data-label="Pull out the details" data-note="Vendor, number, date, total" data-done="14 recognized" data-ms="2000"><span class="mark">2</span><b>Pull out the details</b><small data-step-text></small></div><span class="edge"></span>
+              <div class="node" data-step="2" data-label="Match to purchase orders" data-note="Checking the spreadsheet" data-done="12 matched, 2 to check" data-ms="1800"><span class="mark">3</span><b>Match to purchase orders</b><small data-step-text></small></div><span class="edge"></span>
+              <div class="node" data-step="3" data-label="Review exceptions" data-note="Waiting for you" data-done="1 approved, 1 held" data-wait><span class="mark">4</span><b>Review exceptions</b><small data-step-text></small></div><span class="edge"></span>
+              <div class="node" data-step="4" data-label="File and log" data-note="Moving files, adding rows" data-done="13 filed, 1 held" data-ms="1800"><span class="mark">5</span><b>File and log</b><small data-step-text></small></div>
+            </div>
+          </div>
+          <div class="statusbar">
+            <span data-when="idle">Fill in the task's screen on the right to start.</span>
+            <span data-when="running wait"><b data-live="count"></b> <span data-live="name"></span></span>
+            <span data-when="done"><b>Finished.</b> 13 filed, 1 held.</span>
+            <span class="grow"></span>
+            <span data-live="clock">0:00</span>
+            <button class="btn btn-sm" data-run-stop data-when="running wait"><svg class="i solid"><use href="#i-stop"/></svg>Stop run</button>
+          </div>
+        </div>
+        <aside class="side wide">
+          <div data-guest="start" data-when="idle"></div>
+          <div class="working" data-when="running"><h2 data-live="name"></h2><p data-live="note"></p><div class="bar"></div></div>
+          <div data-guest="review" data-when="wait"></div>
+          <div data-guest="result" data-when="done"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Starts: every way the task can begin is a box on the left of the map -->
+    <section class="screen" data-screen="schedule">
+      <div class="modebar">
+        <span class="ticon" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><h1>Invoice Intake</h1>
+        <span class="seg"><a href="#task">Map</a><a href="#run">Live run</a><a href="#schedule">Starts</a></span>
+        <span class="grow"></span>
+        <a class="btn btn-ink" href="#task">Save starts</a>
+      </div>
+      <div class="board" data-tabs style="grid-template-columns:minmax(0,1fr) 400px">
+        <div class="canvas">
+          <div class="scroll">
+            <div class="flow dimmed">
+              <div class="starts">
+                <button class="start" data-tab="folder" aria-selected="true"><svg class="i"><use href="#i-folder"/></svg>Files in Invoices/Inbox</button>
+                <button class="start" data-tab="time" aria-selected="false"><svg class="i"><use href="#i-clock"/></svg>Weekdays 8:30 AM</button>
+                <button class="start" data-tab="manual" aria-selected="false"><svg class="i"><use href="#i-play"/></svg>Run now</button>
+                <button class="start start-add" data-tab="add" aria-selected="false"><svg class="i"><use href="#i-plus"/></svg>Add a start</button>
+              </div>
+              <span class="join four"></span><span class="edge"></span>
+              <div class="node"><span class="mark">1</span><b>Read the files</b></div><span class="edge"></span>
+              <div class="node"><span class="mark">2</span><b>Pull out the details</b></div><span class="edge"></span>
+              <div class="node"><span class="mark">3</span><b>Match to purchase orders</b></div><span class="edge"></span>
+              <div class="node"><span class="mark">4</span><b>Review exceptions</b><span class="tag tag-you">Asks you</span></div><span class="edge"></span>
+              <div class="node"><span class="mark">5</span><b>File and log</b></div>
+            </div>
+          </div>
+          <div class="statusbar"><svg class="i"><use href="#i-calendar"/></svg><span><b>Coming up:</b> any time files reach Invoices/Inbox, then Wed Nov 18, Thu Nov 19 and Fri Nov 20 at 8:30 AM.</span></div>
+        </div>
+        <aside class="side">
+          <div class="side-panel" data-panel="folder">
+            <h2>When files arrive <input type="checkbox" class="switch" checked aria-label="This start is on"></h2>
+            <label class="field">Folder<span class="row"><span class="path grow"><svg class="i"><use href="#i-folder"/></svg>Documents/Invoices/Inbox</span><button class="btn">Choose</button></span></label>
+            <div class="field">File types<span class="row wrap" style="gap:6px"><button class="chip" aria-pressed="true">PDF</button><button class="chip" aria-pressed="true">Images</button><button class="chip" aria-pressed="false">Anything</button></span></div>
+            <label class="field">Start<select class="input"><option>After the folder is quiet for 2 minutes</option><option>As soon as a file arrives</option><option>Once an hour, if there is anything new</option></select><small>One run handles the whole batch.</small></label>
+            <label class="check"><input type="checkbox">Also watch subfolders</label>
+            <div class="card"><h3>Answers this start uses</h3><dl class="kv"><dt>Match against</dt><dd>Purchase orders Q4.xlsx</dd><dt>Ask me about</dt><dd>Over $5,000, or no matching order</dd></dl><button class="btn btn-sm" style="margin-top:10px">Change saved answers</button></div>
+            <label class="field">If a step needs you and you are away<select class="input"><option>Wait at that step and notify me</option><option>Hold those invoices and finish</option></select></label>
+            <button class="btn btn-quiet btn-sm" style="justify-self:start;color:var(--fail)">Remove this start</button>
+          </div>
+          <div class="side-panel" data-panel="time" hidden>
+            <h2>At set times <input type="checkbox" class="switch" checked aria-label="This start is on"></h2>
+            <label class="field">Repeat<select class="input"><option>Every week</option><option>Every day</option><option>Every month</option><option>Once</option></select></label>
+            <div class="field">On<span class="days"><button class="chip" aria-pressed="true">M</button><button class="chip" aria-pressed="true">T</button><button class="chip" aria-pressed="true">W</button><button class="chip" aria-pressed="true">T</button><button class="chip" aria-pressed="true">F</button><button class="chip" aria-pressed="false">S</button><button class="chip" aria-pressed="false">S</button></span></div>
+            <label class="field">Time<input class="input" type="time" value="08:30"></label>
+            <div class="card"><h3>Next three</h3><dl class="kv"><dt>Wed Nov 18</dt><dd>8:30 AM</dd><dt>Thu Nov 19</dt><dd>8:30 AM</dd><dt>Fri Nov 20</dt><dd>8:30 AM</dd></dl></div>
+            <label class="field">If a step needs you and you are away<select class="input"><option>Wait at that step and notify me</option><option>Hold those invoices and finish</option></select></label>
+            <button class="btn btn-quiet btn-sm" style="justify-self:start;color:var(--fail)">Remove this start</button>
+          </div>
+          <div class="side-panel" data-panel="manual" hidden>
+            <h2>Run now</h2>
+            <p class="sub">Always available. You fill in the task's New batch screen, then watch the run on the map.</p>
+            <a class="btn btn-go" href="#run" style="justify-self:start"><svg class="i solid"><use href="#i-play"/></svg>Run now</a>
+          </div>
+          <div class="side-panel" data-panel="add" hidden>
+            <h2>Add a start</h2>
+            <button class="btn" style="justify-content:flex-start"><svg class="i"><use href="#i-folder"/></svg>When files are added to a folder</button>
+            <button class="btn" style="justify-content:flex-start"><svg class="i"><use href="#i-clock"/></svg>At set times</button>
+            <p class="small dim">A task can have several of each, for example two folders.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Marketplace: cards show the shape of the workflow; the preview is a read-only map -->
+    <section class="screen" data-screen="market" data-market>
+      <div class="modebar"><h1>Marketplace</h1><span class="sub small grow"><b data-count>9</b> tasks</span><label class="searchbox" style="width:260px"><svg class="i"><use href="#i-search"/></svg><input data-search type="search" placeholder="Search tasks" aria-label="Search tasks"></label></div>
+      <div class="mk">
+        <div class="mk-list">
+          <div class="mk-tools">
+            <button class="chip" data-f="cat:finance" aria-pressed="false">Finance</button>
+            <button class="chip" data-f="cat:files" aria-pressed="false">Files</button>
+            <button class="chip" data-f="cat:meetings" aria-pressed="false">Meetings</button>
+            <button class="chip" data-f="cat:reporting" aria-pressed="false">Reporting</button>
+            <button class="chip" data-f="cat:legal" aria-pressed="false">Legal</button>
+            <button class="chip" data-f="cat:email" aria-pressed="false">Email</button>
+            <button class="chip" data-f="cat:data" aria-pressed="false">Data</button>
+            <button class="chip" data-f="start:folder" aria-pressed="false"><svg class="i"><use href="#i-folder"/></svg>Starts when files arrive</button>
+            <button class="chip" data-f="start:schedule" aria-pressed="false"><svg class="i"><use href="#i-clock"/></svg>Starts on a schedule</button>
+            <button class="chip" data-f="ask:never" aria-pressed="false">Never asks you</button>
+            <button class="chip" data-f="net:local" aria-pressed="false"><svg class="i"><use href="#i-wifioff"/></svg>Works without internet</button>
+            <button class="chip" data-f="price:free" aria-pressed="false">Free</button>
+          </div>
+          <div class="cards">
+            <article class="mcard is-picked" data-tags="finance folder manual local verified free"><span class="ticon" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><div><h3>Invoice Intake</h3><p class="by">Ledgerline <svg class="i verified"><use href="#i-shield"/></svg></p></div><p class="what">Reads invoices, matches them to purchase orders, files them and logs the totals.</p><p class="wfline"><span class="pipe"><i></i><i></i><i></i><i class="w"></i><i></i></span>5 steps, 1 asks you</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.8</span><span class="tag">Free</span></footer></article>
+            <article class="mcard" data-tags="files folder local free never"><span class="ticon" data-c="files"><svg class="i"><use href="#i-file"/></svg></span><div><h3>Receipt Renamer</h3><p class="by">Tidyfolder</p></div><p class="what">Renames receipts and scans by date, shop and amount.</p><p class="wfline"><span class="pipe"><i></i><i></i><i></i></span>3 steps</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.6</span><span class="tag">Installed</span></footer></article>
+            <article class="mcard" data-tags="meetings manual folder online verified paid"><span class="ticon" data-c="meet"><svg class="i"><use href="#i-mic"/></svg></span><div><h3>Meeting Notes to Actions</h3><p class="by">Minutely <svg class="i verified"><use href="#i-shield"/></svg></p></div><p class="what">Turns a recording or transcript into decisions, owners and due dates.</p><p class="wfline"><span class="pipe"><i></i><i></i><i class="w"></i><i></i></span>4 steps, 1 asks you</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.7</span><span class="tag">Installed</span></footer></article>
+            <article class="mcard" data-tags="reporting schedule online verified free never"><span class="ticon"><svg class="i"><use href="#i-chart"/></svg></span><div><h3>Weekly Status Digest</h3><p class="by">Northbeam <svg class="i verified"><use href="#i-shield"/></svg></p></div><p class="what">Collects what changed in your project folders and drafts the weekly update.</p><p class="wfline"><span class="pipe"><i></i><i></i><i></i><i></i></span>4 steps</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.5</span><span class="tag">Installed</span></footer></article>
+            <article class="mcard" data-tags="legal manual local verified paid"><span class="ticon" data-c="legal"><svg class="i"><use href="#i-scale"/></svg></span><div><h3>Contract Clause Check</h3><p class="by">Paragraph &amp; Co <svg class="i verified"><use href="#i-shield"/></svg></p></div><p class="what">Flags missing or unusual clauses against your own checklist.</p><p class="wfline"><span class="pipe"><i></i><i></i><i class="w"></i><i></i></span>4 steps, 1 asks you</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.4</span><span class="tag">$9 a month</span></footer></article>
+            <article class="mcard" data-tags="email schedule online free never"><span class="ticon" data-c="mail"><svg class="i"><use href="#i-mail"/></svg></span><div><h3>Inbox Triage</h3><p class="by">Postmark Lane</p></div><p class="what">Sorts new mail into reply today, waiting and reference.</p><p class="wfline"><span class="pipe"><i></i><i></i><i></i></span>3 steps</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.2</span><span class="tag">Free</span></footer></article>
+            <article class="mcard" data-tags="data manual folder local free never"><span class="ticon" data-c="data"><svg class="i"><use href="#i-table"/></svg></span><div><h3>CSV Cleaner</h3><p class="by">Rowhouse</p></div><p class="what">Fixes dates, duplicates and broken columns in exported spreadsheets.</p><p class="wfline"><span class="pipe"><i></i><i></i><i></i></span>3 steps</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.6</span><span class="tag">Installed</span></footer></article>
+            <article class="mcard" data-tags="finance schedule manual local verified paid"><span class="ticon" data-c="fin"><svg class="i"><use href="#i-calendar"/></svg></span><div><h3>Expense Report Builder</h3><p class="by">Ledgerline <svg class="i verified"><use href="#i-shield"/></svg></p></div><p class="what">Builds the monthly expense report from a folder of receipts.</p><p class="wfline"><span class="pipe"><i></i><i></i><i class="w"></i><i></i></span>4 steps, 1 asks you</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.3</span><span class="tag">$6 a month</span></footer></article>
+            <article class="mcard" data-tags="files folder local free never"><span class="ticon" data-c="files"><svg class="i"><use href="#i-image"/></svg></span><div><h3>Screenshot Sorter</h3><p class="by">Tidyfolder</p></div><p class="what">Moves screenshots into folders by app and week.</p><p class="wfline"><span class="pipe"><i></i><i></i><i></i></span>3 steps</p><footer><span class="rate"><svg class="i solid"><use href="#i-star"/></svg>4.1</span><span class="tag">Free</span></footer></article>
+          </div>
+          <p class="empty" data-empty hidden style="margin-top:14px">No task matches. Clear a filter, or try another word.</p>
+        </div>
+        <aside class="mk-preview" aria-label="Preview of Invoice Intake">
+          <div class="sheet" data-installable>
+            <div class="top"><span class="ticon ticon-lg" data-c="fin"><svg class="i"><use href="#i-doc"/></svg></span><div class="grow"><h2>Invoice Intake</h2><p class="small dim">Ledgerline <svg class="i verified"><use href="#i-shield"/></svg> checked publisher. Version 2.3.</p></div>
+              <button class="btn btn-ink" data-install><svg class="i"><use href="#i-down"/></svg>Install</button><a class="btn btn-ink" href="#task" data-installed>Open its map</a></div>
+            <div><h3 style="margin-bottom:8px">It can start</h3>
+              <p class="pillrow"><span class="tag"><svg class="i"><use href="#i-play"/></svg>When you run it</span><span class="tag"><svg class="i"><use href="#i-folder"/></svg>When files arrive</span><span class="tag"><svg class="i"><use href="#i-clock"/></svg>On a schedule</span></p></div>
+            <ol class="steps">
+              <li class="step"><span class="mark"><svg class="i solid" style="width:10px;height:10px"><use href="#i-play"/></svg></span><div><b>You start a batch</b> <span class="tag tag-you">Its own screen</span><div class="mini" data-guest="start" inert></div></div></li>
+              <li class="step"><span class="mark">1</span><div><b>Read the files</b><p>Opens each PDF or scan.</p></div></li>
+              <li class="step"><span class="mark">2</span><div><b>Pull out the details</b><p>Vendor, number, date, total.</p></div></li>
+              <li class="step"><span class="mark">3</span><div><b>Match to purchase orders</b><p>Looks each one up in your spreadsheet.</p></div></li>
+              <li class="step"><span class="mark">4</span><div><b>Review exceptions</b> <span class="tag tag-you">Asks you</span><div class="mini" data-guest="review" inert></div></div></li>
+              <li class="step"><span class="mark">5</span><div><b>File and log</b><p>Moves the PDFs, adds the rows, shows a summary.</p></div></li>
+            </ol>
+            <div><h3 style="margin-bottom:8px">What it can touch</h3>
+              <ul class="can">
+                <li><svg class="i"><use href="#i-folder"/></svg>Read and move files in folders you choose</li>
+                <li><svg class="i"><use href="#i-table"/></svg>Read one spreadsheet, add rows to another</li>
+                <li><svg class="i"><use href="#i-wifioff"/></svg>Works without internet</li>
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+  </main>
+</div>
+<script src="shared.js"></script>
+</body>
+</html>
