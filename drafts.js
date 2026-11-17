@@ -523,6 +523,500 @@ window.DRAFTS = {
           "text": "Nada drena en silencio"
         }
       ]
+    },
+    {
+      "path": "cowork/concept-1-shelf.html",
+      "title": "Cowork concept 1: Shelf",
+      "headings": [
+        {
+          "level": 2,
+          "text": "Installed"
+        },
+        {
+          "level": 1,
+          "text": "Marketplace"
+        },
+        {
+          "level": 3,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 3,
+          "text": "Receipt Renamer"
+        },
+        {
+          "level": 3,
+          "text": "Meeting Notes to Actions"
+        },
+        {
+          "level": 3,
+          "text": "Weekly Status Digest"
+        },
+        {
+          "level": 3,
+          "text": "Contract Clause Check"
+        },
+        {
+          "level": 3,
+          "text": "Inbox Triage"
+        },
+        {
+          "level": 3,
+          "text": "CSV Cleaner"
+        },
+        {
+          "level": 3,
+          "text": "Expense Report Builder"
+        },
+        {
+          "level": 3,
+          "text": "Screenshot Sorter"
+        },
+        {
+          "level": 2,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 3,
+          "text": "Steps"
+        },
+        {
+          "level": 3,
+          "text": "Its own screens"
+        },
+        {
+          "level": 3,
+          "text": "What it can touch"
+        },
+        {
+          "level": 1,
+          "text": "My tasks"
+        },
+        {
+          "level": 1,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 2,
+          "text": "What you get"
+        },
+        {
+          "level": 2,
+          "text": "Last time"
+        },
+        {
+          "level": 3,
+          "text": "Starts Change"
+        },
+        {
+          "level": 3,
+          "text": "What it can touch"
+        },
+        {
+          "level": 3,
+          "text": "About"
+        },
+        {
+          "level": 1,
+          "text": "Run 48"
+        },
+        {
+          "level": 2,
+          "text": "Steps"
+        },
+        {
+          "level": 1,
+          "text": "Start Invoice Intake on its own"
+        },
+        {
+          "level": 2,
+          "text": "When files are added to a folder"
+        },
+        {
+          "level": 2,
+          "text": "At set times"
+        },
+        {
+          "level": 2,
+          "text": "If a run needs you and you are away"
+        },
+        {
+          "level": 3,
+          "text": "Coming up"
+        },
+        {
+          "level": 3,
+          "text": "Answers for runs that start on their own"
+        }
+      ]
+    },
+    {
+      "path": "cowork/concept-2-launchpad.html",
+      "title": "Cowork concept 2: Launchpad",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Run a task"
+        },
+        {
+          "level": 2,
+          "text": "Your tasks"
+        },
+        {
+          "level": 2,
+          "text": "This week"
+        },
+        {
+          "level": 3,
+          "text": "Today, Tue 17"
+        },
+        {
+          "level": 3,
+          "text": "Wed 18"
+        },
+        {
+          "level": 3,
+          "text": "Thu 19"
+        },
+        {
+          "level": 3,
+          "text": "Fri 20"
+        },
+        {
+          "level": 3,
+          "text": "Sat 21"
+        },
+        {
+          "level": 1,
+          "text": "Find a task"
+        },
+        {
+          "level": 1,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 2,
+          "text": "How it works"
+        },
+        {
+          "level": 2,
+          "text": "Previous runs"
+        },
+        {
+          "level": 2,
+          "text": "Starts on its own"
+        },
+        {
+          "level": 2,
+          "text": "What it can touch"
+        },
+        {
+          "level": 1,
+          "text": "Invoice Intake, run 48"
+        },
+        {
+          "level": 1,
+          "text": "When should Invoice Intake start?"
+        },
+        {
+          "level": 2,
+          "text": "When nobody is at the computer"
+        },
+        {
+          "level": 2,
+          "text": "The next 7 days"
+        }
+      ]
+    },
+    {
+      "path": "cowork/concept-3-thread.html",
+      "title": "Cowork concept 3: Thread",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Activity"
+        },
+        {
+          "level": 1,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 2,
+          "text": "About this task"
+        },
+        {
+          "level": 2,
+          "text": "Workflow"
+        },
+        {
+          "level": 2,
+          "text": "Starts Change"
+        },
+        {
+          "level": 2,
+          "text": "What it can touch"
+        },
+        {
+          "level": 1,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 2,
+          "text": "Steps in this run"
+        },
+        {
+          "level": 2,
+          "text": "This run"
+        },
+        {
+          "level": 1,
+          "text": "Add tasks"
+        },
+        {
+          "level": 2,
+          "text": "Start when files arrive"
+        },
+        {
+          "level": 3,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 3,
+          "text": "Receipt Renamer"
+        },
+        {
+          "level": 3,
+          "text": "Screenshot Sorter"
+        },
+        {
+          "level": 2,
+          "text": "Run on a schedule"
+        },
+        {
+          "level": 3,
+          "text": "Weekly Status Digest"
+        },
+        {
+          "level": 3,
+          "text": "Inbox Triage"
+        },
+        {
+          "level": 3,
+          "text": "Expense Report Builder"
+        },
+        {
+          "level": 2,
+          "text": "Start them yourself"
+        },
+        {
+          "level": 3,
+          "text": "Meeting Notes to Actions"
+        },
+        {
+          "level": 3,
+          "text": "Contract Clause Check"
+        },
+        {
+          "level": 3,
+          "text": "CSV Cleaner"
+        },
+        {
+          "level": 2,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 2,
+          "text": "What a run looks like"
+        },
+        {
+          "level": 2,
+          "text": "Workflow"
+        },
+        {
+          "level": 2,
+          "text": "What it can touch"
+        },
+        {
+          "level": 1,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 2,
+          "text": "Send this run"
+        }
+      ]
+    },
+    {
+      "path": "cowork/concept-4-canvas.html",
+      "title": "Cowork concept 4: Canvas",
+      "headings": [
+        {
+          "level": 1,
+          "text": "All tasks"
+        },
+        {
+          "level": 1,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 2,
+          "text": "Previous runs"
+        },
+        {
+          "level": 2,
+          "text": "Overview"
+        },
+        {
+          "level": 3,
+          "text": "What it can touch"
+        },
+        {
+          "level": 2,
+          "text": "1. Read the files Overview"
+        },
+        {
+          "level": 2,
+          "text": "2. Pull out the details Overview"
+        },
+        {
+          "level": 2,
+          "text": "3. Match to purchase orders Overview"
+        },
+        {
+          "level": 2,
+          "text": "4. Review exceptions Overview"
+        },
+        {
+          "level": 2,
+          "text": "5. File and log Overview"
+        },
+        {
+          "level": 1,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 1,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 2,
+          "text": "When files arrive"
+        },
+        {
+          "level": 3,
+          "text": "Answers this start uses"
+        },
+        {
+          "level": 2,
+          "text": "At set times"
+        },
+        {
+          "level": 3,
+          "text": "Next three"
+        },
+        {
+          "level": 2,
+          "text": "Run now"
+        },
+        {
+          "level": 2,
+          "text": "Add a start"
+        },
+        {
+          "level": 1,
+          "text": "Marketplace"
+        },
+        {
+          "level": 3,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 3,
+          "text": "Receipt Renamer"
+        },
+        {
+          "level": 3,
+          "text": "Meeting Notes to Actions"
+        },
+        {
+          "level": 3,
+          "text": "Weekly Status Digest"
+        },
+        {
+          "level": 3,
+          "text": "Contract Clause Check"
+        },
+        {
+          "level": 3,
+          "text": "Inbox Triage"
+        },
+        {
+          "level": 3,
+          "text": "CSV Cleaner"
+        },
+        {
+          "level": 3,
+          "text": "Expense Report Builder"
+        },
+        {
+          "level": 3,
+          "text": "Screenshot Sorter"
+        },
+        {
+          "level": 2,
+          "text": "Invoice Intake"
+        },
+        {
+          "level": 3,
+          "text": "It can start"
+        },
+        {
+          "level": 3,
+          "text": "What it can touch"
+        }
+      ]
+    },
+    {
+      "path": "cowork/index.html",
+      "title": "Cowork task app: four UX mockups",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Four ways to find, run and schedule tasks"
+        },
+        {
+          "level": 2,
+          "text": "Shelf"
+        },
+        {
+          "level": 2,
+          "text": "Launchpad"
+        },
+        {
+          "level": 2,
+          "text": "Thread"
+        },
+        {
+          "level": 2,
+          "text": "Canvas"
+        },
+        {
+          "level": 2,
+          "text": "How they differ"
+        },
+        {
+          "level": 2,
+          "text": "The same in all four"
+        },
+        {
+          "level": 3,
+          "text": "Shared decisions"
+        },
+        {
+          "level": 3,
+          "text": "Still open"
+        }
+      ]
     }
   ]
 };
