@@ -50,6 +50,11 @@
     more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
     lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    pencil: '<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>',
+    fork: '<circle cx="6" cy="5" r="2"/><circle cx="18" cy="5" r="2"/><circle cx="12" cy="19" r="2"/><path d="M6 7v3a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V7M12 13v4"/>',
+    aim: '<circle cx="12" cy="12" r="6"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
+    clip: '<path d="M20 11.5l-8 8a5 5 0 0 1-7-7l8.5-8.5a3.5 3.5 0 0 1 5 5L10 17.5a2 2 0 0 1-3-3l7.5-7.5"/>',
+    up: '<path d="M12 19V6m0 0-5 5m5-5 5 5"/>',
     wifioff: '<path d="M3 3l18 18M5 12.5a10 10 0 0 1 4-2.6M19 12.5a10 10 0 0 0-5-3M8.5 16a5 5 0 0 1 7 0M12 20h.01"/>',
   };
   d.body.insertAdjacentHTML('afterbegin',
@@ -62,18 +67,20 @@
     ['concept-1-shelf.html', 'Shelf'], ['concept-2-launchpad.html', 'Launchpad'],
     ['concept-3-thread.html', 'Thread'], ['concept-4-canvas.html', 'Canvas'],
   ];
-  const SCREENS = [['market', 'Marketplace'], ['tasks', 'My tasks'], ['task', 'Task'], ['run', 'Run'], ['schedule', 'Schedule']];
-  const n = +d.body.dataset.concept;
-  if (n) {
+  // A page that is not one of the four concepts names itself and its screens: data-title, data-screens="id:Name,id:Name".
+  const SCREENS = d.body.dataset.screens?.split(',').map(s => s.split(':'))
+    || [['market', 'Marketplace'], ['tasks', 'My tasks'], ['task', 'Task'], ['run', 'Run'], ['schedule', 'Schedule']];
+  const n = +d.body.dataset.concept, title = d.body.dataset.title;
+  if (n || title) {
     const other = i => CONCEPTS[(i + CONCEPTS.length) % CONCEPTS.length];
     const [prev, next] = [other(n - 2), other(n)];
     d.body.insertAdjacentHTML('afterbegin', `<nav class="mockbar" aria-label="Mockup navigation">
-      <a href="index.html">All mockups</a><b>${n} of 4: ${CONCEPTS[n - 1][1]}</b>
+      <a href="index.html">All mockups</a><b>${n ? `${n} of 4: ${CONCEPTS[n - 1][1]}` : title}</b>
       ${SCREENS.map(([id, name]) => `<a href="#${id}">${name}</a>`).join('')}
       <span class="grow"></span>
       <span class="look" data-solo>Task screens:<button type="button" data-set-look="app" aria-pressed="${look === 'app'}">App's styles</button><button type="button" data-set-look="own" aria-pressed="${look === 'own'}">Task's own</button></span>
-      <a data-file="${prev[0]}" href="${prev[0]}">Previous: ${prev[1]}</a>
-      <a data-file="${next[0]}" href="${next[0]}">Next: ${next[1]}</a></nav>`);
+      ${n ? `<a data-file="${prev[0]}" href="${prev[0]}">Previous: ${prev[1]}</a>
+      <a data-file="${next[0]}" href="${next[0]}">Next: ${next[1]}</a>` : ''}</nav>`);
   }
 
   // ---- Screens the task brings (Invoice Intake) --------------------------
@@ -129,11 +136,14 @@
       <div class="row"><span class="bymark" data-foot-mark></span><span data-foot-text></span><span class="grow"></span><button type="button" class="btn btn-sm" data-foot-undo>Undo its changes</button></div>
       <details><summary>What ${TASK} can do on this screen</summary><ul data-foot-can></ul><h4>Changes so far</h4><ol data-foot-log></ol></details>
     </div>`;
+  // A page can bring the screens of another task: window.COWORK_GUEST = helpers => ({ name: () => html }),
+  // on an element with data-guest="name" data-task="Its name" (and data-tint, data-glyph for its icon).
+  Object.assign(G, window.COWORK_GUEST?.({ ic, button, select, money, esc }));
   $$('[data-guest]').forEach(el => {
     const kind = el.dataset.guest, preview = el.classList.contains('mini');
     el.classList.add('guest');
     if (preview) el.dataset.agentHidden = ''; // a picture of the screen: nothing for the task to read or use
-    el.innerHTML = `<div class="guest-bar"><span class="ticon ticon-sm" data-c="fin">${ic('doc')}</span><b>${TASK}</b><span>This screen comes from the task</span></div>
+    el.innerHTML = `<div class="guest-bar"><span class="ticon ticon-sm" data-c="${el.dataset.tint || 'fin'}">${ic(el.dataset.glyph || 'doc')}</span><b>${el.dataset.task || TASK}</b><span>This screen comes from the task</span></div>
       <div class="guest-body">${G[kind](preview)}</div>${kind === 'review' && !preview ? FOOT : ''}`;
   });
 

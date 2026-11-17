@@ -58,7 +58,7 @@
   <header>
     <span class="brand"><span class="logo"></span>Cowork</span>
     <h1>Four ways to find, run and schedule tasks</h1>
-    <p class="lede">Cowork lets people add tasks from a marketplace, run them by hand or on a schedule, and use whatever screen each task brings with it. The four mockups below are the same app with the same sample task, organised four different ways. Each one is clickable: filter the marketplace, install, start a run and watch its steps advance.</p>
+    <p class="lede">Cowork lets people add tasks from a marketplace, run them by hand or on a schedule, and use whatever screen each task brings with it. The four mockups below are the same app with the same sample task, organised four different ways. Each one is clickable: filter the marketplace, install, start a run and watch its steps advance. Below them is how a task gets made and changed.</p>
   </header>
 
   <section class="concept">
@@ -105,6 +105,28 @@
     <figure><a class="shot" href="concept-4-canvas.html?at=3#run"><iframe src="concept-4-canvas.html?at=3#run" title="Canvas: a run waiting for a decision" loading="lazy" tabindex="-1"></iframe></a><figcaption>A run, stopped at the step that needs you</figcaption></figure>
   </section>
 
+  <h2 id="authoring">Making and changing a task</h2>
+  <section class="concept" style="padding-top:0;border-top:0">
+    <div>
+      <span class="n">Studio</span>
+      <h2><a href="authoring.html">A new task</a></h2>
+      <p>You describe the job in rough words and attach examples. Cowork asks about what is missing, one question at a time, each with a suggested answer, while the brief fills in beside it. Then it builds a first version and tries it on samples: your examples, and ones it makes up for the cases yours do not cover.</p>
+      <p class="links"><a class="chip" href="authoring.html#describe">Describe</a><a class="chip" href="authoring.html#interview">Interview</a><a class="chip" href="authoring.html#build">Build and try</a></p>
+    </div>
+    <figure><a class="shot" href="authoring.html#interview"><iframe src="authoring.html#interview" title="Studio: the interview" loading="lazy" tabindex="-1"></iframe></a><figcaption>A question, its suggested answer, and the brief so far</figcaption></figure>
+    <figure><a class="shot" href="authoring.html#build"><iframe src="authoring.html#build" title="Studio: build and try" loading="lazy" tabindex="-1"></iframe></a><figcaption>Samples, the task’s own screen and what it produces</figcaption></figure>
+  </section>
+  <section class="concept">
+    <div>
+      <span class="n">Studio</span>
+      <h2><a href="authoring.html#change">Changing it later</a></h2>
+      <p>A task you made, you edit. A task you installed, you copy first, and from then on its author's updates are yours to take or leave. Either way you are asked only about what the change leaves open, and the brief shows what the task does now and where each line came from.</p>
+      <p class="links"><a class="chip" href="authoring.html#change">Edit or copy</a><a class="chip" href="authoring.html#customize">Customize</a><a class="chip" href="authoring.html#brief">Brief</a></p>
+    </div>
+    <figure><a class="shot" href="authoring.html#customize"><iframe src="authoring.html#customize" title="Studio: customizing an installed task" loading="lazy" tabindex="-1"></iframe></a><figcaption>Customizing an installed task: what changes, tried on the last run</figcaption></figure>
+    <figure><a class="shot" href="authoring.html#brief"><iframe src="authoring.html#brief" title="Studio: the brief" loading="lazy" tabindex="-1"></iframe></a><figcaption>The brief two changes later, each line with where it came from</figcaption></figure>
+  </section>
+
   <h2>How they differ</h2>
   <div class="cmp-wrap">
     <table class="cmp">
@@ -122,7 +144,7 @@
     </table>
   </div>
 
-  <h2>The same in all four</h2>
+  <h2>Decided and still open</h2>
   <div class="notes">
     <div class="card">
       <h3>Shared decisions</h3>
@@ -143,6 +165,24 @@
         <li>A task's screen is code that runs inside Cowork, not data that Cowork draws. Where that code runs, and who checks it before it reaches the marketplace, is undecided.</li>
         <li>What a scheduled run does at a step that needs you: wait and notify, hold those items, or not start at all. Every schedule screen offers the choice. With UI SDK, it is the answer Cowork gives when the task reaches a control marked as needing a person.</li>
         <li>Whether the task's start screen is a step of the workflow or a form in front of it. Canvas and Thread treat it as part of the run; Shelf and Launchpad as a form.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Making tasks: decided for the mockup</h3>
+      <ul>
+        <li>Questions come one at a time, each with a suggested answer and the reason for asking. What the examples already answer is not asked, only listed so it can be corrected.</li>
+        <li>The brief is the requirements. It is written again after every change, so it stays short. The conversation behind a line is kept and opened only when asked for.</li>
+        <li>An installed task shows its author's brief, never the author's conversations.</li>
+        <li>Customizing an installed task makes a copy. A copy is the author's brief plus your lines, so taking an update means building the task again from both.</li>
+        <li>A change to an existing task is tried on what its last run read, not on made-up samples.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Making tasks: still open</h3>
+      <ul>
+        <li>A brief that Cowork rewrites can drift from what the task really does. The mockup lets a person correct a line or pin its exact words, but nothing checks the brief against the task.</li>
+        <li>Whether an author can see how people customize their task.</li>
+        <li>Publishing your own task to the marketplace is not drawn.</li>
       </ul>
     </div>
   </div>
