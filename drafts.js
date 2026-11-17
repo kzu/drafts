@@ -525,6 +525,88 @@ window.DRAFTS = {
       ]
     },
     {
+      "path": "cowork/authoring.html",
+      "title": "Cowork: making and changing a task",
+      "headings": [
+        {
+          "level": 1,
+          "text": "What should the new task do?"
+        },
+        {
+          "level": 2,
+          "text": "Or start from a task"
+        },
+        {
+          "level": 2,
+          "text": "What happens next"
+        },
+        {
+          "level": 3,
+          "text": "What needs deciding"
+        },
+        {
+          "level": 3,
+          "text": "Found in your files, so not asked"
+        },
+        {
+          "level": 3,
+          "text": "Answered so far"
+        },
+        {
+          "level": 2,
+          "text": "Brief so far"
+        },
+        {
+          "level": 3,
+          "text": "Samples"
+        },
+        {
+          "level": 1,
+          "text": "Change a task"
+        },
+        {
+          "level": 3,
+          "text": "In the brief"
+        },
+        {
+          "level": 3,
+          "text": "In the steps"
+        },
+        {
+          "level": 3,
+          "text": "Around the task"
+        },
+        {
+          "level": 3,
+          "text": "The 14 invoices of run 48, through your draft"
+        },
+        {
+          "level": 1,
+          "text": "What Invoice Intake does"
+        },
+        {
+          "level": 3,
+          "text": "Ledgerline, version 2.4"
+        },
+        {
+          "level": 3,
+          "text": "You3 lines on top"
+        },
+        {
+          "level": 3,
+          "text": "What Cowork reads when you change this task"
+        },
+        {
+          "level": 3,
+          "text": "Change it"
+        },
+        {
+          "level": 3,
+          "text": "Versions"
+        }
+      ]
+    },
+    {
       "path": "cowork/concept-1-shelf.html",
       "title": "Cowork concept 1: Shelf",
       "headings": [
@@ -1002,11 +1084,24 @@ window.DRAFTS = {
         },
         {
           "level": 2,
+          "text": "Making and changing a task",
+          "id": "authoring"
+        },
+        {
+          "level": 2,
+          "text": "A new task"
+        },
+        {
+          "level": 2,
+          "text": "Changing it later"
+        },
+        {
+          "level": 2,
           "text": "How they differ"
         },
         {
           "level": 2,
-          "text": "The same in all four"
+          "text": "Decided and still open"
         },
         {
           "level": 3,
@@ -1015,6 +1110,14 @@ window.DRAFTS = {
         {
           "level": 3,
           "text": "Still open"
+        },
+        {
+          "level": 3,
+          "text": "Making tasks: decided for the mockup"
+        },
+        {
+          "level": 3,
+          "text": "Making tasks: still open"
         }
       ]
     }
