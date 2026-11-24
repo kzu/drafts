@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Living off BRK.A — Withdrawal &amp; Cash Buffer Simulator</title>
+  <meta name="description" content="Simulate monthly withdrawals from a Berkshire Hathaway Class A position, 2006–2025, with an optional cash buffer used in down markets.">
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem("theme");
+        var dark = theme === "dark" || (theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark");
+      } catch (e) {}
+    })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --radius: 0.75rem;
+      --bg: #ffffff;
+      --fg: #18181b;
+      --card: #ffffff;
+      --muted: #f4f4f5;
+      --muted-fg: #71717a;
+      --border: #e4e4e7;
+      --accent: #2563eb;
+      --good: #059669;
+      --bad: #dc2626;
+      --warn: #b45309;
+      color-scheme: light;
+    }
+    html.dark {
+      --bg: #0b0b0d;
+      --fg: #fafafa;
+      --card: #16161a;
+      --muted: #232328;
+      --muted-fg: #a1a1aa;
+      --border: #2c2c33;
+      --accent: #60a5fa;
+      --good: #34d399;
+      --bad: #f87171;
+      --warn: #fbbf24;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: Geist, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 20px 64px; }
+    header.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    header.top h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.02em; }
+    header.top p { margin: 0; color: var(--muted-fg); max-width: 70ch; }
+    .btn {
+      border: 1px solid var(--border); background: var(--card); color: var(--fg);
+      border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 0.85rem; cursor: pointer; white-space: nowrap;
+    }
+    .btn:hover { background: var(--muted); }
+    .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+    @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+    aside.card { position: sticky; top: 16px; }
+    @media (max-width: 960px) { aside.card { position: static; } }
+    aside h2, .card h2 { font-size: 1rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+    .card .sub { color: var(--muted-fg); font-size: 0.85rem; margin: 0 0 12px; }
+    .field { margin: 14px 0; }
+    .field label, .field .lbl { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+    .field output { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent); }
+    .field .hint { font-size: 0.78rem; color: var(--muted-fg); margin-top: 4px; }
+    .money { position: relative; }
+    .money span { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted-fg); }
+    input[type=number] {
+      width: 100%; padding: 8px 10px 8px 22px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg); color: var(--fg); font: inherit; font-variant-numeric: tabular-nums;
+    }
+    input[type=number]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    input[type=range] { width: 100%; accent-color: var(--accent); }
+    .seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .seg input { position: absolute; opacity: 0; pointer-events: none; }
+    .seg label { margin: 0; padding: 7px 8px; text-align: center; font-weight: 500; font-size: 0.8rem; cursor: pointer; display: block; color: var(--muted-fg); }
+    .seg input:checked + label { background: var(--muted); color: var(--fg); font-weight: 600; }
+    .seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+    .kpi .k { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-fg); font-weight: 600; }
+    .kpi .v { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; margin-top: 2px; }
+    .kpi .d { font-size: 0.78rem; color: var(--muted-fg); }
+    .kpi.bad .v { color: var(--bad); }
+    .kpi.good .v { color: var(--good); }
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .charts .wide { grid-column: 1 / -1; }
+    @media (max-width: 1100px) { .charts { grid-template-columns: 1fr; } }
+    .chart-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .chart-box { position: relative; height: 320px; }
+    .wide .chart-box { height: 360px; }
+    .toggle { font-size: 0.8rem; color: var(--muted-fg); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .legend-note { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.78rem; color: var(--muted-fg); margin-top: 8px; }
+    .legend-note i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; }
+    section.block { margin-top: 20px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+    th, td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-fg); font-weight: 600; position: sticky; top: 0; background: var(--card); }
+    tbody tr:hover { background: var(--muted); }
+    td.neg { color: var(--bad); }
+    td.pos { color: var(--good); }
+    tr.dep td { color: var(--muted-fg); }
+    .notes h3 { font-size: 0.95rem; margin: 16px 0 6px; }
+    .notes ul { margin: 0; padding-left: 20px; }
+    .notes li { margin: 4px 0; }
+    .notes p, .notes li { color: var(--fg); }
+    .muted { color: var(--muted-fg); }
+    .rates { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.8rem; font-variant-numeric: tabular-nums; color: var(--muted-fg); }
+    .rates b { color: var(--fg); font-weight: 600; }
+    .status { margin: -6px 0 16px; padding: 10px 14px; border-radius: 10px; font-size: 0.9rem; border: 1px solid var(--border); background: var(--muted); }
+    .status.bad { border-color: color-mix(in srgb, var(--bad) 40%, transparent); background: color-mix(in srgb, var(--bad) 10%, transparent); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Living off BRK.A: withdrawals with a cash buffer</h1>
+      <p>Invest a lump sum in Berkshire Hathaway Class A at the end of 2005, take a fixed amount out every month for 20 years (2006–2025), and see how a cash buffer, spent only when the market is down, changes the outcome. All numbers use real month-end BRK.A prices.</p>
+    </div>
+    <button type="button" id="theme" class="btn" aria-label="Switch theme">Dark</button>
+  </header>
+
+  <div class="layout">
+    <aside class="card" aria-label="Inputs">
+      <h2>Inputs</h2>
+      <p class="sub">Everything recalculates as you change it.</p>
+
+      <div class="field">
+        <label for="initial">Initial investment</label>
+        <div class="money"><span>$</span><input id="initial" type="number" min="1000" step="10000" value="1000000" inputmode="numeric"></div>
+      </div>
+
+      <div class="field">
+        <label for="spend">Monthly spending</label>
+        <div class="money"><span>$</span><input id="spend" type="number" min="0" step="500" value="5000" inputmode="numeric"></div>
+        <div class="hint" id="spendHint"></div>
+      </div>
+
+      <div class="field">
+        <label for="buffer">Cash buffer <output id="bufferOut" for="buffer"></output></label>
+        <input id="buffer" type="range" min="0" max="5" step="0.5" value="2">
+        <div class="hint" id="bufferHint"></div>
+      </div>
+
+      <div class="field">
+        <label for="trigger">Down-market trigger <output id="triggerOut" for="trigger"></output></label>
+        <input id="trigger" type="range" min="5" max="30" step="1" value="10">
+        <div class="hint">A month counts as “down” when BRK.A closes this far or more below its all-time high. Spending then comes from cash.</div>
+      </div>
+
+      <div class="field">
+        <div class="lbl">Cash earns</div>
+        <div class="seg" role="radiogroup" aria-label="Cash yield">
+          <input type="radio" name="yield" id="y-tbill" value="tbill" checked><label for="y-tbill">T-bill rate</label>
+          <input type="radio" name="yield" id="y-zero" value="zero"><label for="y-zero">0%</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="lbl">Return basis</div>
+        <div class="seg" role="radiogroup" aria-label="Return basis">
+          <input type="radio" name="basis" id="b-actual" value="actual" checked><label for="b-actual">Actual prices</label>
+          <input type="radio" name="basis" id="b-smooth" value="smoothed"><label for="b-smooth">Smoothed</label>
+        </div>
+        <div class="hint">Smoothed: each year grows at the prior 5-year BRK.A return ÷ 5, spread evenly over the months.</div>
+      </div>
+
+      <button type="button" class="btn" id="reset">Reset to defaults</button>
+    </aside>
+
+    <main>
+      <div id="status" class="status" role="status"></div>
+      <div class="kpis" id="kpis"></div>
+
+      <div class="charts">
+        <div class="card wide">
+          <div class="chart-head">
+            <div>
+              <h2>Portfolio over time</h2>
+              <p class="sub">Month-end value of the BRK.A shares and the cash buffer. Shaded months are “down” months.</p>
+            </div>
+          </div>
+          <div class="chart-box"><canvas id="cPortfolio" aria-label="Portfolio value over time"></canvas></div>
+        </div>
+
+        <div class="card">
+          <h2>Buffer size compared</h2>
+          <p class="sub">Year-end total value for 0–5 years of cash, with your other inputs.</p>
+          <div class="chart-box"><canvas id="cBuffers" aria-label="Year-end total by buffer size"></canvas></div>
+        </div>
+
+        <div class="card">
+          <h2>Withdrawn vs. what’s left</h2>
+          <p class="sub">Cumulative cash taken out against the remaining total value.</p>
+          <div class="chart-box"><canvas id="cCumulative" aria-label="Cumulative withdrawn versus remaining value"></canvas></div>
+        </div>
+
+        <div class="card wide">
+          <div class="chart-head">
+            <div>
+              <h2 id="priceTitle">BRK.A price and all-time high</h2>
+              <p class="sub">Dots mark months paid from cash and months where shares had to be sold in a down market.</p>
+            </div>
+            <label class="toggle"><input type="checkbox" id="logScale" checked> Log scale</label>
+          </div>
+          <div class="chart-box"><canvas id="cPrice" aria-label="BRK.A price with all-time high"></canvas></div>
+        </div>
+
+        <div class="card wide">
+          <h2>Annual return: actual vs. smoothed</h2>
+          <p class="sub">BRK.A’s calendar-year price return next to the smoothed rate (prior 5-year return ÷ 5) the smoothed basis applies that year.</p>
+          <div class="chart-box"><canvas id="cReturns" aria-label="Annual BRK.A return versus smoothed rate"></canvas></div>
+        </div>
+      </div>
+
+      <section class="card block">
+        <h2>Year by year</h2>
+        <p class="sub" id="tableSub"></p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Year</th><th>BRK.A return</th><th>Year-end price</th><th>Shares</th><th>BRK.A value</th><th>Cash</th><th>Total</th><th>Withdrawn</th>
+            </tr></thead>
+            <tbody id="yearRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card block notes">
+        <h2>How it works</h2>
+        <h3>The rules</h3>
+        <ul>
+          <li>You buy BRK.A at the December 2005 close. The cash buffer (years × 12 × monthly spending) is set aside from the initial amount; the rest buys shares. Fractional shares are allowed.</li>
+          <li>Every month from January 2006 to December 2025, in order: cash earns one month of interest; the month is “down” if the close is below the all-time high by at least the trigger (the high includes 2000–2005 history and is updated after the check).</li>
+          <li>Down month with enough cash: spending comes from cash. Otherwise spending comes from selling shares at that month’s close. If a down month finds the buffer short, the remaining cash is used and the rest is sold — that counts as a <em>forced sale</em>.</li>
+          <li>In a month that is not down, after spending, shares are sold to refill the cash buffer back to its target.</li>
+          <li>If shares plus cash can no longer cover a month, the portfolio is depleted: what is left is paid out and the value stays at zero.</li>
+          <li><strong>Smoothed basis:</strong> for each year Y the annual rate is (close Dec Y−1 ÷ close Dec Y−6 − 1) ÷ 5. A synthetic price starts at the December 2005 close and grows by (1 + rate)<sup>1/12</sup> each month; the same rules run on it, with the all-time high measured on the synthetic price.</li>
+        </ul>
+        <h3>Assumptions and limits</h3>
+        <ul>
+          <li>No taxes, fees, commissions or inflation adjustment; spending is a flat nominal amount.</li>
+          <li>All trades happen at the month-end close. Berkshire pays no dividend, so price return is total return.</li>
+          <li>Cash interest uses approximate annual averages of the 3-month US Treasury bill yield, applied monthly (rate ÷ 12):</li>
+        </ul>
+        <div class="rates" id="rates"></div>
+        <h3>Data</h3>
+        <p class="muted">BRK.A month-end closes, January 2000 – December 2025, from Yahoo Finance monthly bars, embedded in this page. This is a historical illustration, not advice; past returns don’t predict future ones.</p>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+// --- sim start
+var CLOSES = [51200,44000,57200,59300,58600,53800,55100,57700,64400,63700,65900,71000,68400,70300,65450,68000,68700,69400,69200,69400,70000,71200,70000,75600,73900,73000,71100,73450,74600,66800,68300,73000,73900,74190,72300,72750,67600,61700,63800,69815,71000,72500,72010,75775,75000,77810,83750,84250,89490,94500,93300,93390,89000,88950,87250,87000,86650,84250,83700,87900,89900,90200,87000,84350,84100,83500,83500,83150,82000,85900,89390,88620,89490,86800,90350,89000,92290,91659,91600,96097,95800,105475,107100,109990,110050,106190,108990,109200,109490,109475,110000,118390,118510,132500,140100,141600,136000,140000,133400,133850,134650,120750,114450,116600,130600,115490,104000,96600,89502,78600,86700,94000,91600,90000,97000,100850,101000,99000,100600,99200,114600,119800,121800,115325,105910,120000,117000,118675,124500,119300,120200,120450,122425,131300,125300,124750,118775,116105,111500,109769,106800,116950,118500,114755,117925,117934,121900,120800,118850,124945,127445,126560,132700,129505,131916,134060,145875,152600,156280,159000,171300,168600,173900,167050,170410,172994,174750,177900,169511,173708,187350,193275,192000,189900,188124,205880,206900,210000,223065,226000,215865,221180,217500,213400,214800,204850,214000,202531,195240,204596,201360,197800,194360,202555,213450,219000,211695,216975,216000,225760,216220,215700,237000,244121,245980,257100,249850,247780,248440,254700,262786,271450,274740,280470,291500,297600,323375,310250,299100,290650,287200,282040,301550,315800,320000,307705,326000,306000,311500,302200,301215,325080,297060,318350,308666,303078,311832,318939,330495,339590,335996,309096,272000,281700,278640,267300,293631,327560,320001,302500,343688,347815,344100,364580,385702,412500,436000,418601,418900,429900,411379,432902,416876,450662,469805,476205,528921,484340,474050,408950,451700,421308,406470,445050,480280,468711,473000,463525,465600,502880,488024,517810,535400,546725,531477,517825,545900,542625,578020,616561,634440,599500,627400,612241,659211,715300,691180,676960,724040,680920,702614,775000,798442,800540,757400,728800,719850,755280,754200,715740,770100,754800];
+var TBILL = {2006:4.7,2007:4.4,2008:1.4,2009:0.15,2010:0.14,2011:0.05,2012:0.09,2013:0.06,2014:0.03,2015:0.05,2016:0.32,2017:0.93,2018:1.94,2019:2.06,2020:0.36,2021:0.05,2022:2.02,2023:5.07,2024:4.97,2025:4.1};
+var Y0 = 2000, START = 72, N = CLOSES.length; // START = index of Jan 2006
+function yearOf(i) { return Y0 + Math.floor(i / 12); }
+function decIndex(y) { return (y - Y0) * 12 + 11; }
+function smoothRate(y) { return (CLOSES[decIndex(y - 1)] / CLOSES[decIndex(y - 6)] - 1) / 5; }
+function actualReturn(y) { return CLOSES[decIndex(y)] / CLOSES[decIndex(y - 1)] - 1; }
+
+var seriesCache = {};
+function priceSeries(basis) {
+  if (seriesCache[basis]) return seriesCache[basis];
+  var s = CLOSES.slice();
+  if (basis === "smoothed") {
+    for (var i = START; i < N; i++) s[i] = s[i - 1] * Math.pow(1 + smoothRate(yearOf(i)), 1 / 12);
+  }
+  return (seriesCache[basis] = s);
+}
+
+// o: { initial, spend, bufferYears, trigger (fraction), cashYield (bool), basis: "actual" | "smoothed" }
+function simulate(o) {
+  var p = priceSeries(o.basis), spend = o.spend, target = o.bufferYears * 12 * spend;
+  var cash = Math.min(target, o.initial);
+  var shares = (o.initial - cash) / p[START - 1];
+  var ath = o.basis === "actual" ? Math.max.apply(null, p.slice(0, START)) : p[START - 1];
+  var months = [], depleted = null, fromCash = 0, forced = 0, sold = 0, withdrawn = 0;
+  for (var i = START; i < N; i++) {
+    var price = p[i], y = yearOf(i);
+    if (o.cashYield) cash *= 1 + TBILL[y] / 100 / 12;
+    var athBefore = ath;
+    var down = price < ath * (1 - o.trigger);
+    ath = Math.max(ath, price);
+    var kind = "sell", paid = 0, soldNow = 0;
+    if (depleted === null) {
+      var total = shares * price + cash;
+      if (total < spend) {
+        depleted = i; paid = total; soldNow = shares; shares = 0; cash = 0; kind = "depleted";
+      } else if (down && cash >= spend) {
+        cash -= spend; paid = spend; fromCash++; kind = "cash";
+      } else {
+        var need = spend;
+        if (down) { forced++; kind = "forced"; var c = Math.min(cash, need); cash -= c; need -= c; }
+        var sh = Math.min(shares, need / price); shares -= sh; soldNow += sh; need -= sh * price;
+        if (need > 1e-9) { cash -= need; need = 0; }
+        paid = spend;
+        if (!down && cash < target) {
+          var s2 = Math.min(shares, (target - cash) / price); shares -= s2; soldNow += s2; cash += s2 * price;
+        }
+      }
+      sold += soldNow; withdrawn += paid;
+    } else kind = "after";
+    months.push({ i: i, year: y, price: price, ath: athBefore, down: down, kind: kind, paid: paid, shares: shares, cash: cash, brk: shares * price, total: shares * price + cash, withdrawn: withdrawn });
+  }
+  return { months: months, depleted: depleted, fromCash: fromCash, forced: forced, sold: sold, withdrawn: withdrawn, prices: p, startShares: (o.initial - Math.min(target, o.initial)) / p[START - 1], target: target };
+}
+// --- sim end
+
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function monthLabel(i) { return MONTHS[i % 12] + " " + yearOf(i); }
+  var usd0 = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+  function money(v) { return usd0.format(v); }
+  function short(v) {
+    var a = Math.abs(v);
+    if (a >= 1e9) return "$" + (v / 1e9).toFixed(2) + "B";
+    if (a >= 1e6) return "$" + (v / 1e6).toFixed(2) + "M";
+    if (a >= 1e3) return "$" + (v / 1e3).toFixed(0) + "k";
+    return "$" + v.toFixed(0);
+  }
+  function pct(v, d) { return (v >= 0 ? "+" : "") + (v * 100).toFixed(d == null ? 1 : d) + "%"; }
+  function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+
+  // ----- inputs
+  var DEFAULTS = { initial: 1000000, spend: 5000, buffer: 2, trigger: 10, yield: "tbill", basis: "actual" };
+  function readInputs() {
+    var initial = Math.max(0, +$("initial").value || 0);
+    var spend = Math.max(0, +$("spend").value || 0);
+    return {
+      initial: initial,
+      spend: spend,
+      bufferYears: +$("buffer").value,
+      trigger: +$("trigger").value / 100,
+      cashYield: document.querySelector("input[name=yield]:checked").value === "tbill",
+      basis: document.querySelector("input[name=basis]:checked").value
+    };
+  }
+
+  // ----- theme + palette
+  function palette() {
+    var dark = document.documentElement.classList.contains("dark");
+    return dark ? {
+      fg: "#fafafa", muted: "#a1a1aa", grid: "rgba(255,255,255,0.08)",
+      brk: "#60a5fa", brkFill: "rgba(96,165,250,0.35)", cash: "#2dd4bf", cashFill: "rgba(45,212,191,0.45)",
+      total: "#fafafa", down: "rgba(248,113,113,0.12)", bad: "#f87171", good: "#34d399", ath: "#a1a1aa",
+      withdrawn: "#fbbf24", smooth: "#fbbf24",
+      buffers: ["#94a3b8", "#60a5fa", "#a78bfa", "#f472b6", "#fb923c", "#34d399", "#fde047"]
+    } : {
+      fg: "#18181b", muted: "#71717a", grid: "rgba(0,0,0,0.07)",
+      brk: "#2563eb", brkFill: "rgba(37,99,235,0.25)", cash: "#0d9488", cashFill: "rgba(13,148,136,0.4)",
+      total: "#18181b", down: "rgba(220,38,38,0.09)", bad: "#dc2626", good: "#059669", ath: "#71717a",
+      withdrawn: "#d97706", smooth: "#d97706",
+      buffers: ["#64748b", "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#059669", "#ca8a04"]
+    };
+  }
+
+  // Shades down months and marks depletion on category-axis charts.
+  var shadePlugin = {
+    id: "downShade",
+    beforeDatasetsDraw: function (chart, args, opts) {
+      var flags = opts.flags, x = chart.scales.x, area = chart.chartArea, ctx = chart.ctx;
+      if (!flags || !x) return;
+      ctx.save();
+      var half = (x.getPixelForValue(1) - x.getPixelForValue(0)) / 2;
+      ctx.fillStyle = opts.color;
+      for (var k = 0; k < flags.length; k++) {
+        if (!flags[k]) continue;
+        var start = k; while (k + 1 < flags.length && flags[k + 1]) k++;
+        var x0 = Math.max(area.left, x.getPixelForValue(start) - half), x1 = Math.min(area.right, x.getPixelForValue(k) + half);
+        ctx.fillRect(x0, area.top, x1 - x0, area.bottom - area.top);
+      }
+      if (opts.depleted != null) {
+        var px = x.getPixelForValue(opts.depleted);
+        ctx.strokeStyle = opts.lineColor; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+        ctx.beginPath(); ctx.moveTo(px, area.top); ctx.lineTo(px, area.bottom); ctx.stroke();
+        ctx.setLineDash([]); ctx.fillStyle = opts.lineColor; ctx.font = "600 12px system-ui, sans-serif";
+        var label = "Depleted " + opts.depletedLabel, w = ctx.measureText(label).width;
+        ctx.fillText(label, px + 6 + w > area.right ? px - w - 6 : px + 6, area.top + 14);
+      }
+      ctx.restore();
+    }
+  };
+  Chart.register(shadePlugin);
+
+  var monthLabels = [], yearLabels = [];
+  for (var i = START; i < N; i++) monthLabels.push(monthLabel(i));
+  for (var y = 2006; y <= 2025; y++) yearLabels.push(String(y));
+
+  function janTicks(value, index) { return index % 12 === 0 ? String(2006 + index / 12) : null; }
+  function baseOptions(pal, extra) {
+    var o = {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { labels: { color: pal.fg, boxWidth: 12, boxHeight: 12, usePointStyle: false } },
+        tooltip: { callbacks: {} },
+        downShade: {}
+      },
+      scales: {
+        x: { ticks: { color: pal.muted, maxRotation: 0, autoSkip: false }, grid: { color: pal.grid } },
+        y: { ticks: { color: pal.muted }, grid: { color: pal.grid } }
+      }
+    };
+    return extra ? extra(o) : o;
+  }
+  function moneyAxis(o) { o.scales.y.ticks.callback = function (v) { return short(v); }; return o; }
+  function moneyTooltip(o) {
+    o.plugins.tooltip.callbacks.label = function (c) { return c.parsed.y == null ? null : " " + c.dataset.label + ": " + money(c.parsed.y); };
+    return o;
+  }
+
+  var charts = {};
+  function buildCharts() {
+    Object.keys(charts).forEach(function (k) { charts[k].destroy(); });
+    var pal = palette();
+    Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+    Chart.defaults.color = pal.muted;
+
+    charts.portfolio = new Chart($("cPortfolio"), {
+      type: "line",
+      data: { labels: monthLabels, datasets: [
+        { label: "BRK.A value", data: [], borderColor: pal.brk, backgroundColor: pal.brkFill, fill: "origin", pointRadius: 0, borderWidth: 1.5, stack: "parts" },
+        { label: "Cash", data: [], borderColor: pal.cash, backgroundColor: pal.cashFill, fill: "-1", pointRadius: 0, borderWidth: 1.5, stack: "parts" },
+        { label: "Total", data: [], borderColor: pal.total, backgroundColor: pal.total, fill: false, pointRadius: 0, borderWidth: 2, stack: "total" }
+      ] },
+      options: baseOptions(pal, function (o) {
+        o.scales.y.stacked = true; o.scales.y.beginAtZero = true;
+        o.scales.x.ticks.callback = janTicks;
+        o.plugins.downShade = { color: pal.down, lineColor: pal.bad };
+        return moneyTooltip(moneyAxis(o));
+      })
+    });
+
+    charts.buffers = new Chart($("cBuffers"), {
+      type: "line",
+      data: { labels: ["2005"].concat(yearLabels), datasets: [] },
+      options: baseOptions(pal, function (o) {
+        o.scales.y.beginAtZero = true;
+        o.scales.x.ticks.autoSkip = true;
+        o.plugins.tooltip.itemSort = function (a, b) { return b.parsed.y - a.parsed.y; };
+        o.plugins.legend.labels.sort = function (a, b) { return a.datasetIndex - b.datasetIndex; };
+        return moneyTooltip(moneyAxis(o));
+      })
+    });
+
+    charts.cumulative = new Chart($("cCumulative"), {
+      type: "line",
+      data: { labels: monthLabels, datasets: [
+        { label: "Remaining total value", data: [], borderColor: pal.brk, backgroundColor: pal.brkFill, fill: "origin", pointRadius: 0, borderWidth: 2 },
+        { label: "Cumulative withdrawn", data: [], borderColor: pal.withdrawn, backgroundColor: pal.withdrawn, fill: false, pointRadius: 0, borderWidth: 2 }
+      ] },
+      options: baseOptions(pal, function (o) {
+        o.scales.y.beginAtZero = true;
+        o.scales.x.ticks.callback = function (v, idx) { return idx % 60 === 0 ? String(2006 + idx / 12) : null; };
+        return moneyTooltip(moneyAxis(o));
+      })
+    });
+
+    charts.price = new Chart($("cPrice"), {
+      type: "line",
+      data: { labels: monthLabels, datasets: [
+        { label: "Month-end price", data: [], borderColor: pal.brk, backgroundColor: pal.brk, pointRadius: 0, borderWidth: 1.75, order: 3 },
+        { label: "All-time high", data: [], borderColor: pal.ath, backgroundColor: pal.ath, pointRadius: 0, borderWidth: 1.25, borderDash: [5, 4], stepped: true, order: 4 },
+        { label: "Trigger level", data: [], borderColor: pal.bad, backgroundColor: pal.bad, pointRadius: 0, borderWidth: 1, borderDash: [2, 3], stepped: true, order: 5 },
+        { label: "Paid from cash", data: [], showLine: false, pointRadius: 4, pointHoverRadius: 6, borderColor: pal.good, backgroundColor: pal.good, order: 1 },
+        { label: "Forced sale (down month)", data: [], showLine: false, pointRadius: 4, pointHoverRadius: 6, pointStyle: "triangle", borderColor: pal.bad, backgroundColor: pal.bad, order: 2 }
+      ] },
+      options: baseOptions(pal, function (o) {
+        o.scales.x.ticks.callback = janTicks;
+        o.scales.y.type = $("logScale").checked ? "logarithmic" : "linear";
+        o.scales.y.ticks.callback = function (v) {
+          if (o.scales.y.type === "logarithmic") { var m = v / Math.pow(10, Math.floor(Math.log10(v))); if ([1, 2, 5].indexOf(Math.round(m)) < 0) return null; }
+          return short(v);
+        };
+        o.plugins.downShade = { color: pal.down, lineColor: pal.bad };
+        return moneyTooltip(o);
+      })
+    });
+
+    charts.returns = new Chart($("cReturns"), {
+      type: "bar",
+      data: { labels: yearLabels, datasets: [
+        { label: "Actual BRK.A return", data: [], backgroundColor: [], borderRadius: 3 },
+        { label: "Smoothed rate (prior 5y ÷ 5)", data: [], backgroundColor: pal.smooth, borderRadius: 3 }
+      ] },
+      options: baseOptions(pal, function (o) {
+        o.scales.y.ticks.callback = function (v) { return (v * 100).toFixed(0) + "%"; };
+        o.plugins.tooltip.callbacks.label = function (c) { return " " + c.dataset.label + ": " + pct(c.parsed.y); };
+        o.plugins.legend.labels.generateLabels = function (chart) {
+          var items = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+          items[0].fillStyle = pal.brk; items[0].strokeStyle = pal.brk;
+          return items;
+        };
+        return o;
+      })
+    });
+    charts.returns.data.datasets[0].data = yearLabels.map(function (y) { return actualReturn(+y); });
+    charts.returns.data.datasets[0].backgroundColor = charts.returns.data.datasets[0].data.map(function (v) { return v < 0 ? pal.bad : pal.brk; });
+    charts.returns.data.datasets[1].data = yearLabels.map(function (y) { return smoothRate(+y); });
+    charts.returns.update();
+  }
+
+  // ----- render
+  function render() {
+    var o = readInputs(), pal = palette();
+    var r = simulate(o), m = r.months, last = m[m.length - 1];
+
+    // labels
+    $("bufferOut").textContent = o.bufferYears === 0 ? "none" : o.bufferYears + (o.bufferYears === 1 ? " year" : " years");
+    $("bufferHint").textContent = o.bufferYears === 0
+      ? "No cash: every month is paid by selling shares."
+      : "Target " + money(r.target) + " in cash (" + (o.bufferYears * 12) + " months of spending), carved out of the initial amount.";
+    $("triggerOut").textContent = Math.round(o.trigger * 100) + "% below high";
+    $("spendHint").textContent = o.initial > 0 ? money(o.spend * 12) + " a year — " + (o.spend * 12 / o.initial * 100).toFixed(1) + "% of the initial amount." : "";
+
+    // status
+    var minK = 0; for (var k = 1; k < m.length; k++) if (m[k].total < m[minK].total) minK = k;
+    var st = $("status");
+    var basisNote = o.basis === "smoothed" ? " (smoothed returns)" : "";
+    if (r.depleted != null) {
+      st.className = "status bad";
+      st.innerHTML = "<strong>The money runs out in " + monthLabel(r.depleted) + "</strong>" + basisNote + " — " + ((r.depleted - START) / 12).toFixed(1) + " years in, after withdrawing " + money(r.withdrawn) + ".";
+    } else {
+      st.className = "status";
+      st.innerHTML = "<strong>The money lasts all 20 years</strong>" + basisNote + ": " + money(r.withdrawn) + " withdrawn and " + money(last.total) + " left at the end of 2025 (" + (last.total / o.initial).toFixed(2) + "× the starting amount).";
+    }
+
+    // KPIs
+    var downMonths = m.filter(function (x) { return x.down; }).length;
+    var kpis = [
+      { k: "End value (Dec 2025)", v: short(last.total), d: money(last.brk) + " BRK.A · " + money(last.cash) + " cash", cls: last.total >= o.initial ? "good" : (last.total === 0 ? "bad" : "") },
+      { k: "Lowest value", v: short(m[minK].total), d: monthLabel(m[minK].i) },
+      { k: "Depleted", v: r.depleted == null ? "Never" : monthLabel(r.depleted), d: r.depleted == null ? "Lasted 240 of 240 months" : "After " + (r.depleted - START) + " of 240 months", cls: r.depleted == null ? "good" : "bad" },
+      { k: "Total withdrawn", v: short(r.withdrawn), d: money(r.withdrawn) },
+      { k: "Months paid from cash", v: String(r.fromCash), d: "of " + downMonths + " down months" },
+      { k: "Forced sales", v: String(r.forced), d: "down months paid by selling shares", cls: r.forced > 0 ? "bad" : "good" },
+      { k: "Shares sold", v: r.sold.toFixed(2), d: "of " + r.startShares.toFixed(2) + " bought at " + money(r.prices[START - 1]) }
+    ];
+    $("kpis").innerHTML = kpis.map(function (x) {
+      return '<div class="kpi ' + (x.cls || "") + '"><div class="k">' + esc(x.k) + '</div><div class="v">' + esc(x.v) + '</div><div class="d">' + esc(x.d) + "</div></div>";
+    }).join("");
+
+    // Chart 1: portfolio
+    var c1 = charts.portfolio;
+    c1.data.datasets[0].data = m.map(function (x) { return x.brk; });
+    c1.data.datasets[1].data = m.map(function (x) { return x.cash; });
+    c1.data.datasets[2].data = m.map(function (x) { return x.total; });
+    c1.options.plugins.downShade.flags = m.map(function (x) { return x.down; });
+    c1.options.plugins.downShade.depleted = r.depleted == null ? null : r.depleted - START;
+    c1.options.plugins.downShade.depletedLabel = r.depleted == null ? "" : monthLabel(r.depleted);
+    c1.update();
+
+    // Chart 2: buffer comparison
+    var buffers = [0, 1, 2, 3, 4, 5];
+    if (buffers.indexOf(o.bufferYears) < 0) { buffers.push(o.bufferYears); buffers.sort(function (a, b) { return a - b; }); }
+    charts.buffers.data.datasets = buffers.map(function (b, idx) {
+      var rr = b === o.bufferYears ? r : simulate({ initial: o.initial, spend: o.spend, bufferYears: b, trigger: o.trigger, cashYield: o.cashYield, basis: o.basis });
+      var ye = [o.initial].concat(rr.months.filter(function (x) { return x.i % 12 === 11; }).map(function (x) { return x.total; }));
+      var sel = b === o.bufferYears;
+      var color = b === Math.floor(b) ? pal.buffers[b] : pal.buffers[6];
+      return {
+        label: (b === 0 ? "No buffer" : b + "y") + (sel ? " (selected)" : ""),
+        data: ye, borderColor: color, backgroundColor: color,
+        borderWidth: sel ? 3.5 : 1.5, pointRadius: sel ? 2.5 : 0, order: sel ? 0 : 1,
+        segment: sel ? undefined : { borderColor: function () { return color + "99"; } }
+      };
+    });
+    charts.buffers.update();
+
+    // Chart 3: price + ATH + markers
+    var c3 = charts.price;
+    $("priceTitle").textContent = o.basis === "smoothed" ? "Smoothed BRK.A price and all-time high" : "BRK.A price and all-time high";
+    c3.data.datasets[0].label = o.basis === "smoothed" ? "Smoothed price" : "Month-end price";
+    c3.data.datasets[0].data = m.map(function (x) { return x.price; });
+    c3.data.datasets[1].data = m.map(function (x) { return x.ath; });
+    c3.data.datasets[2].data = m.map(function (x) { return x.ath * (1 - o.trigger); });
+    c3.data.datasets[2].label = "Trigger (" + Math.round(o.trigger * 100) + "% below high)";
+    c3.data.datasets[3].data = m.map(function (x) { return x.kind === "cash" ? x.price : null; });
+    c3.data.datasets[4].data = m.map(function (x) { return x.kind === "forced" ? x.price : null; });
+    c3.options.plugins.downShade.flags = m.map(function (x) { return x.down; });
+    c3.options.plugins.downShade.depleted = r.depleted == null ? null : r.depleted - START;
+    c3.options.plugins.downShade.depletedLabel = r.depleted == null ? "" : monthLabel(r.depleted);
+    c3.update();
+
+    // Chart 5: cumulative
+    var c5 = charts.cumulative;
+    c5.data.datasets[0].data = m.map(function (x) { return x.total; });
+    c5.data.datasets[1].data = m.map(function (x) { return x.withdrawn; });
+    c5.update();
+
+    // Table
+    var rows = [], prevW = 0;
+    for (var yy = 2006; yy <= 2025; yy++) {
+      var e = m[decIndex(yy) - START];
+      var ret = o.basis === "smoothed" ? r.prices[decIndex(yy)] / r.prices[decIndex(yy - 1)] - 1 : actualReturn(yy);
+      var wy = e.withdrawn - prevW; prevW = e.withdrawn;
+      var dep = r.depleted != null && r.depleted <= decIndex(yy);
+      rows.push("<tr" + (dep ? ' class="dep"' : "") + "><td>" + yy + '</td><td class="' + (ret < 0 ? "neg" : "pos") + '">' + pct(ret) + "</td><td>" + money(r.prices[decIndex(yy)]) + "</td><td>" + e.shares.toFixed(2) + "</td><td>" + money(e.brk) + "</td><td>" + money(e.cash) + "</td><td><strong>" + money(e.total) + "</strong></td><td>" + money(wy) + "</td></tr>");
+    }
+    $("yearRows").innerHTML = rows.join("");
+    $("tableSub").textContent = o.basis === "smoothed"
+      ? "Year-end values (December). Return and price columns show the smoothed series the simulation used."
+      : "Year-end values (December). BRK.A return is the calendar-year price change.";
+  }
+
+  // ----- wiring
+  function setTheme(dark) {
+    document.documentElement.classList.toggle("dark", dark);
+    $("theme").textContent = dark ? "Light" : "Dark";
+    $("theme").setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+    buildCharts(); render();
+  }
+  $("theme").addEventListener("click", function () {
+    var dark = !document.documentElement.classList.contains("dark");
+    try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
+    setTheme(dark);
+  });
+  try {
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function (e) {
+      var t = null; try { t = localStorage.getItem("theme"); } catch (x) {}
+      if (t !== "dark" && t !== "light") setTheme(e.matches);
+    });
+  } catch (e) {}
+
+  ["initial", "spend", "buffer", "trigger"].forEach(function (id) { $(id).addEventListener("input", render); });
+  document.querySelectorAll("input[name=yield], input[name=basis]").forEach(function (el) { el.addEventListener("change", render); });
+  $("logScale").addEventListener("change", function () {
+    charts.price.options.scales.y.type = $("logScale").checked ? "logarithmic" : "linear";
+    charts.price.update();
+  });
+  $("reset").addEventListener("click", function () {
+    $("initial").value = DEFAULTS.initial; $("spend").value = DEFAULTS.spend;
+    $("buffer").value = DEFAULTS.buffer; $("trigger").value = DEFAULTS.trigger;
+    $("y-tbill").checked = true; $("b-actual").checked = true;
+    render();
+  });
+
+  $("rates").innerHTML = Object.keys(TBILL).map(function (y) { return "<span>" + y + " <b>" + TBILL[y] + "%</b></span>"; }).join("");
+
+  var isDark = document.documentElement.classList.contains("dark");
+  $("theme").textContent = isDark ? "Light" : "Dark";
+  buildCharts();
+  render();
+})();
+</script>
+</body>
+</html>
