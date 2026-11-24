@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Refresh the STRC prices, dividends and dividend rates embedded in strc-simulator.html.
+"""Refresh the STRC trading days, dividends and dividend rates embedded in strc-simulator.html.
 
 Browsers cannot call Yahoo Finance from a page (no CORS headers), so a scheduled workflow runs this
 after each market close and rewrites the data block between the markers in the page.
@@ -100,13 +100,12 @@ def main() -> None:
     result = fetch()
     offset = result["meta"].get("gmtoffset", -18000)
     closes = result["indicators"]["quote"][0]["close"]
-    prices = [(day(t, offset), round(c, 2)) for t, c in zip(result["timestamp"], closes) if c is not None]
+    days = [day(t, offset) for t, c in zip(result["timestamp"], closes) if c is not None]  # trading days with a close
     divs = sorted((day(int(t), offset), round(v["amount"], 4)) for t, v in result.get("events", {}).get("dividends", {}).items())
     rates = {**KNOWN_RATES, **infer_rates(divs)}
     data = {
-        "updated": prices[-1][0].isoformat(),
-        "dates": [d.isoformat() for d, _ in prices],
-        "closes": [c for _, c in prices],
+        "updated": days[-1].isoformat(),
+        "dates": [d.isoformat() for d in days],
         "divs": [[d.isoformat(), a] for d, a in divs],
         "rates": rates,
     }
@@ -117,7 +116,7 @@ def main() -> None:
         raise SystemExit("The data block markers were not found in strc-simulator.html")
     if updated != html:
         PAGE.write_text(updated, encoding="utf-8", newline="\n")
-    print(f"STRC data through {data['updated']}: {len(prices)} closes, {len(divs)} dividends, latest rate {rates[max(rates)]}% ({max(rates)})")
+    print(f"STRC data through {data['updated']}: {len(days)} trading days, {len(divs)} dividends, latest rate {rates[max(rates)]}% ({max(rates)})")
 
 
 if __name__ == "__main__":
