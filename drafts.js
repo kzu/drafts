@@ -1,6 +1,61 @@
 window.DRAFTS = {
   "files": [
     {
+      "path": "brk-withdrawal-simulator.html",
+      "title": "Living off BRK.A — Withdrawal & Cash Buffer Simulator",
+      "headings": [
+        {
+          "level": 1,
+          "text": "Living off BRK.A: withdrawals with a cash buffer"
+        },
+        {
+          "level": 2,
+          "text": "Inputs"
+        },
+        {
+          "level": 2,
+          "text": "Portfolio over time"
+        },
+        {
+          "level": 2,
+          "text": "Buffer size compared"
+        },
+        {
+          "level": 2,
+          "text": "Withdrawn vs. what’s left"
+        },
+        {
+          "level": 2,
+          "text": "BRK.A price and all-time high",
+          "id": "priceTitle"
+        },
+        {
+          "level": 2,
+          "text": "Annual return: actual vs. smoothed"
+        },
+        {
+          "level": 2,
+          "text": "Year by year"
+        },
+        {
+          "level": 2,
+          "text": "How it works"
+        },
+        {
+          "level": 3,
+          "text": "The rules"
+        },
+        {
+          "level": 3,
+          "text": "Assumptions and limits"
+        },
+        {
+          "level": 3,
+          "text": "Data"
+        }
+      ]
+    },
+    {
       "path": "jobs-api.html",
       "title": "Jobs API — Design",
       "headings": [
