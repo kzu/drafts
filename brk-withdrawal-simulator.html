@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Living off BRK.A, the S&amp;P 500 or QQQ — Withdrawal &amp; Cash Buffer Simulator</title>
-  <meta name="description" content="Simulate monthly withdrawals from a BRK.A, S&amp;P 500 or QQQ position since 1980, with an optional cash buffer used in down markets.">
+  <title>Living off BRK.A or the S&amp;P 500 — Withdrawal &amp; Cash Buffer Simulator</title>
+  <meta name="description" content="Simulate monthly withdrawals from a BRK.A or S&amp;P 500 position since 1980, with an optional cash buffer used in down markets.">
   <script>
     (function () {
       try {
@@ -93,7 +93,6 @@
     input[type=range] { width: 100%; accent-color: var(--accent); }
     .seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .seg input { position: absolute; opacity: 0; pointer-events: none; }
-    .seg.three { grid-template-columns: repeat(3, 1fr); }
     .seg label { margin: 0; padding: 7px 8px; text-align: center; font-weight: 500; font-size: 0.8rem; cursor: pointer; display: block; color: var(--muted-fg); }
     .seg input:checked + label { background: var(--muted); color: var(--fg); font-weight: 600; }
     .seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -130,30 +129,38 @@
     .muted { color: var(--muted-fg); }
     .rates { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.8rem; font-variant-numeric: tabular-nums; color: var(--muted-fg); }
     .rates b { color: var(--fg); font-weight: 600; }
-    .play-top { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 20px; align-items: start; margin: 4px 0 8px; }
-    .play-top .sub { margin: 0; }
-    .play-canvas { position: relative; height: 480px; }
-    .play-card { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 0.82rem; background: var(--bg); }
-    .encoding { list-style: none; padding: 0; margin: 10px 0 0; font-size: 0.8rem; color: var(--muted-fg); }
+    .play-canvas { position: relative; height: 500px; }
+    .encoding { list-style: none; padding: 0; margin: 0 0 8px; font-size: 0.8rem; color: var(--muted-fg); }
     .encoding li { margin: 3px 0; }
     .encoding b { color: var(--fg); font-weight: 600; }
-    .pc-when { font-size: 0.78rem; color: var(--muted-fg); margin-bottom: 4px; }
-    .pc-when b { color: var(--fg); }
-    .pc-row { display: grid; grid-template-columns: 10px auto 1fr; column-gap: 8px; align-items: baseline; padding: 5px 0; border-top: 1px solid var(--border); }
-    .pc-row i { width: 10px; height: 10px; border-radius: 50%; align-self: center; }
-    .pc-name { font-weight: 600; }
-    .pc-val { justify-self: end; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .pc-row.sel .pc-val { font-size: 1.3rem; letter-spacing: -0.02em; }
-    .pc-sub { grid-column: 2 / -1; font-size: 0.72rem; color: var(--muted-fg); font-variant-numeric: tabular-nums; }
-    .pc-row.muted { opacity: 0.55; }
-    .bad { color: var(--bad); }
+    /* Always-visible panel inside the playback chart: dark in both themes, draggable. */
+    .play-panel {
+      position: absolute; z-index: 2; width: 270px; padding: 10px 12px 11px; border-radius: 10px;
+      background: rgba(17, 17, 20, 0.9); color: #f4f4f5; border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); backdrop-filter: blur(4px);
+      font-size: 0.82rem; line-height: 1.35; cursor: grab; user-select: none; touch-action: none;
+    }
+    .play-panel.dragging { cursor: grabbing; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35); }
+    .play-panel:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .play-panel .pp-head { display: flex; align-items: center; gap: 7px; font-size: 0.9rem; padding-right: 16px; }
+    .play-panel .pp-head i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+    .play-panel .pp-head::after { content: "⠿"; position: absolute; right: 10px; top: 9px; color: #a1a1aa; }
+    .play-panel .pp-tag { margin-left: auto; font-size: 0.68rem; padding: 1px 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.12); color: #d4d4d8; white-space: nowrap; }
+    .play-panel .pp-sub { color: #a1a1aa; font-size: 0.76rem; margin: 2px 0 6px; font-variant-numeric: tabular-nums; }
+    .play-panel .pp-big { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .play-panel .pp-big small { display: block; font-size: 0.72rem; font-weight: 500; letter-spacing: 0; color: #a1a1aa; }
+    .play-panel .pp-big.bad { color: #f87171; font-size: 1.2rem; }
+    .play-panel .pp-grid { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 8px 0 0; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+    .play-panel dt { color: #a1a1aa; }
+    .play-panel dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    .play-panel .pp-note { margin-top: 8px; font-size: 0.74rem; color: #fca5a5; }
     .play-controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
     .play-controls input[type=range] { flex: 1; min-width: 160px; }
     #playLabel { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 150px; }
     #playBtn { min-width: 88px; }
     @media (max-width: 760px) {
-      .play-top { grid-template-columns: 1fr; }
-      .play-canvas { height: 380px; }
+      .play-canvas { height: 420px; }
+      .play-panel { width: 230px; font-size: 0.76rem; }
     }
     .status { margin: -6px 0 16px; padding: 10px 14px; border-radius: 10px; font-size: 0.9rem; border: 1px solid var(--border); background: var(--muted); }
     .status.bad { border-color: color-mix(in srgb, var(--bad) 40%, transparent); background: color-mix(in srgb, var(--bad) 10%, transparent); }
@@ -164,7 +171,7 @@
   <header class="top">
     <div>
       <h1>Living off <span id="assetTitle">BRK.A</span>: withdrawals with a cash buffer</h1>
-      <p>Invest a lump sum in Berkshire Hathaway (BRK.A), the S&amp;P 500 or the Nasdaq-100 (QQQ) at any month-end in their history, take a fixed amount out every month for 10 to 30 years (data runs to the <span class="lastClose"></span> close), play every start date back, and see how a cash buffer, spent only when the market is down, changes the outcome. All numbers use real month-end prices with dividends reinvested.</p>
+      <p>Invest a lump sum in Berkshire Hathaway (BRK.A) or the S&amp;P 500 at any month-end in their history, take a fixed amount out every month for 10 to 30 years (data runs to the <span class="lastClose"></span> close), play every start date back, and see how a cash buffer, spent only when the market is down, changes the outcome. All numbers use real month-end prices with dividends reinvested.</p>
     </div>
     <button type="button" id="theme" class="btn" aria-label="Switch theme">Dark</button>
   </header>
@@ -176,10 +183,9 @@
 
       <div class="field">
         <div class="lbl">Invest in</div>
-        <div class="seg three" role="radiogroup" aria-label="Asset">
+        <div class="seg" role="radiogroup" aria-label="Asset">
           <input type="radio" name="asset" id="a-brk" value="brk" checked><label for="a-brk">BRK.A</label>
           <input type="radio" name="asset" id="a-spx" value="spx"><label for="a-spx">S&amp;P 500</label>
-          <input type="radio" name="asset" id="a-qqq" value="qqq"><label for="a-qqq">QQQ</label>
         </div>
         <div class="hint" id="assetHint"></div>
       </div>
@@ -258,18 +264,14 @@
       <div class="charts">
         <div class="card wide">
           <h2>Every start date, played back</h2>
-          <div class="play-top">
-            <div class="play-card" id="playCard" aria-live="polite"></div>
-            <div>
-              <p class="sub">Press Play to start the same plan one year later at each step and run it for the chosen period. Each bubble is an asset; trails show where it was at earlier starts.</p>
-              <ul class="encoding">
-                <li><b>Across:</b> the asset’s annualized return over that window.</li>
-                <li><b>Up:</b> what’s left at the end (log scale). On the dashed line, the money ran out.</li>
-                <li><b>Size:</b> how much was withdrawn, so a bubble shrinks when the money runs out early.</li>
-              </ul>
-            </div>
+          <p class="sub">Press Play to start the same plan with <span class="assetName">BRK.A</span> one year later at each step and run it for the chosen period. The trail shows earlier starts; the panel shows the numbers for the current start, or for the trail point you point at. Drag the panel anywhere; double-click it to put it back.</p>
+          <ul class="encoding">
+            <li><b>Across:</b> the annualized return over that window. <b>Up:</b> what’s left at the end (log scale); on the dashed line, the money ran out. <b>Size:</b> how much was withdrawn, so the bubble shrinks when the money runs out early.</li>
+          </ul>
+          <div class="play-canvas">
+            <canvas id="cPlay" aria-label="Playback of outcomes by start date"></canvas>
+            <div class="play-panel" id="playPanel" tabindex="0" role="status" aria-live="polite" title="Drag to move · double-click to reset · arrow keys move it"></div>
           </div>
-          <div class="play-canvas"><canvas id="cPlay" aria-label="Playback of outcomes by start date"></canvas></div>
           <div class="play-controls">
             <button type="button" class="btn" id="playBtn" aria-pressed="false">▶ Play</button>
             <input type="range" id="playRange" min="0" max="0" value="0" step="1" aria-label="Start date">
@@ -344,23 +346,23 @@
         <ul>
           <li>You buy the asset at the close of the month before your first withdrawal. The cash buffer (years × 12 × monthly spending) is set aside from the initial amount; the rest buys shares (or index units). Fractional shares are allowed.</li>
           <li>A run lasts the chosen time period (10–30 years) from the first withdrawal; when the data ends sooner it is cut at the latest close, and the page says so. Every chart, number and table on the page covers that window.</li>
-          <li>The playback steps the first withdrawal forward one year at a time, keeping the month you picked, through the last start that still has a full window of data. With “Move the whole page” on, the whole page follows each step.</li>
+          <li>The playback steps the first withdrawal forward one year at a time with the asset you picked, keeping the month you picked, through the last start that still has a full window of data. With “Move the whole page” on, the whole page follows each step.</li>
           <li>Every month of the run, in order: cash earns one month of interest; the month is “down” if the close is below the all-time high by at least the trigger (the high includes every close in the asset’s data and is updated after the check).</li>
           <li>Down month with enough cash: spending comes from cash. Otherwise spending comes from selling shares at that month’s close. If a down month finds the buffer short, the remaining cash is used and the rest is sold — that counts as a <em>forced sale</em>.</li>
           <li>In a month that is not down, after spending, shares are sold to refill the cash buffer back to its target.</li>
           <li>If shares plus cash can no longer cover a month, the portfolio is depleted: what is left is paid out and the value stays at zero.</li>
-          <li><strong>Smoothed basis:</strong> for each year Y the annual rate is (close Dec Y−1 ÷ close Dec Y−6 − 1) ÷ 5. A synthetic price starts at the purchase close and grows by (1 + rate)<sup>1/12</sup> each month; the same rules run on it, with the all-time high measured on the synthetic price. The first rate needs the asset’s first December close, so a smoothed run starts in January 1986 for BRK.A, 1994 for the S&amp;P 500 and 2005 for QQQ at the earliest.</li>
+          <li><strong>Smoothed basis:</strong> for each year Y the annual rate is (close Dec Y−1 ÷ close Dec Y−6 − 1) ÷ 5. A synthetic price starts at the purchase close and grows by (1 + rate)<sup>1/12</sup> each month; the same rules run on it, with the all-time high measured on the synthetic price. The first rate needs the asset’s first December close, so a smoothed run starts in January 1986 for BRK.A and January 1994 for the S&amp;P 500 at the earliest.</li>
         </ul>
         <h3>Assumptions and limits</h3>
         <ul>
-          <li>No taxes, commissions or inflation adjustment; spending is a flat nominal amount. The S&amp;P 500 is the index itself, with no fund fees; QQQ prices are net of the fund’s fees.</li>
+          <li>No taxes, commissions or inflation adjustment; spending is a flat nominal amount. The S&amp;P 500 is the index itself, with no fund fees.</li>
           <li>All trades happen at the month-end close; the last month is partial and uses the latest close (<span class="lastClose"></span>), with a full month of cash interest.</li>
-          <li>Dividends are reinvested: Berkshire pays none, so its price is its total return; the S&amp;P 500 uses the total-return index (^SP500TR); QQQ uses Yahoo’s dividend-adjusted close, so its prices sit below the quoted ones in earlier years.</li>
+          <li>Dividends are reinvested: Berkshire pays none, so its price is its total return; the S&amp;P 500 uses the total-return index (^SP500TR).</li>
           <li>Cash interest uses approximate annual averages of the 3-month US Treasury bill yield, applied monthly (rate ÷ 12). 1980–2005 and 2026 (to date) are averages of the daily 13-week T-bill index (^IRX):</li>
         </ul>
         <div class="rates" id="rates"></div>
         <h3>Data</h3>
-        <p class="muted">Month-end closes from Yahoo Finance, embedded in this page: BRK.A from March 1980 (the last daily close of each month for 1980–1984, monthly bars from 1985), the S&amp;P 500 total-return index from January 1988, and QQQ from March 1999, all through the close of <span class="lastClose"></span>. This is a historical illustration, not advice; past returns don’t predict future ones.</p>
+        <p class="muted">Month-end closes from Yahoo Finance, embedded in this page: BRK.A from March 1980 (the last daily close of each month for 1980–1984, monthly bars from 1985), and the S&amp;P 500 total-return index from January 1988, both through the close of <span class="lastClose"></span>. This is a historical illustration, not advice; past returns don’t predict future ones.</p>
       </section>
     </main>
   </div>
@@ -368,7 +370,7 @@
 
 <script>
 // --- sim start
-var SERIES = {"brk":[260,275,320,305,340,380,385,420,430,425,430,485,480,515,520,510,485,500,460,505,575,560,510,515,480,510,505,495,475,485,550,610,690,775,765,830,965,975,985,910,950,1020,1240,1310,1350,1310,1325,1280,1240,1250,1290,1260,1240,1290,1305,1300,1280,1275,1395,1490,1815,1850,1860,2150,2110,2040,2120,2620,2625,2470,2255,2760,3120,2910,2860,2975,2825,2900,2625,2875,2740,2820,3100,3360,3520,3380,3410,3500,3960,3990,4220,3325,2900,2950,3030,3150,3425,3775,3925,4150,4375,4300,4800,4725,4700,4700,4925,4725,4950,6275,6425,6575,7500,7975,8625,8510,8250,8675,7455,7225,6725,6700,7150,7200,7000,6400,5875,5950,6345,6675,7400,8075,8025,8125,8750,8400,8525,8775,8875,8570,8350,9050,8850,8725,8950,9125,9100,9225,9525,9125,9400,9475,10725,11750,12100,12475,12750,12650,15000,15400,16000,17525,16675,17250,17250,16325,16200,15450,15925,16100,16100,16100,19600,19100,18950,20250,20525,20400,24600,22275,22650,21600,22700,23450,24750,25500,29400,29500,31300,32100,31900,35500,33850,33500,30500,30700,30900,31300,32150,32400,33200,34100,34800,35500,36200,38000,43000,47200,47200,41500,44800,43700,45300,46000,50300,55800,67200,68600,70700,78305,70105,60500,59600,64500,67900,70000,65000,71100,71400,76400,72000,68900,67805,64200,55000,63900,57300,56100,51200,44000,57200,59300,58600,53800,55100,57700,64400,63700,65900,71000,68400,70300,65450,68000,68700,69400,69200,69400,70000,71200,70000,75600,73900,73000,71100,73450,74600,66800,68300,73000,73900,74190,72300,72750,67600,61700,63800,69815,71000,72500,72010,75775,75000,77810,83750,84250,89490,94500,93300,93390,89000,88950,87250,87000,86650,84250,83700,87900,89900,90200,87000,84350,84100,83500,83500,83150,82000,85900,89390,88620,89490,86800,90350,89000,92290,91659,91600,96097,95800,105475,107100,109990,110050,106190,108990,109200,109490,109475,110000,118390,118510,132500,140100,141600,136000,140000,133400,133850,134650,120750,114450,116600,130600,115490,104000,96600,89502,78600,86700,94000,91600,90000,97000,100850,101000,99000,100600,99200,114600,119800,121800,115325,105910,120000,117000,118675,124500,119300,120200,120450,122425,131300,125300,124750,118775,116105,111500,109769,106800,116950,118500,114755,117925,117934,121900,120800,118850,124945,127445,126560,132700,129505,131916,134060,145875,152600,156280,159000,171300,168600,173900,167050,170410,172994,174750,177900,169511,173708,187350,193275,192000,189900,188124,205880,206900,210000,223065,226000,215865,221180,217500,213400,214800,204850,214000,202531,195240,204596,201360,197800,194360,202555,213450,219000,211695,216975,216000,225760,216220,215700,237000,244121,245980,257100,249850,247780,248440,254700,262786,271450,274740,280470,291500,297600,323375,310250,299100,290650,287200,282040,301550,315800,320000,307705,326000,306000,311500,302200,301215,325080,297060,318350,308666,303078,311832,318939,330495,339590,335996,309096,272000,281700,278640,267300,293631,327560,320001,302500,343688,347815,344100,364580,385702,412500,436000,418601,418900,429900,411379,432902,416876,450662,469805,476205,528921,484340,474050,408950,451700,421308,406470,445050,480280,468711,473000,463525,465600,502880,488024,517810,535400,546725,531477,517825,545900,542625,578020,616561,634440,599500,627400,612241,659211,715300,691180,676960,724040,680920,702614,775000,798442,800540,757400,728800,719850,755280,754200,715740,770100,754800,722500,757000,718140,711900,710900,748850,766600,756650,747005,815600,859191],"spx":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,257.47,269.48,261.15,264.04,266.32,278.54,277.49,268.07,279.49,287.27,283.18,288.12,309.21,301.51,308.54,324.56,337.69,335.78,366.1,373.25,371.74,363.11,370.51,379.41,353.94,358.5,368,358.82,393.8,391.14,389.89,354.65,337.39,335.95,357.67,367.63,383.64,411.08,421.03,422.03,440.24,420.07,439.65,450.06,442.53,448.48,430.41,479.63,470.7,476.79,467.52,481.25,483.6,476.41,495.87,485.72,491.43,493.13,509.92,516.18,520.49,527.59,538.72,525.7,539.76,541.34,539.16,559.62,555.33,566.82,561.41,568.2,587.52,571.57,546.65,553.66,562.75,548.96,566.98,590.23,575.8,588.73,567.29,575.71,590.64,613.65,631.76,650.36,676.36,692.07,715.02,716.82,747.07,744.4,777.07,792.04,819,826.59,834.55,846.85,868.69,872.01,833.48,851.06,898.97,923.76,993.58,973.9,1034.74,1042.85,1000,1059.7,1124.22,1174.59,1268.05,1197.01,1262.56,1220.4,1276.89,1298.82,1313.19,1407.9,1480,1494.89,1469.19,1528.87,1512.59,1293.9,1376.79,1488.78,1579.02,1670.01,1739.84,1685.77,1753.21,1821.11,1778.1,1876.78,1818.18,1809.19,1759.59,1870.94,1908.97,2021.4,1919.84,1883.5,2067.76,2005.55,1964.4,2012.83,1981.36,2104.43,1993.33,1984.91,1828.42,1837.37,1902.55,1729.08,1619.54,1745.39,1757.09,1714.32,1697.45,1591.18,1462.69,1490.58,1604.92,1618.98,1595.35,1564.59,1623.43,1525,1513.77,1405.94,1296.34,1304.86,1163.04,1265.41,1339.89,1261.18,1228.14,1209.71,1221.46,1322.07,1391.72,1409.48,1434.33,1462.3,1446.77,1528.62,1542.07,1622.94,1652.73,1675.7,1650.42,1624.51,1646.8,1678.83,1623.26,1629.83,1647.48,1672.65,1740.33,1799.55,1755.68,1792.63,1760.89,1727.49,1782.46,1784.99,1851.37,1834.48,1849.33,1818.5,1887.28,1887.94,1937.93,1943.19,1967.38,1993.79,1936.41,1939.03,1951,1997.42,2048.89,2115.65,2155.89,2186.13,2219.19,2175.78,2200.12,2297.58,2377.75,2338.25,2265.75,2299.71,2385.72,2423.67,2322.34,2306.23,2167.9,2097.48,2088.42,2190.13,2218.5,2031.47,2014.39,2043.53,1861.44,1548.81,1437.68,1452.98,1330.51,1188.84,1292.98,1416.73,1495.97,1498.94,1612.31,1670.52,1732.86,1700.67,1802.68,1837.5,1771.4,1826.27,1936.48,1967.05,1809.98,1715.23,1835.4,1752.55,1908.95,1981.59,1981.84,2114.29,2164.4,2238.55,2239.44,2305.76,2279.66,2241.66,2196.08,2076.78,1930.79,2141.81,2137.08,2158.94,2255.69,2353.23,2430.67,2415.42,2270.25,2363.79,2396.62,2450.6,2513.93,2467.51,2481.82,2504.44,2634.16,2669.92,2770.05,2823.42,2889.46,2850.66,2995.72,2908.96,3000.18,3138.09,3233.72,3315.59,3200.95,3347.38,3375.51,3400.46,3480.29,3552.18,3503.19,3643.33,3592.25,3679.99,3778.96,3769.44,3656.28,3866.42,3805.27,3841.78,3891.18,3815.85,3895.8,3660.75,3570.17,3871.33,3882.84,3821.6,3631.96,3627.06,3873.11,3888.13,3957.95,3968.21,4114.51,4120.29,4121.06,4045.89,4195.73,4278.66,4359.81,4532.93,4538.21,4584.82,4649.34,4678.36,4774.56,4789.18,4887.97,5002.03,5155.44,5212.76,5511.21,5308.09,5173.19,5193.04,5318.1,5350.83,5549.96,5730.8,5763.42,5369.49,5478.91,4984.22,5383.63,5556.49,5664.46,5893.81,5519.27,5908.25,5993.17,5898.23,6008.59,6138.73,6361.56,6553.57,6551,6011.73,5269.2,5944.68,6227.81,6351.67,6709.81,7192.11,6918.83,6734.84,7472.06,7759.35,7681.01,7892.81,8238.48,8678.16,8738.77,8942.78,9155.21,9433.58,8994.83,9625.02,9558.33,9986.7,9469.92,9186.37,9527.46,8696.65,8712.6,7993.43,8730.46,8374.42,7603.14,8218.7,8678,8178.02,8691.88,8479.8,8791.13,8928.35,8967.16,9559.67,9866.77,9709.68,9246.74,9052.31,9879.02,10327.83,10501.38,11062.11,11418.03,10951.66,11494.7,11907.15,12052.09,12344.43,12608.07,12493.74,13227.13,12911.82,13271.38,13098.22,12360.21,12276.39,13049.13,13712.71,14020.46,14304.68,14826.8,15173.95,15211.14,15220.45,15441.15,15323.8,14560.75,16088.56,16935.35,16774.07,16763.42,17219.94,17160.41,17011.14,16256.4],"qqq":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,44.166,45.2182,43.7977,48.5063,47.6382,50.2424,50.6633,55.3456,61.8692,76.9157,75.4951,89.8577,92.1725,79.7566,69.9711,78.6518,75.2847,85.5437,74.7061,68.7743,53.0176,49.1376,54.125,39.9414,32.9548,38.8471,37.6518,38.4683,35.1518,30.8336,24.3941,28.5356,33.3757,32.7528,32.4161,28.4346,30.3538,26.709,25.2864,21.9699,20.0759,19.7729,17.4412,20.6652,23.3335,20.5136,20.5726,21.1786,21.2544,23.1063,25.076,25.2106,26.7679,28.1063,27.2898,29.613,29.7814,30.7025,31.2162,30.7951,30.1804,29.2794,30.7783,31.7804,29.3804,28.6478,29.5909,31.073,32.9424,33.9381,31.7957,31.6427,31.0901,29.7383,32.3738,31.2975,33.6801,33.1696,33.578,33.076,35.0927,34.4694,35.8256,35.0579,35.791,35.7227,33.1363,33.1159,31.6895,33.2013,34.7417,36.3912,37.639,36.9319,37.7105,37.0774,37.2719,39.3526,40.5941,40.7887,40.7287,41.8769,44.0764,47.18,43.9907,43.9593,38.7326,36.8616,37.5518,40.5494,42.9543,38.8243,39.0735,39.6408,33.4663,28.2885,25.0459,25.6163,25.0306,23.7128,26.1591,29.5756,30.5247,31.4261,34.078,34.579,36.532,35.4166,37.6648,39.6244,37.0607,38.7669,41.7562,42.6926,39.5366,37.174,39.8722,37.8268,42.8097,45.5229,45.4444,47.6062,48.9524,50.4996,50.2733,51.7177,51.0874,50.0526,50.8861,48.3067,46.1373,50.9365,49.5653,49.2609,53.4079,56.8314,59.7031,59.0049,54.8508,56.8372,57.4042,60.3807,60.9171,57.7011,58.4563,58.1833,59.7378,59.9432,61.7563,63.3233,65.5887,64.0177,68.0597,67.7903,71.066,74.5887,77.2375,79.4983,77.9709,81.9883,79.7471,79.4924,83.0581,85.6527,86.6651,91.0065,90.3179,92.7041,96.9188,94.7472,92.7743,99.4731,97.1265,98.9936,101.22,98.7051,103.2,96.1607,94.0381,104.73,105.37,103.69,96.5222,95.0113,101.52,98.2868,102.58,100.25,107.41,108.54,110.94,109.33,109.8,111.05,116.75,121.86,124.33,127.72,132.7,129.63,134.89,137.69,137.28,143.6,146.44,147.32,160.22,158.15,151.7,152.47,161.11,162.96,167.52,177.2,176.7,161.51,161.08,147.13,160.39,165.19,171.67,181.11,166.22,178.83,183.01,179.53,181.18,189.11,196.81,204.46,210.67,197.91,183.49,210.97,224.89,239.03,256.59,284.67,268.22,260.06,289.25,303.43,304.22,303.82,309.03,327.29,323.36,343.61,353.44,368.35,347.42,374.74,382.22,386.63,352.81,337.02,352.75,304.79,299.95,273.24,307.53,291.75,261.01,271.45,286.5,260.68,288.42,287.38,314.66,316.26,341.19,362.7,376.7,371.12,352.26,344.99,382.31,403.67,411.02,432.73,438.25,419.08,444.86,473.64,465.7,470.84,483.18,479,504.63,506.92,517.89,503.89,465.66,472.17,515.51,548.42,561.72,567.08,597.56,626.13,616.35,612.22,619.76,605.23,575.95,666.31,736.73,735.63,687.27,716.01,739.77,690.49,651.03]};            // month-end closes per asset from March 1980, null before an asset's data begins
+var SERIES = {"brk":[260,275,320,305,340,380,385,420,430,425,430,485,480,515,520,510,485,500,460,505,575,560,510,515,480,510,505,495,475,485,550,610,690,775,765,830,965,975,985,910,950,1020,1240,1310,1350,1310,1325,1280,1240,1250,1290,1260,1240,1290,1305,1300,1280,1275,1395,1490,1815,1850,1860,2150,2110,2040,2120,2620,2625,2470,2255,2760,3120,2910,2860,2975,2825,2900,2625,2875,2740,2820,3100,3360,3520,3380,3410,3500,3960,3990,4220,3325,2900,2950,3030,3150,3425,3775,3925,4150,4375,4300,4800,4725,4700,4700,4925,4725,4950,6275,6425,6575,7500,7975,8625,8510,8250,8675,7455,7225,6725,6700,7150,7200,7000,6400,5875,5950,6345,6675,7400,8075,8025,8125,8750,8400,8525,8775,8875,8570,8350,9050,8850,8725,8950,9125,9100,9225,9525,9125,9400,9475,10725,11750,12100,12475,12750,12650,15000,15400,16000,17525,16675,17250,17250,16325,16200,15450,15925,16100,16100,16100,19600,19100,18950,20250,20525,20400,24600,22275,22650,21600,22700,23450,24750,25500,29400,29500,31300,32100,31900,35500,33850,33500,30500,30700,30900,31300,32150,32400,33200,34100,34800,35500,36200,38000,43000,47200,47200,41500,44800,43700,45300,46000,50300,55800,67200,68600,70700,78305,70105,60500,59600,64500,67900,70000,65000,71100,71400,76400,72000,68900,67805,64200,55000,63900,57300,56100,51200,44000,57200,59300,58600,53800,55100,57700,64400,63700,65900,71000,68400,70300,65450,68000,68700,69400,69200,69400,70000,71200,70000,75600,73900,73000,71100,73450,74600,66800,68300,73000,73900,74190,72300,72750,67600,61700,63800,69815,71000,72500,72010,75775,75000,77810,83750,84250,89490,94500,93300,93390,89000,88950,87250,87000,86650,84250,83700,87900,89900,90200,87000,84350,84100,83500,83500,83150,82000,85900,89390,88620,89490,86800,90350,89000,92290,91659,91600,96097,95800,105475,107100,109990,110050,106190,108990,109200,109490,109475,110000,118390,118510,132500,140100,141600,136000,140000,133400,133850,134650,120750,114450,116600,130600,115490,104000,96600,89502,78600,86700,94000,91600,90000,97000,100850,101000,99000,100600,99200,114600,119800,121800,115325,105910,120000,117000,118675,124500,119300,120200,120450,122425,131300,125300,124750,118775,116105,111500,109769,106800,116950,118500,114755,117925,117934,121900,120800,118850,124945,127445,126560,132700,129505,131916,134060,145875,152600,156280,159000,171300,168600,173900,167050,170410,172994,174750,177900,169511,173708,187350,193275,192000,189900,188124,205880,206900,210000,223065,226000,215865,221180,217500,213400,214800,204850,214000,202531,195240,204596,201360,197800,194360,202555,213450,219000,211695,216975,216000,225760,216220,215700,237000,244121,245980,257100,249850,247780,248440,254700,262786,271450,274740,280470,291500,297600,323375,310250,299100,290650,287200,282040,301550,315800,320000,307705,326000,306000,311500,302200,301215,325080,297060,318350,308666,303078,311832,318939,330495,339590,335996,309096,272000,281700,278640,267300,293631,327560,320001,302500,343688,347815,344100,364580,385702,412500,436000,418601,418900,429900,411379,432902,416876,450662,469805,476205,528921,484340,474050,408950,451700,421308,406470,445050,480280,468711,473000,463525,465600,502880,488024,517810,535400,546725,531477,517825,545900,542625,578020,616561,634440,599500,627400,612241,659211,715300,691180,676960,724040,680920,702614,775000,798442,800540,757400,728800,719850,755280,754200,715740,770100,754800,722500,757000,718140,711900,710900,748850,766600,756650,747005,815600,859191],"spx":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,257.47,269.48,261.15,264.04,266.32,278.54,277.49,268.07,279.49,287.27,283.18,288.12,309.21,301.51,308.54,324.56,337.69,335.78,366.1,373.25,371.74,363.11,370.51,379.41,353.94,358.5,368,358.82,393.8,391.14,389.89,354.65,337.39,335.95,357.67,367.63,383.64,411.08,421.03,422.03,440.24,420.07,439.65,450.06,442.53,448.48,430.41,479.63,470.7,476.79,467.52,481.25,483.6,476.41,495.87,485.72,491.43,493.13,509.92,516.18,520.49,527.59,538.72,525.7,539.76,541.34,539.16,559.62,555.33,566.82,561.41,568.2,587.52,571.57,546.65,553.66,562.75,548.96,566.98,590.23,575.8,588.73,567.29,575.71,590.64,613.65,631.76,650.36,676.36,692.07,715.02,716.82,747.07,744.4,777.07,792.04,819,826.59,834.55,846.85,868.69,872.01,833.48,851.06,898.97,923.76,993.58,973.9,1034.74,1042.85,1000,1059.7,1124.22,1174.59,1268.05,1197.01,1262.56,1220.4,1276.89,1298.82,1313.19,1407.9,1480,1494.89,1469.19,1528.87,1512.59,1293.9,1376.79,1488.78,1579.02,1670.01,1739.84,1685.77,1753.21,1821.11,1778.1,1876.78,1818.18,1809.19,1759.59,1870.94,1908.97,2021.4,1919.84,1883.5,2067.76,2005.55,1964.4,2012.83,1981.36,2104.43,1993.33,1984.91,1828.42,1837.37,1902.55,1729.08,1619.54,1745.39,1757.09,1714.32,1697.45,1591.18,1462.69,1490.58,1604.92,1618.98,1595.35,1564.59,1623.43,1525,1513.77,1405.94,1296.34,1304.86,1163.04,1265.41,1339.89,1261.18,1228.14,1209.71,1221.46,1322.07,1391.72,1409.48,1434.33,1462.3,1446.77,1528.62,1542.07,1622.94,1652.73,1675.7,1650.42,1624.51,1646.8,1678.83,1623.26,1629.83,1647.48,1672.65,1740.33,1799.55,1755.68,1792.63,1760.89,1727.49,1782.46,1784.99,1851.37,1834.48,1849.33,1818.5,1887.28,1887.94,1937.93,1943.19,1967.38,1993.79,1936.41,1939.03,1951,1997.42,2048.89,2115.65,2155.89,2186.13,2219.19,2175.78,2200.12,2297.58,2377.75,2338.25,2265.75,2299.71,2385.72,2423.67,2322.34,2306.23,2167.9,2097.48,2088.42,2190.13,2218.5,2031.47,2014.39,2043.53,1861.44,1548.81,1437.68,1452.98,1330.51,1188.84,1292.98,1416.73,1495.97,1498.94,1612.31,1670.52,1732.86,1700.67,1802.68,1837.5,1771.4,1826.27,1936.48,1967.05,1809.98,1715.23,1835.4,1752.55,1908.95,1981.59,1981.84,2114.29,2164.4,2238.55,2239.44,2305.76,2279.66,2241.66,2196.08,2076.78,1930.79,2141.81,2137.08,2158.94,2255.69,2353.23,2430.67,2415.42,2270.25,2363.79,2396.62,2450.6,2513.93,2467.51,2481.82,2504.44,2634.16,2669.92,2770.05,2823.42,2889.46,2850.66,2995.72,2908.96,3000.18,3138.09,3233.72,3315.59,3200.95,3347.38,3375.51,3400.46,3480.29,3552.18,3503.19,3643.33,3592.25,3679.99,3778.96,3769.44,3656.28,3866.42,3805.27,3841.78,3891.18,3815.85,3895.8,3660.75,3570.17,3871.33,3882.84,3821.6,3631.96,3627.06,3873.11,3888.13,3957.95,3968.21,4114.51,4120.29,4121.06,4045.89,4195.73,4278.66,4359.81,4532.93,4538.21,4584.82,4649.34,4678.36,4774.56,4789.18,4887.97,5002.03,5155.44,5212.76,5511.21,5308.09,5173.19,5193.04,5318.1,5350.83,5549.96,5730.8,5763.42,5369.49,5478.91,4984.22,5383.63,5556.49,5664.46,5893.81,5519.27,5908.25,5993.17,5898.23,6008.59,6138.73,6361.56,6553.57,6551,6011.73,5269.2,5944.68,6227.81,6351.67,6709.81,7192.11,6918.83,6734.84,7472.06,7759.35,7681.01,7892.81,8238.48,8678.16,8738.77,8942.78,9155.21,9433.58,8994.83,9625.02,9558.33,9986.7,9469.92,9186.37,9527.46,8696.65,8712.6,7993.43,8730.46,8374.42,7603.14,8218.7,8678,8178.02,8691.88,8479.8,8791.13,8928.35,8967.16,9559.67,9866.77,9709.68,9246.74,9052.31,9879.02,10327.83,10501.38,11062.11,11418.03,10951.66,11494.7,11907.15,12052.09,12344.43,12608.07,12493.74,13227.13,12911.82,13271.38,13098.22,12360.21,12276.39,13049.13,13712.71,14020.46,14304.68,14826.8,15173.95,15211.14,15220.45,15441.15,15323.8,14560.75,16088.56,16935.35,16774.07,16763.42,17219.94,17160.41,17011.14,16256.4]};            // month-end closes per asset from March 1980, null before an asset's data begins
 var TBILL = {"1980":11.39,"1981":14.04,"1982":10.6,"1983":8.62,"1984":9.54,"1985":7.47,"1986":5.97,"1987":5.78,"1988":6.67,"1989":8.11,"1990":7.5,"1991":5.38,"1992":3.43,"1993":3,"1994":4.25,"1995":5.48,"1996":5,"1997":5.05,"1998":4.77,"1999":4.63,"2000":5.81,"2001":3.38,"2002":1.6,"2003":1,"2004":1.37,"2005":3.13,"2006":4.7,"2007":4.4,"2008":1.4,"2009":0.15,"2010":0.14,"2011":0.05,"2012":0.09,"2013":0.06,"2014":0.03,"2015":0.05,"2016":0.32,"2017":0.93,"2018":1.94,"2019":2.06,"2020":0.36,"2021":0.05,"2022":2.02,"2023":5.07,"2024":4.97,"2025":4.1,"2026":3.72};
 var LAST_CLOSE = "2026-11-23";    // date of the final close: the last month is partial
 var FIRST = 1980 * 12 + 2;          // index 0 = March 1980
@@ -380,8 +382,7 @@ function decIndex(y) { return indexOf(y, 11); }
 
 var ASSETS = {
   brk: { name: "BRK.A", units: "Shares", note: "Berkshire Hathaway Class A. It pays no dividend, so its price is its total return." },
-  spx: { name: "S&P 500", units: "Units", note: "S&P 500 total-return index (dividends reinvested, no fund fees). Data from January 1988." },
-  qqq: { name: "QQQ", units: "Shares", note: "Invesco QQQ (Nasdaq-100), dividend-adjusted close, net of fund fees. Data from March 1999." }
+  spx: { name: "S&P 500", units: "Units", note: "S&P 500 total-return index (dividends reinvested, no fund fees). Data from January 1988." }
 };
 Object.keys(ASSETS).forEach(function (k) {
   var a = ASSETS[k];
@@ -516,14 +517,14 @@ function simulate(o) {
       brk: "#60a5fa", brkFill: "rgba(96,165,250,0.35)", cash: "#2dd4bf", cashFill: "rgba(45,212,191,0.45)",
       total: "#fafafa", down: "rgba(248,113,113,0.12)", bad: "#f87171", good: "#34d399", ath: "#a1a1aa",
       withdrawn: "#fbbf24", smooth: "#fbbf24",
-      assets: { brk: "#60a5fa", spx: "#a78bfa", qqq: "#fb923c" },
+      assets: { brk: "#60a5fa", spx: "#a78bfa" },
       buffers: ["#94a3b8", "#60a5fa", "#a78bfa", "#f472b6", "#fb923c", "#34d399", "#fde047"]
     } : {
       fg: "#18181b", muted: "#71717a", grid: "rgba(0,0,0,0.07)",
       brk: "#2563eb", brkFill: "rgba(37,99,235,0.25)", cash: "#0d9488", cashFill: "rgba(13,148,136,0.4)",
       total: "#18181b", down: "rgba(220,38,38,0.09)", bad: "#dc2626", good: "#059669", ath: "#71717a",
       withdrawn: "#d97706", smooth: "#d97706",
-      assets: { brk: "#2563eb", spx: "#7c3aed", qqq: "#ea580c" },
+      assets: { brk: "#2563eb", spx: "#7c3aed" },
       buffers: ["#64748b", "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#059669", "#ca8a04"]
     };
   }
@@ -771,7 +772,7 @@ function simulate(o) {
     Object.assign(c1.options.plugins.downShade, { flags: flags, depleted: depletedAt, depletedLabel: depletedLabel });
     c1.update();
 
-    // Same plan with each asset, from the first month all of them can start
+    // Same plan with each asset, from the first month both can start
     var common = Math.max.apply(null, Object.keys(ASSETS).map(function (k) { return effectiveStart(Object.assign({}, o, { asset: k })); }));
     var included = Object.keys(ASSETS).map(function (k) {
       return { k: k, r: k === o.asset && common === start ? r : simulate(Object.assign({}, o, { asset: k, start: common })) };
@@ -784,8 +785,8 @@ function simulate(o) {
     });
     charts.assets.options.scales.x.ticks.callback = yearTicks(common, tickStep(included[0].r.months.length, true));
     charts.assets.update();
-    $("compareSub").textContent = "Total value with your inputs over " + years(included[0].r.months.length) + ", all three starting " + monthLabel(common) +
-      (common !== start ? " (the first month all of them have " + (o.basis === "smoothed" ? "smoothed returns" : "data") + ")" : "") + ". End values: " +
+    $("compareSub").textContent = "Total value with your inputs over " + years(included[0].r.months.length) + ", both starting " + monthLabel(common) +
+      (common !== start ? " (the first month both have " + (o.basis === "smoothed" ? "smoothed returns" : "data") + ")" : "") + ". End values: " +
       included.map(function (x) { var l = x.r.months[x.r.months.length - 1]; return ASSETS[x.k].name + " " + (x.r.depleted != null ? "ran out " + monthLabel(x.r.depleted) : short(l.total)); }).join(" · ") + ".";
 
     // Chart 2: buffer comparison, sampled at each December plus the last month
@@ -809,7 +810,7 @@ function simulate(o) {
     // Chart 3: price + ATH + markers
     var c3 = charts.price;
     $("priceTitle").textContent = (o.basis === "smoothed" ? "Smoothed " + a.name : a.name) + " price and all-time high";
-    $("priceNote").textContent = o.asset === "spx" ? "Prices are the total-return index level." : o.asset === "qqq" ? "Prices are dividend-adjusted." : "";
+    $("priceNote").textContent = o.asset === "spx" ? "Prices are the total-return index level." : "";
     c3.data.labels = monthLabels;
     c3.data.datasets[0].label = o.basis === "smoothed" ? "Smoothed price" : "Month-end price";
     c3.data.datasets[0].data = m.map(function (x) { return x.price; });
@@ -855,42 +856,37 @@ function simulate(o) {
       ? "Values at the end of each year (or the last month). Return and price columns show the smoothed series the simulation used."
       : "Values at the end of each year (or the last month). Return is the total return over the part of the year simulated.");
 
-    renderPlayback(o, false);
+    renderPlayback(Object.assign({}, o, { start: start })); // follow the start the run really uses
   }
 
   // ----- playback: a Gapminder-style bubble chart where the clock is the start date.
-  // Each step starts the same plan one year later; bubbles are the assets.
-  var PLAY_ASSETS = ["brk", "spx", "qqq"], STEP_MS = 800;
-  var play = { key: null, steps: [], idx: 0, timer: null, o: null, anim: 300 };
+  // Each step starts the same plan, with the asset you picked, one year later.
+  var STEP_MS = 800, PANEL_KEY = "brkSim.playPanel";
+  var play = { key: null, steps: [], idx: 0, timer: null, o: null, anim: 300, hover: null, nearest: false };
 
   function playSteps(o) {
-    var key = [o.years, o.initial, o.spend, o.bufferYears, o.trigger, o.cashYield, o.basis, monthOf(o.start)].join("|");
+    var key = [o.asset, o.years, o.initial, o.spend, o.bufferYears, o.trigger, o.cashYield, o.basis, monthOf(o.start)].join("|");
     if (play.key === key) return play.steps;
-    var earliest = Math.min.apply(null, PLAY_ASSETS.map(function (k) { return effectiveStart({ asset: k, start: 1, basis: o.basis }); }));
+    var earliest = effectiveStart({ asset: o.asset, start: 1, basis: o.basis });
     var first = earliest + (monthOf(o.start) - monthOf(earliest) + 12) % 12, lastFull = N - o.years * 12;
     var steps = [];
     for (var s = first; s <= lastFull; s += 12) {
-      var row = { start: s, assets: {} };
-      PLAY_ASSETS.forEach(function (k) {
-        var o2 = Object.assign({}, o, { asset: k, start: s });
-        if (effectiveStart(o2) !== s) return; // no data (or no smoothed rate) for this asset yet
-        var r = simulate(o2), mm = r.months, low = 0;
-        for (var j = 1; j < mm.length; j++) if (mm[j].total < mm[low].total) low = j;
-        row.assets[k] = {
-          end: mm[mm.length - 1].total, depleted: r.depleted, withdrawn: r.withdrawn, lowest: mm[low].total,
-          cagr: Math.pow(r.prices[r.last] / r.prices[s - 1], 12 / mm.length) - 1, fromCash: r.fromCash, forced: r.forced
-        };
+      var r = simulate(Object.assign({}, o, { start: s })), mm = r.months, low = 0;
+      for (var j = 1; j < mm.length; j++) if (mm[j].total < mm[low].total) low = j;
+      steps.push({
+        start: s, last: r.last, end: mm[mm.length - 1].total, depleted: r.depleted, withdrawn: r.withdrawn,
+        lowest: mm[low].total, lowestAt: mm[low].i, fromCash: r.fromCash, forced: r.forced,
+        cagr: Math.pow(r.prices[r.last] / r.prices[s - 1], 12 / mm.length) - 1
       });
-      steps.push(row);
     }
     play.key = key; play.steps = steps;
-    // Fixed axes for the whole playback, as in Gapminder: only the bubbles move.
-    var xs = [], ys = [];
-    steps.forEach(function (st) { Object.keys(st.assets).forEach(function (k) { var v = st.assets[k]; xs.push(v.cagr); if (v.end > 0) ys.push(v.end); }); });
+    // Fixed axes for the whole playback, as in Gapminder: only the bubble moves.
+    var xs = steps.map(function (st) { return st.cagr; });
+    var ys = steps.filter(function (st) { return st.end > 0; }).map(function (st) { return st.end; });
     play.floor = Math.max(1, o.initial * 0.01);
     play.xMin = Math.floor((Math.min.apply(null, xs.concat([0])) - 0.02) * 20) * 5;
     play.xMax = Math.ceil((Math.max.apply(null, xs.concat([0.1])) + 0.02) * 20) * 5;
-    play.yMax = Math.max.apply(null, ys.concat([o.initial])) * 4; // headroom for the largest bubble
+    play.yMax = Math.max.apply(null, ys.concat([o.initial])) * 4; // headroom for the bubble
     return steps;
   }
 
@@ -915,51 +911,39 @@ function simulate(o) {
       ctx.restore();
     },
     afterDatasetsDraw: function (chart) {
-      var d = chart.$play; if (!d) return;
-      var ctx = chart.ctx; ctx.save();
+      var d = chart.$play, el = chart.getDatasetMeta(1).data[0];
+      if (!d || !el) return;
+      var ctx = chart.ctx, x = el.x + (el.options ? el.options.radius : 10) + 5;
+      ctx.save();
       ctx.font = "600 12px system-ui, sans-serif"; ctx.textBaseline = "middle"; ctx.textAlign = "left";
-      // Place labels right of their bubbles, moving a label up while it overlaps one already placed.
-      var placed = [];
-      PLAY_ASSETS.map(function (k, j) {
-        var el = chart.getDatasetMeta(PLAY_ASSETS.length + j).data[0];
-        if (!el || !d.labels[k]) return null;
-        var x = el.x + (el.options ? el.options.radius : 10) + 5;
-        return { k: k, x: x, y: el.y, w: ctx.measureText(d.labels[k]).width };
-      }).filter(Boolean).sort(function (a, b) { return b.y - a.y; }).forEach(function (l) {
-        var clash = function (p) { return Math.abs(p.y - l.y) < 15 && l.x < p.x + p.w && p.x < l.x + l.w; };
-        while (placed.some(clash)) l.y -= 15;
-        placed.push(l);
-        ctx.lineWidth = 3; ctx.lineJoin = "round"; ctx.strokeStyle = d.halo;
-        ctx.strokeText(d.labels[l.k], l.x, l.y);
-        ctx.fillStyle = d.colors[l.k];
-        ctx.fillText(d.labels[l.k], l.x, l.y);
-      });
+      ctx.lineWidth = 3; ctx.lineJoin = "round"; ctx.strokeStyle = d.halo; ctx.strokeText(d.label, x, el.y);
+      ctx.fillStyle = d.color; ctx.fillText(d.label, x, el.y);
       ctx.restore();
     }
   };
 
   function buildPlayChart(pal) {
-    var trail = PLAY_ASSETS.map(function (k) {
-      return { type: "line", label: ASSETS[k].name + " trail", data: [], borderColor: pal.assets[k] + "55", backgroundColor: pal.assets[k] + "55", borderWidth: 1.5, pointRadius: 2, pointHoverRadius: 4, animation: false };
-    });
-    var bubbles = PLAY_ASSETS.map(function (k) {
-      return { type: "bubble", label: ASSETS[k].name, data: [], borderColor: pal.assets[k], backgroundColor: pal.assets[k] + "aa", borderWidth: 2 };
-    });
     charts.play = new Chart($("cPlay"), {
       type: "bubble",
-      data: { datasets: trail.concat(bubbles) },
+      data: { datasets: [
+        { type: "line", label: "Earlier starts", data: [], borderWidth: 1.5, pointRadius: 2.5, pointHoverRadius: 5, animation: false },
+        { type: "bubble", label: "Current start", data: [], borderWidth: 3 }
+      ] },
       plugins: [playPlugin],
       options: {
         responsive: true, maintainAspectRatio: false,
         animation: { duration: 300, easing: "linear" },
         interaction: { mode: "nearest", intersect: true },
-        layout: { padding: { top: 8, right: 70 } },
-        plugins: {
-          legend: { display: false },
-          tooltip: { filter: function (c) { return !!c.raw && !!c.raw.tip; }, callbacks: { title: function (items) { return items.length ? items[0].raw.title : ""; }, label: function (c) { return c.raw.tip; } } }
+        layout: { padding: { top: 8, right: 90 } },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } }, // the panel shows the numbers
+        onHover: function (e, els) {
+          var hover = els.length ? this.data.datasets[els[0].datasetIndex].data[els[0].index].step : null;
+          if (hover === play.hover) return;
+          play.hover = hover; drawPanel();
         },
+        onResize: function () { setTimeout(placePanel, 0); },
         scales: {
-          x: { type: "linear", title: { display: true, text: "Annualized return of the asset over the window", color: pal.muted }, ticks: { color: pal.muted, callback: function (v) { return v + "%"; } }, grid: { color: pal.grid } },
+          x: { type: "linear", title: { display: true, text: "Annualized return over the window", color: pal.muted }, ticks: { color: pal.muted, callback: function (v) { return v + "%"; } }, grid: { color: pal.grid } },
           y: { type: "logarithmic", title: { display: true, text: "Left at the end (log scale)", color: pal.muted }, grid: { color: pal.grid },
             ticks: { color: pal.muted, callback: function (v) { var m = v / Math.pow(10, Math.floor(Math.log10(v) + 1e-9)); return [1, 2, 5].some(function (t) { return Math.abs(m - t) < 1e-6; }) ? short(v) : null; } } }
         }
@@ -967,60 +951,82 @@ function simulate(o) {
     });
   }
 
-  function cardRow(k, v, sel, pal, o) {
-    var dot = '<i style="background:' + pal.assets[k] + '"></i><span class="pc-name">' + esc(ASSETS[k].name) + "</span>";
-    if (!v) {
-      return '<div class="pc-row muted">' + dot + '<span class="pc-val">—</span><span class="pc-sub">' +
-        (o.basis === "smoothed" ? "smoothed from " + monthLabel(ASSETS[k].smoothStart) : "data from " + monthLabel(ASSETS[k].first)) + "</span></div>";
+  // The panel: the numbers of the current start, or of the trail point under the pointer.
+  function drawPanel() {
+    var o = play.o, steps = play.steps, panel = $("playPanel");
+    if (!steps.length) {
+      panel.innerHTML = '<div class="pp-head">' + esc(ASSETS[o.asset].name) + '</div><div class="pp-note">No start leaves a full ' + o.years + "-year window before " + LAST_LABEL + ".</div>";
+      return;
     }
-    var end = v.depleted != null ? '<span class="bad">Ran out ' + monthLabel(v.depleted) + "</span>" : short(v.end);
-    return '<div class="pc-row' + (sel ? " sel" : "") + '">' + dot + '<span class="pc-val">' + end + '</span><span class="pc-sub">' +
-      pct(v.cagr) + "/yr · lowest " + short(v.lowest) + " · " + v.fromCash + " from cash, " + v.forced + " forced</span></div>";
+    var hovered = play.hover != null && play.hover !== play.idx, st = steps[hovered ? play.hover : play.idx];
+    var ran = st.depleted != null;
+    panel.innerHTML =
+      '<div class="pp-head"><i style="background:' + palette().assets[o.asset] + '"></i><span><b>' + esc(ASSETS[o.asset].name) + "</b>, starting " + monthLabel(st.start) + "</span>" +
+        (hovered ? '<span class="pp-tag">earlier start</span>' : "") + "</div>" +
+      '<div class="pp-sub">' + monthLabel(st.start) + " → " + monthLabel(st.start + o.years * 12 - 1) + " · " + o.years + " years</div>" +
+      '<div class="pp-big' + (ran ? " bad" : "") + '">' + (ran ? "Ran out " + monthLabel(st.depleted) : money(st.end)) +
+        "<small>" + (ran ? (years(st.depleted - st.start) + " in") : "left at the end") + "</small></div>" +
+      '<dl class="pp-grid">' +
+        "<dt>Return</dt><dd>" + pct(st.cagr) + " a year</dd>" +
+        "<dt>Withdrawn</dt><dd>" + money(st.withdrawn) + "</dd>" +
+        "<dt>Lowest</dt><dd>" + short(st.lowest) + " · " + monthLabel(st.lowestAt) + "</dd>" +
+        "<dt>Down months</dt><dd>" + st.fromCash + " from cash · " + st.forced + " forced</dd>" +
+      "</dl>" +
+      (play.nearest && !hovered ? '<div class="pp-note">Your start has no full ' + o.years + "-year window, so this shows the nearest one.</div>" : "");
+  }
+
+  // Default spot: top-left of the plot. A position the user dragged to is kept, as fractions of the box.
+  function placePanel() {
+    var panel = $("playPanel"), box = panel.parentElement, ch = charts.play, saved = null;
+    try { saved = JSON.parse(localStorage.getItem(PANEL_KEY)); } catch (e) {}
+    var x = saved ? saved.x * box.clientWidth : (ch ? ch.chartArea.left : 60) + 10;
+    var y = saved ? saved.y * box.clientHeight : (ch ? ch.chartArea.top : 8) + 10;
+    movePanel(x, y);
+  }
+  function movePanel(x, y) {
+    var panel = $("playPanel"), box = panel.parentElement;
+    panel.style.left = Math.max(0, Math.min(x, box.clientWidth - panel.offsetWidth)) + "px";
+    panel.style.top = Math.max(0, Math.min(y, box.clientHeight - panel.offsetHeight)) + "px";
+  }
+  function savePanel() {
+    var panel = $("playPanel"), box = panel.parentElement;
+    try { localStorage.setItem(PANEL_KEY, JSON.stringify({ x: panel.offsetLeft / box.clientWidth, y: panel.offsetTop / box.clientHeight })); } catch (e) {}
   }
 
   function drawStep() {
-    var ch = charts.play, o = play.o, steps = play.steps, pal = palette();
+    var ch = charts.play, o = play.o, steps = play.steps, pal = palette(), color = pal.assets[o.asset];
     $("playRange").max = Math.max(0, steps.length - 1);
     if (!steps.length) {
-      $("playCard").innerHTML = '<div class="pc-when">No start date leaves a full ' + o.years + "-year window before " + LAST_LABEL + ".</div>";
       $("playLabel").textContent = "";
-      ch.data.datasets.forEach(function (d) { d.data = []; }); ch.$play = null; ch.update(); return;
+      ch.data.datasets.forEach(function (d) { d.data = []; }); ch.$play = null; ch.update(); drawPanel(); return;
     }
     var idx = play.idx, st = steps[idx], endIdx = st.start + o.years * 12 - 1;
     $("playRange").value = idx;
     $("playLabel").textContent = monthLabel(st.start) + " – " + monthLabel(endIdx);
     var maxW = Math.max(1, o.years * 12 * o.spend), maxR = Math.max(10, Math.min(30, ch.width / 26));
-    function point(k, v, s) {
-      return { x: v.cagr * 100, y: Math.max(v.end, play.floor), r: Math.max(3, Math.sqrt(Math.min(1, v.withdrawn / maxW)) * maxR),
-        title: ASSETS[k].name + ", starting " + monthLabel(s),
-        tip: [v.depleted != null ? " Ran out " + monthLabel(v.depleted) : " Left at the end: " + money(v.end), " Return: " + pct(v.cagr) + " a year", " Withdrawn: " + money(v.withdrawn)] };
+    function point(s, k) {
+      return { x: s.cagr * 100, y: Math.max(s.end, play.floor), r: Math.max(3, Math.sqrt(Math.min(1, s.withdrawn / maxW)) * maxR), step: k };
     }
-    var labels = {};
-    PLAY_ASSETS.forEach(function (k, j) {
-      var v = st.assets[k], bubble = ch.data.datasets[PLAY_ASSETS.length + j];
-      bubble.data = v ? [point(k, v, st.start)] : [];
-      bubble.borderWidth = k === o.asset ? 3.5 : 1.5;
-      ch.data.datasets[j].data = $("playTrails").checked
-        ? steps.slice(0, idx + 1).filter(function (s2) { return s2.assets[k]; }).map(function (s2) { var p = point(k, s2.assets[k], s2.start); p.r = 2; return p; })
-        : [];
-      if (v) labels[k] = ASSETS[k].name + (v.depleted != null ? " · ran out " + yearOf(v.depleted) : "");
-    });
+    var trail = ch.data.datasets[0], bubble = ch.data.datasets[1];
+    bubble.data = [point(st, idx)];
+    bubble.borderColor = color; bubble.backgroundColor = color + "aa";
+    trail.data = $("playTrails").checked ? steps.slice(0, idx + 1).map(point) : [];
+    trail.borderColor = color + "55"; trail.backgroundColor = color + "88";
     ch.options.scales.x.min = play.xMin; ch.options.scales.x.max = play.xMax;
     ch.options.scales.y.min = play.floor * 0.35; ch.options.scales.y.max = play.yMax;
     ch.options.animation.duration = play.anim;
-    ch.$play = { stepLabel: monthLabel(st.start), endLabel: monthLabel(endIdx), floor: play.floor, labels: labels, colors: pal.assets, bad: pal.bad,
-      halo: document.documentElement.classList.contains("dark") ? "#16161a" : "#ffffff",
-      watermark: document.documentElement.classList.contains("dark") ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)" };
+    var dark = document.documentElement.classList.contains("dark");
+    ch.$play = {
+      stepLabel: monthLabel(st.start), endLabel: monthLabel(endIdx), floor: play.floor, bad: pal.bad, color: color,
+      label: ASSETS[o.asset].name + (st.depleted != null ? " · ran out " + yearOf(st.depleted) : ""),
+      halo: dark ? "#16161a" : "#ffffff", watermark: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)"
+    };
     ch.update();
-
-    // At-a-glance card, top-left: the selected asset first, then the others.
-    var order = [o.asset].concat(PLAY_ASSETS.filter(function (k) { return k !== o.asset; }));
-    $("playCard").innerHTML = '<div class="pc-when">Start <b>' + monthLabel(st.start) + "</b> → " + monthLabel(endIdx) + " · " + o.years + " years" +
-      (play.nearest ? '<br><span class="bad">Your start has no full ' + o.years + "-year window, so this shows the nearest one.</span>" : "") + "</div>" +
-      order.map(function (k) { return cardRow(k, st.assets[k], k === o.asset, pal, o); }).join("");
+    play.hover = null;
+    drawPanel();
   }
 
-  // Called by render(): the playback follows the page's start date.
+  // Called by render() with the run's start: the playback follows it.
   function renderPlayback(o) {
     play.o = o;
     var steps = playSteps(o);
@@ -1053,12 +1059,29 @@ function simulate(o) {
   $("playBtn").addEventListener("click", function () { if (play.timer) stopPlay(); else startPlay(); });
   $("playRange").addEventListener("input", function () { stopPlay(); goToStep(+$("playRange").value, 250); });
   $("playTrails").addEventListener("change", drawStep);
+  $("cPlay").addEventListener("mouseleave", function () { if (play.hover != null) { play.hover = null; drawPanel(); } });
+  (function () {
+    // Drag the panel with a mouse, pen or finger; arrow keys move it too; double-click puts it back.
+    var panel = $("playPanel"), drag = null;
+    panel.addEventListener("pointerdown", function (e) {
+      drag = { dx: e.clientX - panel.offsetLeft, dy: e.clientY - panel.offsetTop };
+      panel.setPointerCapture(e.pointerId); panel.classList.add("dragging");
+    });
+    panel.addEventListener("pointermove", function (e) { if (drag) movePanel(e.clientX - drag.dx, e.clientY - drag.dy); });
+    panel.addEventListener("pointerup", function () { if (!drag) return; drag = null; panel.classList.remove("dragging"); savePanel(); });
+    panel.addEventListener("dblclick", function () { try { localStorage.removeItem(PANEL_KEY); } catch (e) {} placePanel(); });
+    panel.addEventListener("keydown", function (e) {
+      var step = e.shiftKey ? 40 : 10, d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+      if (!d) return;
+      e.preventDefault(); movePanel(panel.offsetLeft + d[0], panel.offsetTop + d[1]); savePanel();
+    });
+  })();
 
   function setTheme(dark) {
     document.documentElement.classList.toggle("dark", dark);
     $("theme").textContent = dark ? "Light" : "Dark";
     $("theme").setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
-    buildCharts(); render();
+    buildCharts(); render(); placePanel();
   }
   $("theme").addEventListener("click", function () {
     var dark = !document.documentElement.classList.contains("dark");
@@ -1099,6 +1122,7 @@ function simulate(o) {
   $("theme").textContent = document.documentElement.classList.contains("dark") ? "Light" : "Dark";
   buildCharts();
   render();
+  placePanel();
 })();
 </script>
 </body>
