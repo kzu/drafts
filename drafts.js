@@ -2,7 +2,7 @@ window.DRAFTS = {
   "files": [
     {
       "path": "brk-withdrawal-simulator.html",
-      "title": "Living off BRK.A or the S&P 500 — Withdrawal & Cash Buffer Simulator",
+      "title": "Living off Berkshire Hathaway — Withdrawal & Cash Buffer Simulator",
       "headings": [
         {
           "level": 1,
