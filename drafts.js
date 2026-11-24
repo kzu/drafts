@@ -14,6 +14,10 @@ window.DRAFTS = {
         },
         {
           "level": 2,
+          "text": "Every start date, played back"
+        },
+        {
+          "level": 2,
           "text": "Portfolio over time"
         },
         {
