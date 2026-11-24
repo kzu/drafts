@@ -370,6 +370,44 @@ window.DRAFTS = {
       ]
     },
     {
+      "path": "strc-simulator.html",
+      "title": "STRC simulator — Stretch preferred at $100 with daily dividends",
+      "headings": [
+        {
+          "level": 1,
+          "text": "STRC simulator: Stretch preferred with daily dividends"
+        },
+        {
+          "level": 2,
+          "text": "Growth of the investment"
+        },
+        {
+          "level": 2,
+          "text": "Dividends earned each month"
+        },
+        {
+          "level": 2,
+          "text": "Year by year"
+        },
+        {
+          "level": 2,
+          "text": "How it works"
+        },
+        {
+          "level": 3,
+          "text": "The rules"
+        },
+        {
+          "level": 3,
+          "text": "Assumptions and limits"
+        },
+        {
+          "level": 3,
+          "text": "Data"
+        }
+      ]
+    },
+    {
       "path": "chebot/comparison.html",
       "title": "CheBot vs CodeAlta vs Claude Cowork",
       "headings": [
