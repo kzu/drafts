@@ -56,7 +56,7 @@
       -webkit-font-smoothing: antialiased;
     }
     a { color: var(--accent); }
-    .wrap { max-width: 1280px; margin: 0 auto; padding: 72px 20px 64px; } /* the top leaves room for the floating playback bar */
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 20px 96px; } /* the bottom leaves room for the floating playback bar */
     header.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
     .top-tools { display: flex; gap: 6px; flex: none; }
     header.top h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.02em; }
@@ -82,7 +82,7 @@
     .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
     .card h2 { font-size: 1rem; margin: 0 0 4px; letter-spacing: -0.01em; }
     /* Inputs panel: docked in the layout (the default), collapsed to a rail, closed, or floating over the page. */
-    #inputs { position: sticky; top: 68px; max-height: calc(100vh - 84px); overflow: auto; scrollbar-width: thin; }
+    #inputs { position: sticky; top: 16px; max-height: calc(100vh - 86px); overflow: auto; scrollbar-width: thin; }
     .inputs-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
     .inputs-head h2 { margin: 0; }
     .inputs-tools { display: flex; gap: 2px; margin: -4px -8px -4px 0; }
@@ -94,7 +94,7 @@
     html[data-inputs=closed] #gear, html[data-inputs=floating] #gear { display: inline-grid; }
     html[data-inputs=floating] #gear { background: var(--muted); }
     html[data-inputs=floating] #inputs {
-      position: fixed; z-index: 40; width: min(300px, calc(100vw - 16px)); top: 72px; right: 16px; max-height: calc(100vh - 88px);
+      position: fixed; z-index: 40; width: min(300px, calc(100vw - 16px)); top: 16px; right: 16px; max-height: calc(100vh - 86px);
       box-shadow: 0 12px 36px color-mix(in srgb, var(--fg) 20%, transparent);
     }
     html[data-inputs=floating] .inputs-head { cursor: grab; touch-action: none; user-select: none; }
@@ -199,9 +199,9 @@
     .play-controls input[type=range] { flex: 1; min-width: 160px; }
     #playLabel { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 150px; }
     #playBtn { min-width: 88px; }
-    /* Floating playback bar at the top center, in sync with the controls under the chart. */
+    /* Floating playback bar at the bottom center, in sync with the controls under the chart. */
     .play-float {
-      position: fixed; z-index: 50; top: 12px; left: 50%; transform: translateX(-50%);
+      position: fixed; z-index: 50; bottom: 12px; left: 50%; transform: translateX(-50%);
       width: min(560px, calc(100vw - 24px)); display: flex; align-items: center; gap: 12px; padding: 5px 16px 5px 5px;
       border-radius: 999px; border: 1px solid var(--border); background: color-mix(in srgb, var(--card) 90%, transparent);
       box-shadow: 0 6px 20px color-mix(in srgb, var(--fg) 14%, transparent); backdrop-filter: blur(8px);
@@ -353,7 +353,7 @@
       <div class="charts">
         <div class="card wide">
           <h2>Every start date, played back</h2>
-          <p class="sub">Press Play to start the same plan with <span class="assetName">BRK.A</span> one year later at each step and run it for the chosen period. The trail shows earlier starts; the panel shows the numbers for the current start, or for the trail point you point at, and moves to the other corner when the bubble comes under it. The bar at the top of the page plays it back from anywhere on the page.</p>
+          <p class="sub">Press Play to start the same plan with <span class="assetName">BRK.A</span> one year later at each step and run it for the chosen period. The trail shows earlier starts; the panel shows the numbers for the current start, or for the trail point you point at, and moves to the other corner when the bubble comes under it. The bar at the bottom of the screen plays it back from anywhere on the page.</p>
           <ul class="encoding">
             <li><b>Across:</b> the annualized return over that window. <b>Up:</b> what’s left at the end (log scale); on the dashed line, the money ran out. <b>Size:</b> how much was withdrawn, so the bubble shrinks when the money runs out early.</li>
           </ul>
@@ -1174,7 +1174,7 @@ function simulate(o) {
   $("cPlay").addEventListener("mouseleave", function () { if (play.hover != null) { play.hover = null; drawPanel(); } });
 
   // ----- inputs panel: docked, collapsed to a rail, closed (the gear brings it back floating), or floating (dragged by its header, the pin docks it).
-  var INPUTS_KEY = "brkSim.inputs", FLOAT_KEY = "brkSim.inputsAt";
+  var INPUTS_KEY = "brkSim.inputs", FLOAT_KEY = "brkSim.inputsAt", BAR = 70; // BAR: room kept free above the bottom edge for the playback bar
   function inputsState() { return document.documentElement.getAttribute("data-inputs") || "docked"; }
   function setInputs(state) {
     document.documentElement.setAttribute("data-inputs", state);
@@ -1189,15 +1189,15 @@ function simulate(o) {
       if (at) moveInputs(at.x, at.y);
       else { // first time: at the right edge, below the gear and theme buttons when they are in view
         el.style.left = el.style.right = "";
-        var top = Math.max(72, $("gear").getBoundingClientRect().bottom + 10);
-        el.style.top = top + "px"; el.style.maxHeight = (innerHeight - top - 12) + "px";
+        var top = Math.max(16, $("gear").getBoundingClientRect().bottom + 10);
+        el.style.top = top + "px"; el.style.maxHeight = (innerHeight - top - BAR) + "px";
       }
     } else el.style.left = el.style.top = el.style.right = el.style.maxHeight = "";
   }
   function moveInputs(x, y) {
     var el = $("inputs");
-    x = Math.max(8, Math.min(x, innerWidth - el.offsetWidth - 8)); y = Math.max(8, Math.min(y, innerHeight - 60));
-    el.style.left = x + "px"; el.style.top = y + "px"; el.style.right = "auto"; el.style.maxHeight = (innerHeight - y - 12) + "px";
+    x = Math.max(8, Math.min(x, innerWidth - el.offsetWidth - 8)); y = Math.max(8, Math.min(y, innerHeight - BAR - 50));
+    el.style.left = x + "px"; el.style.top = y + "px"; el.style.right = "auto"; el.style.maxHeight = (innerHeight - y - BAR) + "px";
   }
   $("inCollapse").addEventListener("click", function () { setInputs(inputsState() === "collapsed" ? "docked" : "collapsed"); });
   $("inClose").addEventListener("click", function () { setInputs("closed"); });
