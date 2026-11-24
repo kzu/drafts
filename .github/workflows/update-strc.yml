@@ -1,0 +1,38 @@
+name: Refresh STRC data
+
+on:
+  schedule:
+    - cron: "30 21 * * 1-5" # weekdays after the US close (4 p.m. New York is 20:00 or 21:00 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-strc
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Fetch STRC prices and dividends
+        run: python3 .github/scripts/update-strc.py
+
+      - name: Commit the data
+        run: |
+          git add strc-simulator.html
+          if git diff --cached --quiet; then
+            echo "STRC data is already up to date."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "Refresh STRC data"
+          git pull --rebase origin main
+          git push origin HEAD:main
