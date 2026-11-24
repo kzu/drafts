@@ -21,7 +21,7 @@ jobs:
         with:
           ref: main
 
-      - name: Fetch STRC trading days and dividends
+      - name: Fetch the latest STRC rate
         run: python3 .github/scripts/update-strc.py
 
       - name: Commit the data

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>STRC simulator — Stretch preferred at $100 with daily dividends</title>
-  <meta name="description" content="Simulate an investment in Strategy's STRC (Stretch) preferred stock at its $100 stated amount: real dividends since its IPO, then daily dividends at the current rate, reinvested or taken as cash.">
+  <meta name="description" content="Simulate an investment in Strategy's STRC (Stretch) preferred stock at its $100 stated amount, with monthly additions and daily dividends at the current rate, reinvested or taken as cash.">
   <script>
     (function () {
       try {
@@ -18,12 +18,12 @@
     :root {
       --radius: 0.75rem;
       --bg: #ffffff; --fg: #18181b; --card: #ffffff; --muted: #f4f4f5; --muted-fg: #71717a; --border: #e4e4e7;
-      --accent: #ea580c; --good: #059669; --bad: #dc2626;
+      --accent: #ea580c; --good: #059669;
       color-scheme: light;
     }
     html.dark {
       --bg: #0b0b0d; --fg: #fafafa; --card: #16161a; --muted: #232328; --muted-fg: #a1a1aa; --border: #2c2c33;
-      --accent: #fb923c; --good: #34d399; --bad: #f87171;
+      --accent: #fb923c; --good: #34d399;
       color-scheme: dark;
     }
     * { box-sizing: border-box; }
@@ -48,7 +48,7 @@
     /* Inputs: a bar across the top that stays in view while the cards and chart below change. */
     .bar {
       position: sticky; top: 0; z-index: 30; margin: 0 0 16px; padding: 12px 18px;
-      display: grid; grid-template-columns: minmax(130px, 0.8fr) minmax(220px, 1.6fr) minmax(170px, 1.2fr) minmax(160px, 1fr) minmax(170px, 1fr);
+      display: grid; grid-template-columns: repeat(2, minmax(140px, 1fr)) minmax(170px, 1.3fr) repeat(2, minmax(160px, 1fr));
       gap: 10px 20px; align-items: start; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
     }
     @media (max-width: 1050px) { .bar { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -59,16 +59,11 @@
     .field[hidden] { display: none; }
     .unit { position: relative; }
     .unit span { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted-fg); pointer-events: none; }
-    input[type=number], input[type=date] {
-      width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px;
+    input[type=number] {
+      width: 100%; padding: 6px 10px 6px 22px; border: 1px solid var(--border); border-radius: 8px;
       background: var(--bg); color: var(--fg); font: inherit; font-variant-numeric: tabular-nums;
     }
-    .unit input { padding-left: 22px; }
     input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-    .when { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-    .when input { flex: 1 1 130px; width: auto; }
-    .chip { border: 1px solid var(--border); background: var(--bg); color: var(--muted-fg); border-radius: 999px; padding: 1px 9px; font: inherit; font-size: 0.75rem; cursor: pointer; }
-    .chip:hover { color: var(--fg); background: var(--muted); }
     input[type=range] { width: 100%; accent-color: var(--accent); margin: 8px 0 0; }
     .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .seg input { position: absolute; opacity: 0; pointer-events: none; }
@@ -103,9 +98,6 @@
     th:first-child, td:first-child { text-align: left; }
     thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-fg); font-weight: 600; background: var(--card); }
     tbody tr:hover { background: var(--muted); }
-    tr.proj td { color: var(--muted-fg); }
-    tr.proj td:first-child::after { content: " (projected)"; font-size: 0.75rem; }
-    tr.part td:first-child::after { content: " (partly projected)"; font-size: 0.75rem; color: var(--muted-fg); }
     .notes h3 { font-size: 0.95rem; margin: 16px 0 6px; }
     .notes ul { margin: 0; padding-left: 20px; }
     .notes li { margin: 4px 0; }
@@ -128,18 +120,14 @@
   <section class="card bar" id="inputs" aria-label="Inputs">
     <div class="field">
       <label for="initial">Initial investment</label>
-      <div class="unit"><span>$</span><input autocomplete="off" id="initial" type="number" min="100" step="1000" value="100000" inputmode="numeric"></div>
+      <div class="unit"><span>$</span><input autocomplete="off" id="initial" type="number" min="0" step="1000" value="100000" inputmode="numeric"></div>
       <div class="hint" id="initialHint"></div>
     </div>
 
     <div class="field">
-      <label for="start">Buy on</label>
-      <div class="when">
-        <input autocomplete="off" id="start" type="date">
-        <button type="button" class="chip" data-start="ipo">IPO</button>
-        <button type="button" class="chip" data-start="last">Today</button>
-      </div>
-      <div class="hint" id="startHint"></div>
+      <label for="monthly">Monthly investment</label>
+      <div class="unit"><span>$</span><input autocomplete="off" id="monthly" type="number" min="0" step="100" value="0" inputmode="numeric"></div>
+      <div class="hint" id="monthlyHint"></div>
     </div>
 
     <div class="field">
@@ -192,7 +180,7 @@
     <p class="sub" id="tableSub"></p>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Year</th><th>Rate</th><th>Dividends</th><th id="thUse">Shares bought</th><th>Shares at year end</th><th>Position</th><th>Total</th></tr></thead>
+        <thead><tr><th>Year</th><th>Added</th><th>Dividends</th><th id="thUse">Shares bought</th><th>Shares at year end</th><th>Position</th><th>Total</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
@@ -202,12 +190,12 @@
     <h2>How it works</h2>
     <h3>The rules</h3>
     <ul>
-      <li>Every share is bought at $100, STRC’s stated amount, and valued at $100: market prices, past or future, are ignored. You buy on the chosen day (the next trading day when markets were closed), and the run lasts the chosen number of years from there.</li>
-      <li>Up to the latest data (<span class="lastData"></span>) the run gets every dividend Strategy actually declared, by ex-dividend date. After it, every month pays the dividend of the latest declared month (<span class="rateNow"></span>), daily.</li>
-      <li>A dividend goes to the shares held before its ex-dividend date: shares bought on a day earn from the next ex-dividend date on. STRC settles in one business day, so the ex-dividend date is the record date.</li>
-      <li><strong>Daily dividends</strong>, as Strategy declares them: each month pays a twelfth of the annual rate on the $100 stated amount (12% pays $1.00 a share), spread over its calendar days, weekends and holidays included, so the running total is cut to the cent and the last day takes the rest. At 12% in a 30-day month a share gets $0.03 most days and $0.04 every third day. A weekend or holiday day goes ex-dividend with the business day before it, and each day is paid the next business day.</li>
-      <li><strong>Reinvesting</strong> buys STRC at $100 on the payment day: fractional shares for the whole amount, or whole shares only, with the rest waiting in cash that earns nothing until it reaches $100. <strong>Taking cash</strong> keeps the shares as they are; the total adds up the position and the cash taken out. A dividend earned but not paid by the end of the run counts in the total.</li>
-      <li>Past payment days: the next business day after the ex-dividend date, except the monthly dividends through June 2026, paid on the last business day of the month.</li>
+      <li>Every share is bought at $100, STRC’s stated amount, and valued at $100: market prices are ignored. The initial investment buys shares at the latest close (<span class="startDay"></span>), and the run lasts the chosen number of years from there.</li>
+      <li>The monthly investment buys more shares on the same day of every following month (the next weekday when it falls on a weekend).</li>
+      <li>Every month pays the dividend of the latest declared month (<span class="rateNow"></span>), daily. A dividend goes to the shares held before its ex-dividend date: shares bought on a day earn from the next ex-dividend date on. STRC settles in one business day, so the ex-dividend date is the record date.</li>
+      <li><strong>Daily dividends</strong>, as Strategy declares them: each month pays a twelfth of the annual rate on the $100 stated amount (12% pays $1.00 a share), spread over its calendar days, weekends and holidays included, so the running total is cut to the cent and the last day takes the rest. At 12% in a 30-day month a share gets $0.03 most days and $0.04 every third day. A weekend day goes ex-dividend with the Friday before it, and each day is paid the next business day.</li>
+      <li><strong>Reinvesting</strong> buys STRC at $100 on the payment day: fractional shares for the whole amount, or whole shares only, with the rest, of the dividends and of the monthly investment, waiting in cash that earns nothing until it reaches $100. <strong>Taking cash</strong> keeps the dividends out; the total adds up the position and the cash taken out. A dividend earned but not paid by the end of the run counts in the total.</li>
+      <li>The annualized return is the rate that, compounded daily over the time each dollar was invested, turns the money put in into what you have at the end; dividends taken as cash count on the day you get them.</li>
     </ul>
     <h3>Assumptions and limits</h3>
     <ul>
@@ -215,16 +203,16 @@
       <li>STRC trades above and below $100, so buying or selling at market prices gives a different result. Strategy adjusts the rate every month to keep it near $100.</li>
       <li>The rate is not guaranteed: Strategy’s board sets it every month and may lower it, and it can suspend dividends. STRC is not backed by Strategy’s bitcoin; it has a preferred claim on what is left of the company.</li>
       <li>Strategy can redeem STRC at $101 plus accrued dividends; a projection running for decades assumes it never does.</li>
-      <li>Weekends are the only days markets are assumed closed after the latest data.</li>
+      <li>Weekends are the only days markets are assumed closed.</li>
     </ul>
     <h3>Data</h3>
-    <p class="muted">Trading days and dividends by ex-dividend date from Yahoo Finance, from STRC’s first trading day (July 30, 2025) through <span class="lastData"></span>, embedded in this page. A GitHub workflow refreshes them every weekday after the close, so the rate and dividends are at most a day old. Monthly rates from Strategy’s 8-K filings through October 2026; later months are worked out from the daily dividends paid. This is an illustration, not advice.</p>
+    <p class="muted">The rate of the latest declared month comes from STRC’s dividends on Yahoo Finance, worked out from the daily dividends paid; earlier months are in Strategy’s 8-K filings. A GitHub workflow refreshes it every weekday after the close, so it is at most a day old. This is an illustration, not advice.</p>
   </section>
 </div>
 
 <script>
 // --- data start (written by .github/scripts/update-strc.py)
-var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-01","2025-10-02","2025-10-03","2025-10-06","2025-10-07","2025-10-08","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-02","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-06","2026-04-07","2026-04-08","2026-04-09","2026-04-10","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-20","2026-04-21","2026-04-22","2026-04-23","2026-04-24","2026-04-27","2026-04-28","2026-04-29","2026-04-30","2026-05-01","2026-05-04","2026-05-05","2026-05-06","2026-05-07","2026-05-08","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-18","2026-05-19","2026-05-20","2026-05-21","2026-05-22","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-20","2026-07-21","2026-07-22","2026-07-23","2026-07-24","2026-07-27","2026-07-28","2026-07-29","2026-07-30","2026-07-31","2026-08-03","2026-08-04","2026-08-05","2026-08-06","2026-08-07","2026-08-10","2026-08-11","2026-08-12","2026-08-13","2026-08-14","2026-08-17","2026-08-18","2026-08-19","2026-08-20","2026-08-21","2026-08-24","2026-08-25","2026-08-26","2026-08-27","2026-08-28","2026-08-31","2026-09-01","2026-09-02","2026-09-03","2026-09-04","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-14","2026-09-15","2026-09-16","2026-09-17","2026-09-18","2026-09-21","2026-09-22","2026-09-23","2026-09-24","2026-09-25","2026-09-28","2026-09-29","2026-09-30","2026-10-01","2026-10-02","2026-10-05","2026-10-06","2026-10-07","2026-10-08","2026-10-09","2026-10-12","2026-10-13","2026-10-14","2026-10-15","2026-10-16","2026-10-19","2026-10-20","2026-10-21","2026-10-22","2026-10-23","2026-10-26","2026-10-27","2026-10-28","2026-10-29","2026-10-30","2026-11-02","2026-11-03","2026-11-04","2026-11-05","2026-11-06","2026-11-09","2026-11-10","2026-11-11","2026-11-12","2026-11-13","2026-11-16","2026-11-17","2026-11-18","2026-11-19","2026-11-20","2026-11-23","2026-11-24"],"divs":[["2025-08-15",0.8],["2025-09-15",0.833],["2025-10-15",0.854],["2025-11-14",0.875],["2025-12-15",0.896],["2026-01-15",0.917],["2026-02-13",0.938],["2026-03-13",0.958],["2026-04-15",0.958],["2026-05-15",0.958],["2026-06-15",0.958],["2026-06-30",0.479],["2026-07-15",0.5],["2026-07-31",0.5],["2026-08-14",0.5],["2026-08-31",0.5],["2026-09-15",0.5],["2026-09-30",0.5],["2026-10-15",0.5],["2026-10-30",0.03],["2026-11-02",0.03],["2026-11-03",0.04],["2026-11-04",0.03],["2026-11-05",0.03],["2026-11-06",0.1],["2026-11-09",0.04],["2026-11-10",0.06],["2026-11-12",0.04],["2026-11-13",0.1],["2026-11-16",0.03],["2026-11-17",0.03],["2026-11-18",0.04],["2026-11-19",0.03],["2026-11-20",0.1],["2026-11-23",0.03]],"rates":{"2025-08":9.0,"2025-09":10.0,"2025-10":10.25,"2025-11":10.5,"2025-12":10.75,"2026-01":11.0,"2026-02":11.25,"2026-03":11.5,"2026-04":11.5,"2026-05":11.5,"2026-06":11.5,"2026-07":12.0,"2026-08":12.0,"2026-09":12.0,"2026-10":12.0,"2026-11":12.0}};
+var DATA = {"updated":"2026-11-24","month":"2026-11","rate":12.0};
 // --- data end
 
 (function () {
@@ -240,94 +228,90 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
   function ymd(n) { var d = new Date(n * DAY); return { y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate(), w: d.getUTCDay() }; }
   function monthKey(n) { return iso(n).slice(0, 7); }
   function daysIn(y, m) { return new Date(Date.UTC(y, m + 1, 0)).getUTCDate(); }
-  function lastOfMonth(n) { var p = ymd(n); return Date.UTC(p.y, p.m + 1, 0) / DAY; }
-  function addYears(n, k) { var p = ymd(n); return Date.UTC(p.y + k, p.m, Math.min(p.d, daysIn(p.y + k, p.m))) / DAY; }
+  function addMonths(n, k) { var p = ymd(n); return Date.UTC(p.y, p.m + k, Math.min(p.d, daysIn(p.y, p.m + k))) / DAY; }
   function dateLabel(n) { var p = ymd(n); return MONTHS[p.m] + " " + p.d + ", " + p.y; }
   function longLabel(n) { return WEEKDAYS[ymd(n).w] + ", " + dateLabel(n); }
   function monthLabel(key) { var p = key.split("-"); return MONTHS[+p[1] - 1] + " " + p[0]; }
   function fullMonth(key) { var p = key.split("-"); return FULL[+p[1] - 1] + " " + p[0]; }
-
-  // ----- trading calendar: the days in the data, then weekdays
-  var FIRST_DAY = toDay(DATA.dates[0]), LAST_DAY = toDay(DATA.dates[DATA.dates.length - 1]);
-  var traded = {};
-  DATA.dates.forEach(function (s) { traded[toDay(s)] = true; });
   function isWeekend(n) { var w = ymd(n).w; return w === 0 || w === 6; }
-  function isTrading(n) { return n <= LAST_DAY ? !!traded[n] : !isWeekend(n); }
-  function nextTrading(n) { do n++; while (!isTrading(n)); return n; }
-  function onOrAfterTrading(n) { while (!isTrading(n)) n++; return n; }
-  function onOrBeforeTrading(n) { while (!isTrading(n)) n--; return n; }
+  function nextWeekday(n) { do n++; while (isWeekend(n)); return n; }
+  function onOrAfterWeekday(n) { while (isWeekend(n)) n++; return n; }
+  function onOrBeforeWeekday(n) { while (isWeekend(n)) n--; return n; }
 
-  // ----- rates: declared, then the latest declared one for every later month
-  var RATE_KEYS = Object.keys(DATA.rates).sort();
-  var LATEST_KEY = RATE_KEYS[RATE_KEYS.length - 1], LATEST_RATE = DATA.rates[LATEST_KEY];
-  function rateOf(key) { return key > LATEST_KEY ? LATEST_RATE : DATA.rates[key]; }
+  // ----- the run starts at the latest close and every month pays the latest declared rate
+  var START = toDay(DATA.updated), RATE = DATA.rate, MONTHLY = RATE / 12; // MONTHLY: dollars a share a month
 
-  // Dividends actually declared. Monthly ones (ex-dividend through mid-June 2026) were paid at the month's end, later ones the next business day.
-  var MONTHLY_UNTIL = toDay("2026-06-30");
-  var HISTORY = DATA.divs.map(function (x) {
-    var ex = toDay(x[0]);
-    return { ex: ex, pay: ex < MONTHLY_UNTIL ? onOrAfterTrading(lastOfMonth(ex)) : nextTrading(ex), amount: x[1] };
-  });
-  // The last listed ex-dividend date covers the record dates up to the next business day; the projection starts there.
-  var PROJ_FROM = nextTrading(HISTORY[HISTORY.length - 1].ex);
+  // Per-share dividend of day d of a month: the running total is cut to the cent, and the last day takes the rest.
+  function cut(days, d) { return Math.floor(MONTHLY * d / days * 100 + 1e-6); }
+  function dailyAmount(days, d) { return d === days ? MONTHLY - cut(days, d - 1) / 100 : (cut(days, d) - cut(days, d - 1)) / 100; }
 
-  // Per-share dividend of day d of a month paying `monthly` dollars a share: the running total is cut to the cent, and the last day takes the rest.
-  function cut(monthly, days, d) { return Math.floor(monthly * d / days * 100 + 1e-6); }
-  function dailyAmount(monthly, days, d) { return d === days ? monthly - cut(monthly, days, d - 1) / 100 : (cut(monthly, days, d) - cut(monthly, days, d - 1)) / 100; }
-
-  var projCache = {};
-  // Daily dividends after the data, through `end`.
-  function projected(end) {
-    if (projCache[end]) return projCache[end];
+  var divCache = {};
+  // Daily dividends that shares bought at the START close earn, through `end`.
+  function dividends(end) {
+    if (divCache[end]) return divCache[end];
     var out = [];
-    for (var n = PROJ_FROM; n <= end; n++) {
-      var p = ymd(n), ex = onOrBeforeTrading(n);
-      out.push({ ex: ex, pay: nextTrading(ex), amount: dailyAmount(rateOf(monthKey(n)) / 12, daysIn(p.y, p.m), p.d) });
+    for (var n = START + 1; n <= end; n++) {
+      var p = ymd(n), ex = onOrBeforeWeekday(n);
+      if (ex > START) out.push({ ex: ex, pay: nextWeekday(ex), amount: dailyAmount(daysIn(p.y, p.m), p.d) });
     }
-    return (projCache[end] = out);
+    return (divCache[end] = out);
   }
 
-  // o: { start, end (days), initial, reinvest, fractional }. Shares are bought and valued at PAR.
+  // o: { end (day), years, initial, monthly, reinvest, fractional }. Shares are bought and valued at PAR.
   function simulate(o) {
     var actions = [];
-    HISTORY.concat(projected(o.end)).forEach(function (e) {
-      if (e.ex <= o.start) return;
+    dividends(o.end).forEach(function (e) {
       e = Object.assign({}, e);
       actions.push({ day: e.ex, kind: 0, e: e }, { day: e.pay, kind: 1, e: e });
     });
+    if (o.monthly > 0) for (var k = 1, d; (d = onOrAfterWeekday(addMonths(START, k))) <= o.end; k++) actions.push({ day: d, kind: 2 });
     actions.sort(function (a, b) { return a.day - b.day || a.kind - b.kind; });
-    var whole = o.reinvest && !o.fractional;
-    var shares = whole ? Math.floor(o.initial / PAR) : o.initial / PAR;
-    var cash = o.initial - shares * PAR, taken = 0, received = 0, bought = 0, payments = 0;
-    var startShares = shares, income = {}, samples = [], years = [], yearDivs = 0, yearBought = 0;
-    var span = o.end - o.start, step = span <= 1100 ? 1 : span <= 4000 ? 3 : 7;
+
+    var whole = o.reinvest && !o.fractional, shares = 0, cash = 0;
+    function buy(amount) {
+      if (!whole) { shares += amount / PAR; return amount / PAR; }
+      cash += amount; var n = Math.floor(cash / PAR + 1e-9); shares += n; cash -= n * PAR; return n;
+    }
+    buy(o.initial);
+    var startShares = shares, invested = o.initial, flows = [{ t: START, v: o.initial }];
+    var taken = 0, received = 0, bought = 0, monthlyShares = 0, payments = 0;
+    var income = {}, samples = [], years = [], yearAdded = o.initial, yearDivs = 0, yearBought = 0;
+    var span = o.end - START, step = span <= 1100 ? 1 : span <= 4000 ? 3 : 7;
     var a = 0;
-    for (var n = o.start; n <= o.end; n++) {
+    for (var n = START; n <= o.end; n++) {
       for (; a < actions.length && actions[a].day <= n; a++) {
         var act = actions[a], e = act.e;
+        if (act.kind === 2) { monthlyShares += buy(o.monthly); invested += o.monthly; yearAdded += o.monthly; flows.push({ t: n, v: o.monthly }); continue; }
         if (act.kind === 0) { e.owed = shares * e.amount; continue; }
         var amt = e.owed;
         if (!amt) continue;
         e.owed = 0; received += amt; yearDivs += amt; payments++;
         var mk = monthKey(e.ex); income[mk] = (income[mk] || 0) + amt; // by the month it was earned
-        if (!o.reinvest) taken += amt;
-        else if (!whole) { shares += amt / PAR; bought += amt / PAR; yearBought += amt / PAR; }
-        else { cash += amt; var buy = Math.floor(cash / PAR + 1e-9); shares += buy; bought += buy; yearBought += buy; cash -= buy * PAR; }
+        if (o.reinvest) { var got = buy(amt); bought += got; yearBought += got; }
+        else { taken += amt; flows.push({ t: n, v: -amt }); } // cash back to you
       }
       var position = shares * PAR + cash;
-      if ((n - o.start) % step === 0 || n === o.end) samples.push({ x: n, position: position, total: position + taken });
+      if ((n - START) % step === 0 || n === o.end) samples.push({ x: n, position: position, total: position + taken, invested: invested });
       var p = ymd(n);
       if ((p.m === 11 && p.d === 31) || n === o.end) {
-        years.push({ year: p.y, day: n, divs: yearDivs, bought: yearBought, shares: shares, position: position, total: position + taken });
-        yearDivs = 0; yearBought = 0;
+        years.push({ year: p.y, added: yearAdded, divs: yearDivs, bought: yearBought, shares: shares, position: position, total: position + taken });
+        yearAdded = 0; yearDivs = 0; yearBought = 0;
       }
     }
     // Dividends owed on an ex-dividend date in the run but paid after it.
     var pending = 0;
     for (; a < actions.length; a++) if (actions[a].kind === 1) pending += actions[a].e.owed || 0;
-    var final = shares * PAR + cash;
-    return { startShares: startShares, shares: shares, taken: taken, received: received, pending: pending, bought: bought, payments: payments,
-      position: final, total: final + taken + pending, income: income, samples: samples, years: years };
+    var final = shares * PAR + cash, total = final + taken + pending;
+    return { startShares: startShares, monthlyShares: monthlyShares, shares: shares, invested: invested, taken: taken, received: received, pending: pending,
+      bought: bought, payments: payments, total: total, rate: annualized(flows, o.end, final + pending), income: income, samples: samples, years: years };
+  }
+
+  // Annual rate r, compounded daily, at which the money put in (flows: positive in, negative back out) grows to `value` at `end`.
+  function annualized(flows, end, value) {
+    function surplus(r) { var daily = Math.log(1 + r / 365); return flows.reduce(function (s, f) { return s - f.v * Math.exp(daily * (end - f.t)); }, value); }
+    var lo = -0.99, hi = 5;
+    for (var i = 0; i < 100; i++) { var mid = (lo + hi) / 2; if (surplus(mid) > 0) lo = mid; else hi = mid; }
+    return Math.pow(1 + lo / 365, 365) - 1; // as an effective yearly rate
   }
 
   // ----- formatting
@@ -349,22 +333,19 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
   function pct(v) { return (v * 100).toFixed(2) + "%"; }
   function qty(v, whole) { return whole ? int0.format(v) : num2.format(v); }
   function plural(n, w) { return n + " " + w + (n === 1 ? "" : "s"); }
+  function ordinal(n) { var s = ["th", "st", "nd", "rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
 
   // ----- inputs
-  var DEFAULTS = { initial: 100000, start: iso(LAST_DAY), years: 10, reinvest: "yes", fractional: "yes" };
-  $("start").min = iso(FIRST_DAY); $("start").max = iso(LAST_DAY);
+  var DEFAULTS = { initial: 100000, monthly: 0, years: 10, reinvest: "yes", fractional: "yes" };
   function radio(name) { return document.querySelector("input[name=" + name + "]:checked").value; }
   function setRadio(name, v) { document.querySelector("input[name=" + name + "][value=" + v + "]").checked = true; }
   function apply(d) {
-    $("initial").value = d.initial; $("start").value = d.start; $("years").value = d.years;
+    $("initial").value = d.initial; $("monthly").value = d.monthly; $("years").value = d.years;
     setRadio("reinvest", d.reinvest); setRadio("fractional", d.fractional);
   }
   function read() {
-    var s = $("start").value ? toDay($("start").value) : LAST_DAY;
-    var start = Math.min(onOrAfterTrading(Math.max(s, FIRST_DAY)), LAST_DAY);
-    if (!isTrading(start)) start = onOrBeforeTrading(start);
-    var years = +$("years").value;
-    return { start: start, end: addYears(start, years), years: years, initial: Math.max(100, +$("initial").value || 0),
+    var years = +$("years").value, initial = Math.max(0, +$("initial").value || 0), monthly = Math.max(0, +$("monthly").value || 0);
+    return { end: addMonths(START, years * 12), years: years, initial: initial || (monthly ? 0 : 100), monthly: monthly,
       reinvest: radio("reinvest") === "yes", fractional: radio("fractional") === "yes" };
   }
 
@@ -373,21 +354,6 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
   function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function alpha(hex, a) { var h = hex.replace("#", ""); return "rgba(" + [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); }).join(",") + "," + a + ")"; }
   function draw(id, config) { if (charts[id]) charts[id].destroy(); charts[id] = new Chart($(id), config); }
-  var todayLine = {
-    id: "todayLine",
-    afterDatasetsDraw: function (chart, args, opts) {
-      if (opts.day == null) return;
-      var x = chart.scales.x.getPixelForValue(opts.day), area = chart.chartArea;
-      if (x < area.left || x > area.right) return;
-      var c = chart.ctx; c.save();
-      c.strokeStyle = opts.color; c.lineWidth = 1; c.setLineDash([4, 4]);
-      c.beginPath(); c.moveTo(x, area.top); c.lineTo(x, area.bottom); c.stroke();
-      c.setLineDash([]); c.fillStyle = opts.color; c.font = "600 11px system-ui, sans-serif";
-      var w = c.measureText(opts.label).width;
-      c.fillText(opts.label, x + 6 + w > area.right ? x - w - 6 : x + 6, area.top + 12);
-      c.restore();
-    }
-  };
   function baseOptions() {
     var grid = css("--border"), fg = css("--muted-fg");
     return {
@@ -400,95 +366,82 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
       }
     };
   }
-  var projectedSegment = { borderDash: function (ctx) { return ctx.p1.parsed.x > LAST_DAY ? [6, 4] : undefined; } };
 
   // ----- render
   function render() {
     var o = read(), whole = o.reinvest && !o.fractional;
     $("fractionalField").hidden = !o.reinvest;
     $("yearsOut").textContent = plural(o.years, "year");
-    var projDays = Math.max(0, o.end - LAST_DAY), histDays = Math.min(o.end, LAST_DAY) - o.start;
-    $("yearsHint").textContent = "Until " + dateLabel(o.end) + (histDays > 0 ? ": " + int0.format(histDays) + " days of real dividends" + (projDays > 0 ? ", then projected" : "") : ", projected") + ".";
-    $("startHint").textContent = longLabel(o.start) + ", at $100 a share.";
-    $("initialHint").textContent = qty(whole ? Math.floor(o.initial / PAR) : o.initial / PAR, whole) + " shares.";
+    $("yearsHint").textContent = "Until " + dateLabel(o.end) + ".";
+    $("initialHint").textContent = qty(whole ? Math.floor(o.initial / PAR) : o.initial / PAR, whole) + " shares on " + dateLabel(START) + ".";
+    $("monthlyHint").textContent = o.monthly > 0 ? qty(o.monthly / PAR, false) + " shares on the " + ordinal(ymd(START).d) + " of each month." : "Added on the " + ordinal(ymd(START).d) + " of each month.";
 
     var run = simulate(o);
 
     $("status").innerHTML =
-      "<span class='live'>Data through <b>" + longLabel(LAST_DAY) + "</b></span>" +
-      "<span>" + fullMonth(LATEST_KEY) + " dividend <b>" + cents(LATEST_RATE / 12) + "</b> a share (" + LATEST_RATE.toFixed(2) + "% a year)</span>";
-    document.querySelectorAll(".lastData").forEach(function (el) { el.textContent = dateLabel(LAST_DAY); });
-    document.querySelectorAll(".rateNow").forEach(function (el) { el.textContent = fullMonth(LATEST_KEY) + ", " + LATEST_RATE.toFixed(2) + "% a year"; });
+      "<span class='live'>Rate as of <b>" + longLabel(START) + "</b></span>" +
+      "<span>" + fullMonth(DATA.month) + " dividend <b>" + cents(MONTHLY) + "</b> a share (" + RATE.toFixed(2) + "% a year)</span>";
+    document.querySelectorAll(".startDay").forEach(function (el) { el.textContent = dateLabel(START); });
+    document.querySelectorAll(".rateNow").forEach(function (el) { el.textContent = fullMonth(DATA.month) + ", " + RATE.toFixed(2) + "% a year"; });
 
     // KPIs
-    var gain = run.total - o.initial, yrs = (o.end - o.start) / 365.25;
-    var endRate = rateOf(monthKey(o.end));
+    var gain = run.total - run.invested;
+    var sharesFrom = "from " + qty(run.startShares, whole) + (o.monthly > 0 ? ", " + qty(run.monthlyShares, whole) + " bought monthly" : "") + (o.reinvest ? ", " + qty(run.bought, whole) + " with dividends" : "");
     var kpis = [
-      { cls: "hero", k: "Total at the end", v: money(run.total), d: "+" + money(gain) + " on " + money(o.initial) + (o.reinvest ? "" : ", " + money(run.taken) + " of it taken as cash") },
-      { k: "Annualized return", v: pct(Math.pow(run.total / o.initial, 1 / yrs) - 1), d: "over " + plural(o.years, "year") },
+      { cls: "hero", k: "Total at the end", v: money(run.total), d: "+" + money(gain) + " on " + money(run.invested) + " put in" + (o.reinvest ? "" : ", " + money(run.taken) + " taken as cash") },
+      { k: "Annualized return", v: pct(run.rate), d: o.monthly > 0 ? "on each dollar, for the time it was invested" : "over " + plural(o.years, "year") },
       { k: "Dividends earned", v: money(run.received + run.pending), d: int0.format(run.payments) + " payments" + (run.pending > 0.5 ? ", " + money(run.pending) + " not paid yet" : "") },
-      { k: "Shares", v: qty(run.shares, whole), d: "from " + qty(run.startShares, whole) + (o.reinvest ? ", " + qty(run.bought, whole) + " bought with dividends" : ", none added") },
-      { k: "Monthly income at the end", v: money(run.shares * endRate / 12), d: "what the final shares pay a month at " + endRate.toFixed(2) + "%" }
+      { k: "Shares", v: qty(run.shares, whole), d: sharesFrom },
+      { k: "Monthly income at the end", v: money(run.shares * MONTHLY), d: "what the final shares pay a month at " + RATE.toFixed(2) + "%" }
     ];
     $("kpis").innerHTML = kpis.map(function (x) { return "<div class='kpi " + (x.cls || "") + "'><div class='k'>" + x.k + "</div><div class='v'>" + x.v + "</div><div class='d'>" + x.d + "</div></div>"; }).join("");
 
     var accent = css("--accent"), good = css("--good"), muted = css("--muted-fg");
-    var marker = { day: LAST_DAY, color: muted, label: "Latest data" };
 
     // growth
     $("growthSub").textContent = (o.reinvest
       ? "Value of the position at $100 a share, with every dividend reinvested" + (whole ? " (the cash waiting for the next share included)" : "")
-      : "Value of the position at $100 a share, and the total with the dividends taken as cash") + ". Dashed after the latest data: projected at the current " + cents(LATEST_RATE / 12) + " a share a month.";
+      : "Value of the position at $100 a share, and the total with the dividends taken as cash") + ", against the money put in, at the current " + cents(MONTHLY) + " a share a month.";
+    function series(key) { return run.samples.map(function (s) { return { x: s.x, y: s[key] }; }); }
     var sets = [];
-    if (!o.reinvest) sets.push({ label: "Total with cash taken", data: run.samples.map(function (s) { return { x: s.x, y: s.total }; }), borderColor: good, backgroundColor: alpha(good, 0.12), fill: "+1", pointRadius: 0, borderWidth: 2, segment: projectedSegment });
-    sets.push({ label: "Position", data: run.samples.map(function (s) { return { x: s.x, y: s.position }; }), borderColor: accent,
-      fill: o.reinvest ? { target: { value: o.initial }, above: alpha(accent, 0.12) } : false, pointRadius: 0, borderWidth: 2, segment: projectedSegment });
-    sets.push({ label: "Invested", data: [{ x: o.start, y: o.initial }, { x: o.end, y: o.initial }], borderColor: muted, borderDash: [2, 3], pointRadius: 0, borderWidth: 1.5, fill: false });
+    if (!o.reinvest) sets.push({ label: "Total with cash taken", data: series("total"), borderColor: good, backgroundColor: alpha(good, 0.12), fill: "+1", pointRadius: 0, borderWidth: 2 });
+    sets.push({ label: "Position", data: series("position"), borderColor: accent, backgroundColor: alpha(accent, 0.12), fill: o.reinvest ? "+1" : false, pointRadius: 0, borderWidth: 2 });
+    sets.push({ label: "Put in", data: series("invested"), borderColor: muted, borderDash: [2, 3], stepped: "before", pointRadius: 0, borderWidth: 1.5, fill: false });
     var g = baseOptions();
-    g.scales.x.min = o.start; g.scales.x.max = o.end;
+    g.scales.x.min = START; g.scales.x.max = o.end;
     g.scales.y.type = $("logScale").checked ? "logarithmic" : "linear";
-    g.plugins.todayLine = marker;
     g.plugins.tooltip.callbacks = {
-      title: function (items) { return dateLabel(items[0].parsed.x) + (items[0].parsed.x > LAST_DAY ? " (projected)" : ""); },
+      title: function (items) { return dateLabel(items[0].parsed.x); },
       label: function (c) { return c.dataset.label + ": " + money(c.parsed.y); }
     };
-    draw("cGrowth", { type: "line", data: { datasets: sets }, options: g, plugins: [todayLine] });
+    draw("cGrowth", { type: "line", data: { datasets: sets }, options: g });
 
     // dividends per month
     var keys = [], k1 = monthKey(o.end);
-    for (var kk = monthKey(o.start); kk <= k1; ) { keys.push(kk); var yy = +kk.slice(0, 4), mm = +kk.slice(5, 7); kk = mm === 12 ? (yy + 1) + "-01" : yy + "-" + String(mm + 1).padStart(2, "0"); }
-    var lastKey = monthKey(LAST_DAY);
-    $("incomeSub").textContent = "Dividends paid to you, by the month of their ex-dividend date, " + (o.reinvest ? "all reinvested" : "all taken as cash") + ". Lighter bars are projected; the first and last months can be partial. June 2026 has an extra half-month dividend (ex June 30) and October 2026 one less, around the switches to paying twice a month and then daily.";
+    for (var kk = monthKey(START); kk <= k1; ) { keys.push(kk); var yy = +kk.slice(0, 4), mm = +kk.slice(5, 7); kk = mm === 12 ? (yy + 1) + "-01" : yy + "-" + String(mm + 1).padStart(2, "0"); }
+    $("incomeSub").textContent = "Dividends paid to you, by the month of their ex-dividend date, " + (o.reinvest ? "all reinvested" : "all taken as cash") + ". The first and last months are partial.";
     var b = baseOptions();
     b.parsing = true;
     b.scales.x = { type: "category", grid: { display: false }, ticks: { color: muted, maxTicksLimit: 12, maxRotation: 0, autoSkip: true } };
     b.plugins.legend = { display: false };
-    b.plugins.tooltip.callbacks = { label: function (c) { return money(c.parsed.y) + (keys[c.dataIndex] > lastKey ? " (projected)" : ""); } };
+    b.plugins.tooltip.callbacks = { label: function (c) { return money(c.parsed.y); } };
     draw("cIncome", { type: "bar", data: { labels: keys.map(monthLabel), datasets: [{ data: keys.map(function (k) { return run.income[k] || 0; }),
-      backgroundColor: keys.map(function (k) { return k > lastKey ? alpha(good, 0.45) : good; }), borderRadius: 2, categoryPercentage: 0.9, barPercentage: 0.9 }] }, options: b });
+      backgroundColor: good, borderRadius: 2, categoryPercentage: 0.9, barPercentage: 0.9 }] }, options: b });
 
     // table
     $("thUse").textContent = o.reinvest ? "Shares bought" : "Taken as cash";
-    $("tableSub").textContent = "Each calendar year of the run; the first and last can be partial. " + (o.reinvest ? "Shares bought with the year’s dividends." : "Dividends taken as cash; Total adds up everything taken so far.");
+    $("tableSub").textContent = "Each calendar year of the run; the first and last are partial. Added is the money put in that year. " + (o.reinvest ? "Shares bought with the year’s dividends." : "Dividends taken as cash; Total adds up everything taken so far.");
     $("rows").innerHTML = run.years.map(function (r) {
-      var rates = [];
-      for (var m = 1; m <= 12; m++) { var key = r.year + "-" + String(m).padStart(2, "0"); if (key < monthKey(o.start) || key > monthKey(o.end)) continue; var v = rateOf(key); if (v != null) rates.push(v); }
-      var lo = Math.min.apply(null, rates), hi = Math.max.apply(null, rates);
-      var rateText = !rates.length ? "–" : lo === hi ? lo.toFixed(2) + "%" : lo.toFixed(2) + "–" + hi.toFixed(2) + "%";
-      var cls = r.day <= LAST_DAY ? "" : Math.max(o.start, toDay(r.year + "-01-01")) > LAST_DAY ? "proj" : "part";
-      return "<tr class='" + cls + "'><td>" + r.year + "</td><td>" + rateText + "</td><td>" + money(r.divs) + "</td><td>" + (o.reinvest ? qty(r.bought, whole) : money(r.divs)) + "</td><td>" + qty(r.shares, whole) + "</td><td>" + money(r.position) + "</td><td>" + money(r.total) + "</td></tr>";
+      return "<tr><td>" + r.year + "</td><td>" + money(r.added) + "</td><td>" + money(r.divs) + "</td><td>" + (o.reinvest ? qty(r.bought, whole) : money(r.divs)) + "</td><td>" + qty(r.shares, whole) + "</td><td>" + money(r.position) + "</td><td>" + money(r.total) + "</td></tr>";
     }).join("");
   }
 
   // ----- events
   var queued = false;
   function schedule() { if (queued) return; queued = true; requestAnimationFrame(function () { queued = false; render(); }); }
-  ["initial", "start", "years"].forEach(function (id) { $(id).addEventListener("input", schedule); });
+  ["initial", "monthly", "years"].forEach(function (id) { $(id).addEventListener("input", schedule); });
   document.querySelectorAll("input[type=radio]").forEach(function (el) { el.addEventListener("change", schedule); });
   $("logScale").addEventListener("change", schedule);
-  document.querySelectorAll("[data-start]").forEach(function (btn) {
-    btn.addEventListener("click", function () { $("start").value = btn.dataset.start === "ipo" ? iso(FIRST_DAY) : iso(LAST_DAY); render(); });
-  });
   $("reset").addEventListener("click", function () { apply(DEFAULTS); render(); });
   $("theme").addEventListener("click", function () {
     var dark = document.documentElement.classList.toggle("dark");
