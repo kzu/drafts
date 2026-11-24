@@ -80,7 +80,16 @@
       width: 100%; padding: 8px 10px 8px 22px; border: 1px solid var(--border); border-radius: 8px;
       background: var(--bg); color: var(--fg); font: inherit; font-variant-numeric: tabular-nums;
     }
-    input[type=number]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    input[type=number]:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .when { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    select {
+      width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg); color: var(--fg); font: inherit; font-variant-numeric: tabular-nums;
+    }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .chip { border: 1px solid var(--border); background: var(--bg); color: var(--muted-fg); border-radius: 999px; padding: 2px 10px; font: inherit; font-size: 0.78rem; cursor: pointer; }
+    .chip:hover { color: var(--fg); background: var(--muted); }
+    .chip[aria-pressed=true] { color: var(--fg); border-color: var(--accent); }
     input[type=range] { width: 100%; accent-color: var(--accent); }
     .seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .seg input { position: absolute; opacity: 0; pointer-events: none; }
@@ -129,7 +138,7 @@
   <header class="top">
     <div>
       <h1>Living off BRK.A: withdrawals with a cash buffer</h1>
-      <p>Invest a lump sum in Berkshire Hathaway Class A at the end of 2005, take a fixed amount out every month for 20 years (2006–2025), and see how a cash buffer, spent only when the market is down, changes the outcome. All numbers use real month-end BRK.A prices.</p>
+      <p>Invest a lump sum in Berkshire Hathaway Class A at any month-end since it started trading in March 1980, take a fixed amount out every month through October 2026, and see how a cash buffer, spent only when the market is down, changes the outcome. All numbers use real month-end BRK.A prices.</p>
     </div>
     <button type="button" id="theme" class="btn" aria-label="Switch theme">Dark</button>
   </header>
@@ -138,6 +147,23 @@
     <aside class="card" aria-label="Inputs">
       <h2>Inputs</h2>
       <p class="sub">Everything recalculates as you change it.</p>
+
+      <div class="field">
+        <div class="lbl">First withdrawal</div>
+        <div class="when">
+          <select id="startMonth" aria-label="Start month"></select>
+          <select id="startYear" aria-label="Start year"></select>
+        </div>
+        <div class="presets" id="presets">
+          <button type="button" class="chip" data-start="1980-04">Earliest</button>
+          <button type="button" class="chip" data-start="1990-01">1990</button>
+          <button type="button" class="chip" data-start="2000-01">2000</button>
+          <button type="button" class="chip" data-start="2006-01">2006</button>
+          <button type="button" class="chip" data-start="2008-01">2008</button>
+          <button type="button" class="chip" data-start="2016-01">2016</button>
+        </div>
+        <div class="hint" id="startHint"></div>
+      </div>
 
       <div class="field">
         <label for="initial">Initial investment</label>
@@ -176,7 +202,7 @@
           <input type="radio" name="basis" id="b-actual" value="actual" checked><label for="b-actual">Actual prices</label>
           <input type="radio" name="basis" id="b-smooth" value="smoothed"><label for="b-smooth">Smoothed</label>
         </div>
-        <div class="hint">Smoothed: each year grows at the prior 5-year BRK.A return ÷ 5, spread evenly over the months.</div>
+        <div class="hint">Smoothed: each year grows at the prior 5-year BRK.A return ÷ 5, spread evenly over the months. It needs five earlier years of prices, so it starts in January 1986 at the earliest.</div>
       </div>
 
       <button type="button" class="btn" id="reset">Reset to defaults</button>
@@ -222,7 +248,7 @@
 
         <div class="card wide">
           <h2>Annual return: actual vs. smoothed</h2>
-          <p class="sub">BRK.A’s calendar-year price return next to the smoothed rate (prior 5-year return ÷ 5) the smoothed basis applies that year.</p>
+          <p class="sub">BRK.A’s calendar-year price return next to the smoothed rate (prior 5-year return ÷ 5) the smoothed basis applies that year. The first and last years can be partial.</p>
           <div class="chart-box"><canvas id="cReturns" aria-label="Annual BRK.A return versus smoothed rate"></canvas></div>
         </div>
       </div>
@@ -244,22 +270,22 @@
         <h2>How it works</h2>
         <h3>The rules</h3>
         <ul>
-          <li>You buy BRK.A at the December 2005 close. The cash buffer (years × 12 × monthly spending) is set aside from the initial amount; the rest buys shares. Fractional shares are allowed.</li>
-          <li>Every month from January 2006 to December 2025, in order: cash earns one month of interest; the month is “down” if the close is below the all-time high by at least the trigger (the high includes 2000–2005 history and is updated after the check).</li>
+          <li>You buy BRK.A at the close of the month before your first withdrawal. The cash buffer (years × 12 × monthly spending) is set aside from the initial amount; the rest buys shares. Fractional shares are allowed.</li>
+          <li>Every month from the first withdrawal to October 2026, in order: cash earns one month of interest; the month is “down” if the close is below the all-time high by at least the trigger (the high includes every close since March 1980 and is updated after the check).</li>
           <li>Down month with enough cash: spending comes from cash. Otherwise spending comes from selling shares at that month’s close. If a down month finds the buffer short, the remaining cash is used and the rest is sold — that counts as a <em>forced sale</em>.</li>
           <li>In a month that is not down, after spending, shares are sold to refill the cash buffer back to its target.</li>
           <li>If shares plus cash can no longer cover a month, the portfolio is depleted: what is left is paid out and the value stays at zero.</li>
-          <li><strong>Smoothed basis:</strong> for each year Y the annual rate is (close Dec Y−1 ÷ close Dec Y−6 − 1) ÷ 5. A synthetic price starts at the December 2005 close and grows by (1 + rate)<sup>1/12</sup> each month; the same rules run on it, with the all-time high measured on the synthetic price.</li>
+          <li><strong>Smoothed basis:</strong> for each year Y the annual rate is (close Dec Y−1 ÷ close Dec Y−6 − 1) ÷ 5. A synthetic price starts at the purchase close and grows by (1 + rate)<sup>1/12</sup> each month; the same rules run on it, with the all-time high measured on the synthetic price. The first rate needs December 1980, so a smoothed run starts in January 1986 at the earliest.</li>
         </ul>
         <h3>Assumptions and limits</h3>
         <ul>
           <li>No taxes, fees, commissions or inflation adjustment; spending is a flat nominal amount.</li>
           <li>All trades happen at the month-end close. Berkshire pays no dividend, so price return is total return.</li>
-          <li>Cash interest uses approximate annual averages of the 3-month US Treasury bill yield, applied monthly (rate ÷ 12):</li>
+          <li>Cash interest uses approximate annual averages of the 3-month US Treasury bill yield, applied monthly (rate ÷ 12). 1980–2005 and 2026 (to date) are averages of the daily 13-week T-bill index (^IRX):</li>
         </ul>
         <div class="rates" id="rates"></div>
         <h3>Data</h3>
-        <p class="muted">BRK.A month-end closes, January 2000 – December 2025, from Yahoo Finance monthly bars, embedded in this page. This is a historical illustration, not advice; past returns don’t predict future ones.</p>
+        <p class="muted">BRK.A month-end closes, March 1980 – October 2026, from Yahoo Finance (the last daily close of each month for 1980–1984, monthly bars from 1985), embedded in this page. This is a historical illustration, not advice; past returns don’t predict future ones.</p>
       </section>
     </main>
   </div>
@@ -267,32 +293,50 @@
 
 <script>
 // --- sim start
-var CLOSES = [51200,44000,57200,59300,58600,53800,55100,57700,64400,63700,65900,71000,68400,70300,65450,68000,68700,69400,69200,69400,70000,71200,70000,75600,73900,73000,71100,73450,74600,66800,68300,73000,73900,74190,72300,72750,67600,61700,63800,69815,71000,72500,72010,75775,75000,77810,83750,84250,89490,94500,93300,93390,89000,88950,87250,87000,86650,84250,83700,87900,89900,90200,87000,84350,84100,83500,83500,83150,82000,85900,89390,88620,89490,86800,90350,89000,92290,91659,91600,96097,95800,105475,107100,109990,110050,106190,108990,109200,109490,109475,110000,118390,118510,132500,140100,141600,136000,140000,133400,133850,134650,120750,114450,116600,130600,115490,104000,96600,89502,78600,86700,94000,91600,90000,97000,100850,101000,99000,100600,99200,114600,119800,121800,115325,105910,120000,117000,118675,124500,119300,120200,120450,122425,131300,125300,124750,118775,116105,111500,109769,106800,116950,118500,114755,117925,117934,121900,120800,118850,124945,127445,126560,132700,129505,131916,134060,145875,152600,156280,159000,171300,168600,173900,167050,170410,172994,174750,177900,169511,173708,187350,193275,192000,189900,188124,205880,206900,210000,223065,226000,215865,221180,217500,213400,214800,204850,214000,202531,195240,204596,201360,197800,194360,202555,213450,219000,211695,216975,216000,225760,216220,215700,237000,244121,245980,257100,249850,247780,248440,254700,262786,271450,274740,280470,291500,297600,323375,310250,299100,290650,287200,282040,301550,315800,320000,307705,326000,306000,311500,302200,301215,325080,297060,318350,308666,303078,311832,318939,330495,339590,335996,309096,272000,281700,278640,267300,293631,327560,320001,302500,343688,347815,344100,364580,385702,412500,436000,418601,418900,429900,411379,432902,416876,450662,469805,476205,528921,484340,474050,408950,451700,421308,406470,445050,480280,468711,473000,463525,465600,502880,488024,517810,535400,546725,531477,517825,545900,542625,578020,616561,634440,599500,627400,612241,659211,715300,691180,676960,724040,680920,702614,775000,798442,800540,757400,728800,719850,755280,754200,715740,770100,754800];
-var TBILL = {2006:4.7,2007:4.4,2008:1.4,2009:0.15,2010:0.14,2011:0.05,2012:0.09,2013:0.06,2014:0.03,2015:0.05,2016:0.32,2017:0.93,2018:1.94,2019:2.06,2020:0.36,2021:0.05,2022:2.02,2023:5.07,2024:4.97,2025:4.1};
-var Y0 = 2000, START = 72, N = CLOSES.length; // START = index of Jan 2006
-function yearOf(i) { return Y0 + Math.floor(i / 12); }
-function decIndex(y) { return (y - Y0) * 12 + 11; }
-function smoothRate(y) { return (CLOSES[decIndex(y - 1)] / CLOSES[decIndex(y - 6)] - 1) / 5; }
-function actualReturn(y) { return CLOSES[decIndex(y)] / CLOSES[decIndex(y - 1)] - 1; }
-
-var seriesCache = {};
-function priceSeries(basis) {
-  if (seriesCache[basis]) return seriesCache[basis];
-  var s = CLOSES.slice();
-  if (basis === "smoothed") {
-    for (var i = START; i < N; i++) s[i] = s[i - 1] * Math.pow(1 + smoothRate(yearOf(i)), 1 / 12);
-  }
-  return (seriesCache[basis] = s);
+var CLOSES = [260,275,320,305,340,380,385,420,430,425,430,485,480,515,520,510,485,500,460,505,575,560,510,515,480,510,505,495,475,485,550,610,690,775,765,830,965,975,985,910,950,1020,1240,1310,1350,1310,1325,1280,1240,1250,1290,1260,1240,1290,1305,1300,1280,1275,1395,1490,1815,1850,1860,2150,2110,2040,2120,2620,2625,2470,2255,2760,3120,2910,2860,2975,2825,2900,2625,2875,2740,2820,3100,3360,3520,3380,3410,3500,3960,3990,4220,3325,2900,2950,3030,3150,3425,3775,3925,4150,4375,4300,4800,4725,4700,4700,4925,4725,4950,6275,6425,6575,7500,7975,8625,8510,8250,8675,7455,7225,6725,6700,7150,7200,7000,6400,5875,5950,6345,6675,7400,8075,8025,8125,8750,8400,8525,8775,8875,8570,8350,9050,8850,8725,8950,9125,9100,9225,9525,9125,9400,9475,10725,11750,12100,12475,12750,12650,15000,15400,16000,17525,16675,17250,17250,16325,16200,15450,15925,16100,16100,16100,19600,19100,18950,20250,20525,20400,24600,22275,22650,21600,22700,23450,24750,25500,29400,29500,31300,32100,31900,35500,33850,33500,30500,30700,30900,31300,32150,32400,33200,34100,34800,35500,36200,38000,43000,47200,47200,41500,44800,43700,45300,46000,50300,55800,67200,68600,70700,78305,70105,60500,59600,64500,67900,70000,65000,71100,71400,76400,72000,68900,67805,64200,55000,63900,57300,56100,51200,44000,57200,59300,58600,53800,55100,57700,64400,63700,65900,71000,68400,70300,65450,68000,68700,69400,69200,69400,70000,71200,70000,75600,73900,73000,71100,73450,74600,66800,68300,73000,73900,74190,72300,72750,67600,61700,63800,69815,71000,72500,72010,75775,75000,77810,83750,84250,89490,94500,93300,93390,89000,88950,87250,87000,86650,84250,83700,87900,89900,90200,87000,84350,84100,83500,83500,83150,82000,85900,89390,88620,89490,86800,90350,89000,92290,91659,91600,96097,95800,105475,107100,109990,110050,106190,108990,109200,109490,109475,110000,118390,118510,132500,140100,141600,136000,140000,133400,133850,134650,120750,114450,116600,130600,115490,104000,96600,89502,78600,86700,94000,91600,90000,97000,100850,101000,99000,100600,99200,114600,119800,121800,115325,105910,120000,117000,118675,124500,119300,120200,120450,122425,131300,125300,124750,118775,116105,111500,109769,106800,116950,118500,114755,117925,117934,121900,120800,118850,124945,127445,126560,132700,129505,131916,134060,145875,152600,156280,159000,171300,168600,173900,167050,170410,172994,174750,177900,169511,173708,187350,193275,192000,189900,188124,205880,206900,210000,223065,226000,215865,221180,217500,213400,214800,204850,214000,202531,195240,204596,201360,197800,194360,202555,213450,219000,211695,216975,216000,225760,216220,215700,237000,244121,245980,257100,249850,247780,248440,254700,262786,271450,274740,280470,291500,297600,323375,310250,299100,290650,287200,282040,301550,315800,320000,307705,326000,306000,311500,302200,301215,325080,297060,318350,308666,303078,311832,318939,330495,339590,335996,309096,272000,281700,278640,267300,293631,327560,320001,302500,343688,347815,344100,364580,385702,412500,436000,418601,418900,429900,411379,432902,416876,450662,469805,476205,528921,484340,474050,408950,451700,421308,406470,445050,480280,468711,473000,463525,465600,502880,488024,517810,535400,546725,531477,517825,545900,542625,578020,616561,634440,599500,627400,612241,659211,715300,691180,676960,724040,680920,702614,775000,798442,800540,757400,728800,719850,755280,754200,715740,770100,754800,722500,757000,718140,711900,710900,748850,766600,756650,747005,815600];
+var TBILL = {"1980":11.39,"1981":14.04,"1982":10.6,"1983":8.62,"1984":9.54,"1985":7.47,"1986":5.97,"1987":5.78,"1988":6.67,"1989":8.11,"1990":7.5,"1991":5.38,"1992":3.43,"1993":3,"1994":4.25,"1995":5.48,"1996":5,"1997":5.05,"1998":4.77,"1999":4.63,"2000":5.81,"2001":3.38,"2002":1.6,"2003":1,"2004":1.37,"2005":3.13,"2006":4.7,"2007":4.4,"2008":1.4,"2009":0.15,"2010":0.14,"2011":0.05,"2012":0.09,"2013":0.06,"2014":0.03,"2015":0.05,"2016":0.32,"2017":0.93,"2018":1.94,"2019":2.06,"2020":0.36,"2021":0.05,"2022":2.02,"2023":5.07,"2024":4.97,"2025":4.1,"2026":3.72};
+var FIRST = 1980 * 12 + 2;          // index 0 = March 1980, the first month BRK.A traded
+var N = CLOSES.length;              // last index = last complete month
+var SMOOTH_START = (1986 * 12) - FIRST; // first month whose smoothed rate has five prior Decembers
+function yearOf(i) { return Math.floor((FIRST + i) / 12); }
+function monthOf(i) { return (FIRST + i) % 12; }
+function indexOf(year, month) { return year * 12 + month - FIRST; } // month: 0 = January
+function decIndex(y) { return indexOf(y, 11); }
+function smoothRate(y) {
+  var from = decIndex(y - 6);
+  return from < 0 ? null : (CLOSES[decIndex(y - 1)] / CLOSES[from] - 1) / 5;
+}
+// Price change over calendar year y, clipped to [first purchase, last month].
+function yearReturn(p, y, start) {
+  var from = Math.max(decIndex(y - 1), start - 1), to = Math.min(decIndex(y), N - 1);
+  return p[to] / p[from] - 1;
+}
+// First withdrawal month actually used: a smoothed run cannot start before 1986.
+function effectiveStart(o) {
+  var s = Math.min(Math.max(o.start, 1), N - 1);
+  return o.basis === "smoothed" ? Math.max(s, SMOOTH_START) : s;
 }
 
-// o: { initial, spend, bufferYears, trigger (fraction), cashYield (bool), basis: "actual" | "smoothed" }
+var seriesCache = {};
+function priceSeries(basis, start) {
+  var key = basis + start;
+  if (seriesCache[key]) return seriesCache[key];
+  var s = CLOSES.slice();
+  if (basis === "smoothed") {
+    for (var i = start; i < N; i++) s[i] = s[i - 1] * Math.pow(1 + smoothRate(yearOf(i)), 1 / 12);
+  }
+  return (seriesCache[key] = s);
+}
+
+// o: { start (index of first withdrawal), initial, spend, bufferYears, trigger (fraction), cashYield (bool), basis: "actual" | "smoothed" }
 function simulate(o) {
-  var p = priceSeries(o.basis), spend = o.spend, target = o.bufferYears * 12 * spend;
+  var start = effectiveStart(o);
+  var p = priceSeries(o.basis, start), spend = o.spend, target = o.bufferYears * 12 * spend;
   var cash = Math.min(target, o.initial);
-  var shares = (o.initial - cash) / p[START - 1];
-  var ath = o.basis === "actual" ? Math.max.apply(null, p.slice(0, START)) : p[START - 1];
+  var shares = (o.initial - cash) / p[start - 1];
+  var ath = o.basis === "actual" ? Math.max.apply(null, p.slice(0, start)) : p[start - 1];
   var months = [], depleted = null, fromCash = 0, forced = 0, sold = 0, withdrawn = 0;
-  for (var i = START; i < N; i++) {
+  for (var i = start; i < N; i++) {
     var price = p[i], y = yearOf(i);
     if (o.cashYield) cash *= 1 + TBILL[y] / 100 / 12;
     var athBefore = ath;
@@ -319,34 +363,49 @@ function simulate(o) {
     } else kind = "after";
     months.push({ i: i, year: y, price: price, ath: athBefore, down: down, kind: kind, paid: paid, shares: shares, cash: cash, brk: shares * price, total: shares * price + cash, withdrawn: withdrawn });
   }
-  return { months: months, depleted: depleted, fromCash: fromCash, forced: forced, sold: sold, withdrawn: withdrawn, prices: p, startShares: (o.initial - Math.min(target, o.initial)) / p[START - 1], target: target };
+  return { start: start, months: months, depleted: depleted, fromCash: fromCash, forced: forced, sold: sold, withdrawn: withdrawn, prices: p, startShares: (o.initial - Math.min(target, o.initial)) / p[start - 1], target: target };
 }
 // --- sim end
 
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  function monthLabel(i) { return MONTHS[i % 12] + " " + yearOf(i); }
+  var FULL_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function monthLabel(i) { return MONTHS[monthOf(i)] + " " + yearOf(i); }
   var usd0 = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
   function money(v) { return usd0.format(v); }
   function short(v) {
     var a = Math.abs(v);
-    if (a >= 1e9) return "$" + (v / 1e9).toFixed(2) + "B";
-    if (a >= 1e6) return "$" + (v / 1e6).toFixed(2) + "M";
+    function two(x) { return String(+x.toFixed(2)); }
+    if (a >= 1e12) return "$" + two(v / 1e12) + "T";
+    if (a >= 1e9) return "$" + two(v / 1e9) + "B";
+    if (a >= 1e6) return "$" + two(v / 1e6) + "M";
     if (a >= 1e3) return "$" + (v / 1e3).toFixed(0) + "k";
     return "$" + v.toFixed(0);
   }
   function pct(v, d) { return (v >= 0 ? "+" : "") + (v * 100).toFixed(d == null ? 1 : d) + "%"; }
+  function years(months) { var y = months / 12; return (y === Math.round(y) ? y.toFixed(0) : y.toFixed(1)) + (y === 1 ? " year" : " years"); }
   function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
 
   // ----- inputs
-  var DEFAULTS = { initial: 1000000, spend: 5000, buffer: 2, trigger: 10, yield: "tbill", basis: "actual" };
+  var DEFAULTS = { start: "1980-04", initial: 1000000, spend: 5000, buffer: 2, trigger: 10 };
+  var FIRST_YEAR = yearOf(1), LAST_YEAR = yearOf(N - 1);
+  for (var m = 0; m < 12; m++) $("startMonth").add(new Option(FULL_MONTHS[m], m));
+  for (var yy = FIRST_YEAR; yy <= LAST_YEAR; yy++) $("startYear").add(new Option(yy, yy));
+  function setStart(year, month) {
+    var i = Math.min(Math.max(indexOf(year, month), 1), N - 1);
+    $("startYear").value = yearOf(i); $("startMonth").value = monthOf(i);
+  }
+  function setStartText(s) { var parts = s.split("-"); setStart(+parts[0], +parts[1] - 1); }
+  function readStart() {
+    var i = Math.min(Math.max(indexOf(+$("startYear").value, +$("startMonth").value), 1), N - 1);
+    return i;
+  }
   function readInputs() {
-    var initial = Math.max(0, +$("initial").value || 0);
-    var spend = Math.max(0, +$("spend").value || 0);
     return {
-      initial: initial,
-      spend: spend,
+      start: readStart(),
+      initial: Math.max(0, +$("initial").value || 0),
+      spend: Math.max(0, +$("spend").value || 0),
       bufferYears: +$("buffer").value,
       trigger: +$("trigger").value / 100,
       cashYield: document.querySelector("input[name=yield]:checked").value === "tbill",
@@ -372,19 +431,19 @@ function simulate(o) {
     };
   }
 
-  // Shades down months and marks depletion on category-axis charts.
+  // Shades down months and marks depletion on month-axis charts.
   var shadePlugin = {
     id: "downShade",
     beforeDatasetsDraw: function (chart, args, opts) {
       var flags = opts.flags, x = chart.scales.x, area = chart.chartArea, ctx = chart.ctx;
-      if (!flags || !x) return;
+      if (!flags || !x || flags.length < 2) return;
       ctx.save();
       var half = (x.getPixelForValue(1) - x.getPixelForValue(0)) / 2;
       ctx.fillStyle = opts.color;
       for (var k = 0; k < flags.length; k++) {
         if (!flags[k]) continue;
-        var start = k; while (k + 1 < flags.length && flags[k + 1]) k++;
-        var x0 = Math.max(area.left, x.getPixelForValue(start) - half), x1 = Math.min(area.right, x.getPixelForValue(k) + half);
+        var first = k; while (k + 1 < flags.length && flags[k + 1]) k++;
+        var x0 = Math.max(area.left, x.getPixelForValue(first) - half), x1 = Math.min(area.right, x.getPixelForValue(k) + half);
         ctx.fillRect(x0, area.top, x1 - x0, area.bottom - area.top);
       }
       if (opts.depleted != null) {
@@ -400,17 +459,25 @@ function simulate(o) {
   };
   Chart.register(shadePlugin);
 
-  var monthLabels = [], yearLabels = [];
-  for (var i = START; i < N; i++) monthLabels.push(monthLabel(i));
-  for (var y = 2006; y <= 2025; y++) yearLabels.push(String(y));
+  // Year ticks on a month axis: label January of every `step`-th year.
+  function yearTicks(start, step) {
+    return function (v, k) {
+      var i = start + k;
+      return monthOf(i) === 0 && yearOf(i) % step === 0 ? String(yearOf(i)) : null;
+    };
+  }
+  function tickStep(months, dense) {
+    var span = months / 12;
+    if (dense) return span > 30 ? 5 : span > 12 ? 2 : 1;
+    return span > 30 ? 10 : span > 12 ? 5 : span > 5 ? 2 : 1;
+  }
 
-  function janTicks(value, index) { return index % 12 === 0 ? String(2006 + index / 12) : null; }
   function baseOptions(pal, extra) {
     var o = {
       responsive: true, maintainAspectRatio: false, animation: false,
       interaction: { mode: "index", intersect: false },
       plugins: {
-        legend: { labels: { color: pal.fg, boxWidth: 12, boxHeight: 12, usePointStyle: false } },
+        legend: { labels: { color: pal.fg, boxWidth: 12, boxHeight: 12 } },
         tooltip: { callbacks: {} },
         downShade: {}
       },
@@ -436,14 +503,13 @@ function simulate(o) {
 
     charts.portfolio = new Chart($("cPortfolio"), {
       type: "line",
-      data: { labels: monthLabels, datasets: [
+      data: { labels: [], datasets: [
         { label: "BRK.A value", data: [], borderColor: pal.brk, backgroundColor: pal.brkFill, fill: "origin", pointRadius: 0, borderWidth: 1.5, stack: "parts" },
         { label: "Cash", data: [], borderColor: pal.cash, backgroundColor: pal.cashFill, fill: "-1", pointRadius: 0, borderWidth: 1.5, stack: "parts" },
         { label: "Total", data: [], borderColor: pal.total, backgroundColor: pal.total, fill: false, pointRadius: 0, borderWidth: 2, stack: "total" }
       ] },
       options: baseOptions(pal, function (o) {
         o.scales.y.stacked = true; o.scales.y.beginAtZero = true;
-        o.scales.x.ticks.callback = janTicks;
         o.plugins.downShade = { color: pal.down, lineColor: pal.bad };
         return moneyTooltip(moneyAxis(o));
       })
@@ -451,7 +517,7 @@ function simulate(o) {
 
     charts.buffers = new Chart($("cBuffers"), {
       type: "line",
-      data: { labels: ["2005"].concat(yearLabels), datasets: [] },
+      data: { labels: [], datasets: [] },
       options: baseOptions(pal, function (o) {
         o.scales.y.beginAtZero = true;
         o.scales.x.ticks.autoSkip = true;
@@ -463,20 +529,19 @@ function simulate(o) {
 
     charts.cumulative = new Chart($("cCumulative"), {
       type: "line",
-      data: { labels: monthLabels, datasets: [
+      data: { labels: [], datasets: [
         { label: "Remaining total value", data: [], borderColor: pal.brk, backgroundColor: pal.brkFill, fill: "origin", pointRadius: 0, borderWidth: 2 },
         { label: "Cumulative withdrawn", data: [], borderColor: pal.withdrawn, backgroundColor: pal.withdrawn, fill: false, pointRadius: 0, borderWidth: 2 }
       ] },
       options: baseOptions(pal, function (o) {
         o.scales.y.beginAtZero = true;
-        o.scales.x.ticks.callback = function (v, idx) { return idx % 60 === 0 ? String(2006 + idx / 12) : null; };
         return moneyTooltip(moneyAxis(o));
       })
     });
 
     charts.price = new Chart($("cPrice"), {
       type: "line",
-      data: { labels: monthLabels, datasets: [
+      data: { labels: [], datasets: [
         { label: "Month-end price", data: [], borderColor: pal.brk, backgroundColor: pal.brk, pointRadius: 0, borderWidth: 1.75, order: 3 },
         { label: "All-time high", data: [], borderColor: pal.ath, backgroundColor: pal.ath, pointRadius: 0, borderWidth: 1.25, borderDash: [5, 4], stepped: true, order: 4 },
         { label: "Trigger level", data: [], borderColor: pal.bad, backgroundColor: pal.bad, pointRadius: 0, borderWidth: 1, borderDash: [2, 3], stepped: true, order: 5 },
@@ -484,10 +549,9 @@ function simulate(o) {
         { label: "Forced sale (down month)", data: [], showLine: false, pointRadius: 4, pointHoverRadius: 6, pointStyle: "triangle", borderColor: pal.bad, backgroundColor: pal.bad, order: 2 }
       ] },
       options: baseOptions(pal, function (o) {
-        o.scales.x.ticks.callback = janTicks;
         o.scales.y.type = $("logScale").checked ? "logarithmic" : "linear";
         o.scales.y.ticks.callback = function (v) {
-          if (o.scales.y.type === "logarithmic") { var m = v / Math.pow(10, Math.floor(Math.log10(v))); if ([1, 2, 5].indexOf(Math.round(m)) < 0) return null; }
+          if (o.scales.y.type === "logarithmic") { var m = v / Math.pow(10, Math.floor(Math.log10(v) + 1e-9)); if (![1, 2, 5].some(function (t) { return Math.abs(m - t) < 1e-6; })) return null; }
           return short(v);
         };
         o.plugins.downShade = { color: pal.down, lineColor: pal.bad };
@@ -497,13 +561,14 @@ function simulate(o) {
 
     charts.returns = new Chart($("cReturns"), {
       type: "bar",
-      data: { labels: yearLabels, datasets: [
+      data: { labels: [], datasets: [
         { label: "Actual BRK.A return", data: [], backgroundColor: [], borderRadius: 3 },
         { label: "Smoothed rate (prior 5y ÷ 5)", data: [], backgroundColor: pal.smooth, borderRadius: 3 }
       ] },
       options: baseOptions(pal, function (o) {
+        o.scales.x.ticks.autoSkip = true;
         o.scales.y.ticks.callback = function (v) { return (v * 100).toFixed(0) + "%"; };
-        o.plugins.tooltip.callbacks.label = function (c) { return " " + c.dataset.label + ": " + pct(c.parsed.y); };
+        o.plugins.tooltip.callbacks.label = function (c) { return c.parsed.y == null ? null : " " + c.dataset.label + ": " + pct(c.parsed.y); };
         o.plugins.legend.labels.generateLabels = function (chart) {
           var items = Chart.defaults.plugins.legend.labels.generateLabels(chart);
           items[0].fillStyle = pal.brk; items[0].strokeStyle = pal.brk;
@@ -512,75 +577,92 @@ function simulate(o) {
         return o;
       })
     });
-    charts.returns.data.datasets[0].data = yearLabels.map(function (y) { return actualReturn(+y); });
-    charts.returns.data.datasets[0].backgroundColor = charts.returns.data.datasets[0].data.map(function (v) { return v < 0 ? pal.bad : pal.brk; });
-    charts.returns.data.datasets[1].data = yearLabels.map(function (y) { return smoothRate(+y); });
-    charts.returns.update();
+  }
+
+  // Label for calendar year y within [start, N-1], noting partial years.
+  function yearLabel(y, start) {
+    var from = Math.max(indexOf(y, 0), start), to = Math.min(decIndex(y), N - 1);
+    if (monthOf(from) === 0 && monthOf(to) === 11) return String(y);
+    return y + " (" + MONTHS[monthOf(from)] + "–" + MONTHS[monthOf(to)] + ")";
   }
 
   // ----- render
   function render() {
     var o = readInputs(), pal = palette();
-    var r = simulate(o), m = r.months, last = m[m.length - 1];
+    var r = simulate(o), m = r.months, last = m[m.length - 1], start = r.start, count = m.length;
+    var firstYear = yearOf(start), lastYear = yearOf(N - 1);
+    var monthLabels = m.map(function (x) { return monthLabel(x.i); });
+    var yearList = []; for (var y = firstYear; y <= lastYear; y++) yearList.push(y);
 
-    // labels
+    // labels and hints
     $("bufferOut").textContent = o.bufferYears === 0 ? "none" : o.bufferYears + (o.bufferYears === 1 ? " year" : " years");
     $("bufferHint").textContent = o.bufferYears === 0
       ? "No cash: every month is paid by selling shares."
       : "Target " + money(r.target) + " in cash (" + (o.bufferYears * 12) + " months of spending), carved out of the initial amount.";
     $("triggerOut").textContent = Math.round(o.trigger * 100) + "% below high";
     $("spendHint").textContent = o.initial > 0 ? money(o.spend * 12) + " a year — " + (o.spend * 12 / o.initial * 100).toFixed(1) + "% of the initial amount." : "";
+    var shifted = start !== o.start;
+    $("startHint").innerHTML = (shifted ? "<strong>Smoothed returns start in " + monthLabel(start) + " at the earliest.</strong> " : "") +
+      esc("Buys at the " + monthLabel(start - 1) + " close (" + money(r.prices[start - 1]) + "); withdrawals run " + monthLabel(start) + " – " + monthLabel(N - 1) + " (" + years(count) + ").");
+    var startText = yearOf(o.start) + "-" + String(monthOf(o.start) + 1).padStart(2, "0");
+    document.querySelectorAll("#presets .chip").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-start") === startText ? "true" : "false"); });
 
     // status
-    var minK = 0; for (var k = 1; k < m.length; k++) if (m[k].total < m[minK].total) minK = k;
+    var minK = 0; for (var k = 1; k < count; k++) if (m[k].total < m[minK].total) minK = k;
     var st = $("status");
     var basisNote = o.basis === "smoothed" ? " (smoothed returns)" : "";
     if (r.depleted != null) {
       st.className = "status bad";
-      st.innerHTML = "<strong>The money runs out in " + monthLabel(r.depleted) + "</strong>" + basisNote + " — " + ((r.depleted - START) / 12).toFixed(1) + " years in, after withdrawing " + money(r.withdrawn) + ".";
+      st.innerHTML = "<strong>The money runs out in " + monthLabel(r.depleted) + "</strong>" + basisNote + " — " + years(r.depleted - start) + " in, after withdrawing " + money(r.withdrawn) + ".";
     } else {
       st.className = "status";
-      st.innerHTML = "<strong>The money lasts all 20 years</strong>" + basisNote + ": " + money(r.withdrawn) + " withdrawn and " + money(last.total) + " left at the end of 2025 (" + (last.total / o.initial).toFixed(2) + "× the starting amount).";
+      st.innerHTML = "<strong>The money lasts all " + years(count) + "</strong>" + basisNote + ", " + monthLabel(start) + " – " + monthLabel(N - 1) + ": " + money(r.withdrawn) + " withdrawn and " + money(last.total) + " left (" + (o.initial > 0 ? (last.total / o.initial).toFixed(2) : "0") + "× the starting amount).";
     }
 
     // KPIs
     var downMonths = m.filter(function (x) { return x.down; }).length;
     var kpis = [
-      { k: "End value (Dec 2025)", v: short(last.total), d: money(last.brk) + " BRK.A · " + money(last.cash) + " cash", cls: last.total >= o.initial ? "good" : (last.total === 0 ? "bad" : "") },
+      { k: "End value (" + monthLabel(N - 1) + ")", v: short(last.total), d: money(last.brk) + " BRK.A · " + money(last.cash) + " cash", cls: last.total >= o.initial ? "good" : (last.total === 0 ? "bad" : "") },
       { k: "Lowest value", v: short(m[minK].total), d: monthLabel(m[minK].i) },
-      { k: "Depleted", v: r.depleted == null ? "Never" : monthLabel(r.depleted), d: r.depleted == null ? "Lasted 240 of 240 months" : "After " + (r.depleted - START) + " of 240 months", cls: r.depleted == null ? "good" : "bad" },
+      { k: "Depleted", v: r.depleted == null ? "Never" : monthLabel(r.depleted), d: r.depleted == null ? "Lasted all " + count + " months" : "After " + (r.depleted - start) + " of " + count + " months", cls: r.depleted == null ? "good" : "bad" },
       { k: "Total withdrawn", v: short(r.withdrawn), d: money(r.withdrawn) },
       { k: "Months paid from cash", v: String(r.fromCash), d: "of " + downMonths + " down months" },
       { k: "Forced sales", v: String(r.forced), d: "down months paid by selling shares", cls: r.forced > 0 ? "bad" : "good" },
-      { k: "Shares sold", v: r.sold.toFixed(2), d: "of " + r.startShares.toFixed(2) + " bought at " + money(r.prices[START - 1]) }
+      { k: "Shares sold", v: r.sold.toFixed(2), d: "of " + r.startShares.toFixed(2) + " bought at " + money(r.prices[start - 1]) }
     ];
     $("kpis").innerHTML = kpis.map(function (x) {
       return '<div class="kpi ' + (x.cls || "") + '"><div class="k">' + esc(x.k) + '</div><div class="v">' + esc(x.v) + '</div><div class="d">' + esc(x.d) + "</div></div>";
     }).join("");
 
+    var flags = m.map(function (x) { return x.down; });
+    var depletedAt = r.depleted == null ? null : r.depleted - start;
+    var depletedLabel = r.depleted == null ? "" : monthLabel(r.depleted);
+    var denseTicks = yearTicks(start, tickStep(count, true)), sparseTicks = yearTicks(start, tickStep(count, false));
+
     // Chart 1: portfolio
     var c1 = charts.portfolio;
+    c1.data.labels = monthLabels;
     c1.data.datasets[0].data = m.map(function (x) { return x.brk; });
     c1.data.datasets[1].data = m.map(function (x) { return x.cash; });
     c1.data.datasets[2].data = m.map(function (x) { return x.total; });
-    c1.options.plugins.downShade.flags = m.map(function (x) { return x.down; });
-    c1.options.plugins.downShade.depleted = r.depleted == null ? null : r.depleted - START;
-    c1.options.plugins.downShade.depletedLabel = r.depleted == null ? "" : monthLabel(r.depleted);
+    c1.options.scales.x.ticks.callback = denseTicks;
+    Object.assign(c1.options.plugins.downShade, { flags: flags, depleted: depletedAt, depletedLabel: depletedLabel });
     c1.update();
 
-    // Chart 2: buffer comparison
+    // Chart 2: buffer comparison, sampled at each December plus the last month
+    var sample = []; m.forEach(function (x, k) { if (monthOf(x.i) === 11 || k === count - 1) sample.push(k); });
     var buffers = [0, 1, 2, 3, 4, 5];
     if (buffers.indexOf(o.bufferYears) < 0) { buffers.push(o.bufferYears); buffers.sort(function (a, b) { return a - b; }); }
-    charts.buffers.data.datasets = buffers.map(function (b, idx) {
-      var rr = b === o.bufferYears ? r : simulate({ initial: o.initial, spend: o.spend, bufferYears: b, trigger: o.trigger, cashYield: o.cashYield, basis: o.basis });
-      var ye = [o.initial].concat(rr.months.filter(function (x) { return x.i % 12 === 11; }).map(function (x) { return x.total; }));
+    charts.buffers.data.labels = [monthLabel(start - 1)].concat(sample.map(function (k) { var i = m[k].i; return monthOf(i) === 11 ? String(yearOf(i)) : monthLabel(i); }));
+    charts.buffers.data.datasets = buffers.map(function (b) {
+      var rr = b === o.bufferYears ? r : simulate({ start: o.start, initial: o.initial, spend: o.spend, bufferYears: b, trigger: o.trigger, cashYield: o.cashYield, basis: o.basis });
       var sel = b === o.bufferYears;
       var color = b === Math.floor(b) ? pal.buffers[b] : pal.buffers[6];
       return {
         label: (b === 0 ? "No buffer" : b + "y") + (sel ? " (selected)" : ""),
-        data: ye, borderColor: color, backgroundColor: color,
-        borderWidth: sel ? 3.5 : 1.5, pointRadius: sel ? 2.5 : 0, order: sel ? 0 : 1,
-        segment: sel ? undefined : { borderColor: function () { return color + "99"; } }
+        data: [o.initial].concat(sample.map(function (k) { return rr.months[k].total; })),
+        borderColor: sel ? color : color + "99", backgroundColor: color,
+        borderWidth: sel ? 3.5 : 1.5, pointRadius: sel && sample.length < 30 ? 2.5 : 0, order: sel ? 0 : 1
       };
     });
     charts.buffers.update();
@@ -588,6 +670,7 @@ function simulate(o) {
     // Chart 3: price + ATH + markers
     var c3 = charts.price;
     $("priceTitle").textContent = o.basis === "smoothed" ? "Smoothed BRK.A price and all-time high" : "BRK.A price and all-time high";
+    c3.data.labels = monthLabels;
     c3.data.datasets[0].label = o.basis === "smoothed" ? "Smoothed price" : "Month-end price";
     c3.data.datasets[0].data = m.map(function (x) { return x.price; });
     c3.data.datasets[1].data = m.map(function (x) { return x.ath; });
@@ -595,30 +678,41 @@ function simulate(o) {
     c3.data.datasets[2].label = "Trigger (" + Math.round(o.trigger * 100) + "% below high)";
     c3.data.datasets[3].data = m.map(function (x) { return x.kind === "cash" ? x.price : null; });
     c3.data.datasets[4].data = m.map(function (x) { return x.kind === "forced" ? x.price : null; });
-    c3.options.plugins.downShade.flags = m.map(function (x) { return x.down; });
-    c3.options.plugins.downShade.depleted = r.depleted == null ? null : r.depleted - START;
-    c3.options.plugins.downShade.depletedLabel = r.depleted == null ? "" : monthLabel(r.depleted);
+    var marker = count > 300 ? 2.5 : 4;
+    c3.data.datasets[3].pointRadius = marker; c3.data.datasets[4].pointRadius = marker + 0.5;
+    c3.options.scales.x.ticks.callback = denseTicks;
+    Object.assign(c3.options.plugins.downShade, { flags: flags, depleted: depletedAt, depletedLabel: depletedLabel });
     c3.update();
+
+    // Chart 4: annual returns
+    var c4 = charts.returns, actual = yearList.map(function (y) { return yearReturn(CLOSES, y, start); });
+    c4.data.labels = yearList.map(function (y) { return yearLabel(y, start); });
+    c4.data.datasets[0].data = actual;
+    c4.data.datasets[0].backgroundColor = actual.map(function (v) { return v < 0 ? pal.bad : pal.brk; });
+    c4.data.datasets[1].data = yearList.map(function (y) { return smoothRate(y); });
+    c4.update();
 
     // Chart 5: cumulative
     var c5 = charts.cumulative;
+    c5.data.labels = monthLabels;
     c5.data.datasets[0].data = m.map(function (x) { return x.total; });
     c5.data.datasets[1].data = m.map(function (x) { return x.withdrawn; });
+    c5.options.scales.x.ticks.callback = sparseTicks;
     c5.update();
 
     // Table
     var rows = [], prevW = 0;
-    for (var yy = 2006; yy <= 2025; yy++) {
-      var e = m[decIndex(yy) - START];
-      var ret = o.basis === "smoothed" ? r.prices[decIndex(yy)] / r.prices[decIndex(yy - 1)] - 1 : actualReturn(yy);
+    yearList.forEach(function (y) {
+      var e = m[Math.min(decIndex(y), N - 1) - start];
+      var ret = yearReturn(r.prices, y, start);
       var wy = e.withdrawn - prevW; prevW = e.withdrawn;
-      var dep = r.depleted != null && r.depleted <= decIndex(yy);
-      rows.push("<tr" + (dep ? ' class="dep"' : "") + "><td>" + yy + '</td><td class="' + (ret < 0 ? "neg" : "pos") + '">' + pct(ret) + "</td><td>" + money(r.prices[decIndex(yy)]) + "</td><td>" + e.shares.toFixed(2) + "</td><td>" + money(e.brk) + "</td><td>" + money(e.cash) + "</td><td><strong>" + money(e.total) + "</strong></td><td>" + money(wy) + "</td></tr>");
-    }
+      var dep = r.depleted != null && r.depleted <= decIndex(y);
+      rows.push("<tr" + (dep ? ' class="dep"' : "") + "><td>" + esc(yearLabel(y, start)) + '</td><td class="' + (ret < 0 ? "neg" : "pos") + '">' + pct(ret) + "</td><td>" + money(e.price) + "</td><td>" + e.shares.toFixed(2) + "</td><td>" + money(e.brk) + "</td><td>" + money(e.cash) + "</td><td><strong>" + money(e.total) + "</strong></td><td>" + money(wy) + "</td></tr>");
+    });
     $("yearRows").innerHTML = rows.join("");
-    $("tableSub").textContent = o.basis === "smoothed"
-      ? "Year-end values (December). Return and price columns show the smoothed series the simulation used."
-      : "Year-end values (December). BRK.A return is the calendar-year price change.";
+    $("tableSub").textContent = (o.basis === "smoothed"
+      ? "Values at the end of each year (or the last month). Return and price columns show the smoothed series the simulation used."
+      : "Values at the end of each year (or the last month). BRK.A return is the price change over the part of the year simulated.");
   }
 
   // ----- wiring
@@ -641,12 +735,19 @@ function simulate(o) {
   } catch (e) {}
 
   ["initial", "spend", "buffer", "trigger"].forEach(function (id) { $(id).addEventListener("input", render); });
+  ["startMonth", "startYear"].forEach(function (id) {
+    $(id).addEventListener("change", function () { setStart(+$("startYear").value, +$("startMonth").value); render(); });
+  });
+  document.querySelectorAll("#presets .chip").forEach(function (b) {
+    b.addEventListener("click", function () { setStartText(b.getAttribute("data-start")); render(); });
+  });
   document.querySelectorAll("input[name=yield], input[name=basis]").forEach(function (el) { el.addEventListener("change", render); });
   $("logScale").addEventListener("change", function () {
     charts.price.options.scales.y.type = $("logScale").checked ? "logarithmic" : "linear";
     charts.price.update();
   });
   $("reset").addEventListener("click", function () {
+    setStartText(DEFAULTS.start);
     $("initial").value = DEFAULTS.initial; $("spend").value = DEFAULTS.spend;
     $("buffer").value = DEFAULTS.buffer; $("trigger").value = DEFAULTS.trigger;
     $("y-tbill").checked = true; $("b-actual").checked = true;
@@ -655,8 +756,8 @@ function simulate(o) {
 
   $("rates").innerHTML = Object.keys(TBILL).map(function (y) { return "<span>" + y + " <b>" + TBILL[y] + "%</b></span>"; }).join("");
 
-  var isDark = document.documentElement.classList.contains("dark");
-  $("theme").textContent = isDark ? "Light" : "Dark";
+  setStartText(DEFAULTS.start);
+  $("theme").textContent = document.documentElement.classList.contains("dark") ? "Light" : "Dark";
   buildCharts();
   render();
 })();
