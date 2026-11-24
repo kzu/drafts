@@ -57,16 +57,12 @@
     .unit { position: relative; }
     .unit span { position: absolute; top: 50%; transform: translateY(-50%); color: var(--muted-fg); pointer-events: none; }
     .unit .pre { left: 10px; }
-    .unit .post { right: 10px; }
     input[type=number], input[type=date], select {
       width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
       background: var(--bg); color: var(--fg); font: inherit; font-variant-numeric: tabular-nums;
     }
     .unit .pre ~ input { padding-left: 22px; }
-    .unit input:has(~ .post) { padding-right: 28px; }
     input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .pair small { display: block; font-size: 0.72rem; color: var(--muted-fg); margin-bottom: 3px; font-weight: 500; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
     .chip { border: 1px solid var(--border); background: var(--bg); color: var(--muted-fg); border-radius: 999px; padding: 2px 10px; font: inherit; font-size: 0.78rem; cursor: pointer; }
     .chip:hover { color: var(--fg); background: var(--muted); }
@@ -121,7 +117,7 @@
   <header class="top">
     <div>
       <h1>STRC simulator: Stretch preferred with daily dividends</h1>
-      <p>Put money into Strategy’s Variable Rate Series A Perpetual Stretch Preferred (STRC) on any day since its July 2025 IPO, hold it for up to 30 years, and either reinvest every dividend or take it as cash. The past uses STRC’s real closes and dividends; from the latest close on, dividends accrue every calendar day and are paid the next business day, as they have been since November 2026, at the rate and price you choose.</p>
+      <p>Put money into Strategy’s Variable Rate Series A Perpetual Stretch Preferred (STRC) on any day since its July 2025 IPO, hold it for up to 30 years, and either reinvest every dividend or take it as cash. The past uses STRC’s real closes and dividends; from the latest close on, dividends accrue every calendar day and are paid the next business day, as they have been since November 2026, at the current month’s dividend and the price you choose.</p>
     </div>
     <button type="button" id="theme" class="icon-btn" aria-label="Switch theme">
       <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
@@ -186,16 +182,6 @@
       </div>
 
       <div class="field">
-        <div class="lbl">Dividend rate from <span id="rateFrom"></span></div>
-        <div class="pair">
-          <div><small>Per year</small><div class="unit"><input autocomplete="off" id="rate" type="number" min="0" max="30" step="0.25" aria-label="Annual rate"><span class="post">%</span></div></div>
-          <div><small>Per share, per day</small><div class="unit"><span class="pre">$</span><input autocomplete="off" id="perDay" type="number" min="0" step="0.0001" aria-label="Dividend per share per day"></div></div>
-        </div>
-        <div class="chips" id="rateChips"></div>
-        <div class="hint" id="rateHint"></div>
-      </div>
-
-      <div class="field">
         <label for="price">Share price from the latest close on</label>
         <div class="unit"><span class="pre">$</span><input autocomplete="off" id="price" type="number" min="1" step="0.25"></div>
         <div class="chips" id="priceChips"></div>
@@ -256,20 +242,20 @@
         <h2>How it works</h2>
         <h3>The rules</h3>
         <ul>
-          <li>You buy at the close of the chosen day (the next trading day when markets were closed), and the run lasts the chosen number of years from there. Up to the latest close (<span class="lastClose"></span>) it uses STRC’s real closes and every dividend actually declared, by ex-dividend date. After it, prices are the price you set and dividends follow the rate and cadence you set.</li>
+          <li>You buy at the close of the chosen day (the next trading day when markets were closed), and the run lasts the chosen number of years from there. Up to the latest close (<span class="lastClose"></span>) it uses STRC’s real closes and every dividend actually declared, by ex-dividend date. After it, prices are the price you set, and every month pays the dividend of the latest declared month (<span class="rateNow"></span>) on the cadence you set.</li>
           <li>A dividend goes to the shares held before its ex-dividend date: shares bought at a close earn from the next ex-dividend date on. STRC settles in one business day, so the ex-dividend date is the record date.</li>
           <li><strong>Daily dividends</strong>, as Strategy declares them: each month pays a twelfth of the annual rate on the $100 stated amount (12% pays $1.00 a share), spread over its calendar days, weekends and holidays included, so the running total is cut to the cent and the last day takes the rest. At 12% in a 30-day month a share gets $0.03 most days and $0.04 every third day. A weekend or holiday day goes ex-dividend with the business day before it, and each day is paid the next business day.</li>
           <li><strong>Twice a month</strong> pays what accrued on the 15th and the last day of the month, <strong>monthly</strong> on the last day; each is paid the next business day. A period still open at the end of the run counts what accrued so far.</li>
           <li><strong>Reinvesting</strong> buys STRC at the close of the payment day: fractional shares for the whole amount, or whole shares only, with the rest waiting in cash that earns nothing. <strong>Taking cash</strong> keeps the shares as they are; the total adds up the position and the cash taken out.</li>
           <li>Past payment days: next business day after the ex-dividend date for the daily and twice-a-month dividends; the last business day of the month for the monthly dividends through June 2026.</li>
-          <li>The effective yields compound the rate on the price you set: the yield on price is the rate × $100 ÷ price, and reinvesting it n times a year gives (1 + yield ÷ n)<sup>n</sup> − 1.</li>
+          <li>The effective yields compound the current rate on the price you set: the yield on price is the rate × $100 ÷ price, and reinvesting it n times a year gives (1 + yield ÷ n)<sup>n</sup> − 1.</li>
         </ul>
         <h3>Assumptions and limits</h3>
         <ul>
           <li>No taxes, fees or commissions. Strategy expects STRC’s distributions to be a return of capital for years, which lowers your cost basis instead of being taxed as income; that changes with your situation and the company’s earnings, and this page does not model it.</li>
           <li>The rate is not guaranteed: Strategy’s board sets it every month and may lower it, and it can suspend dividends. STRC is not backed by Strategy’s bitcoin; it has a preferred claim on what is left of the company. Its lowest close since the IPO was <span id="lowClose"></span>.</li>
           <li>Strategy can redeem STRC at $101 plus accrued dividends; a projection running for decades assumes it never does.</li>
-          <li>Future months use one flat rate and one flat price, and weekends are the only days markets are assumed closed.</li>
+          <li>The projection keeps the latest declared dividend and one flat price for every future month, and weekends are the only days markets are assumed closed.</li>
         </ul>
         <h3>Data</h3>
         <p class="muted">Daily closes and dividends by ex-dividend date from Yahoo Finance, from STRC’s first trading day (July 30, 2025) through <span class="lastClose"></span>, embedded in this page. A GitHub workflow refreshes them every weekday after the close, so the latest close, rate and dividends are at most a day old. Monthly rates from Strategy’s 8-K filings through October 2026; later months are worked out from the daily dividends paid. This is an illustration, not advice.</p>
@@ -317,7 +303,6 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
 
   var RATE_KEYS = Object.keys(DATA.rates).sort();
   var LATEST_KEY = RATE_KEYS[RATE_KEYS.length - 1], LATEST_RATE = DATA.rates[LATEST_KEY];
-  var ASSUMED_FROM = (function () { var p = LATEST_KEY.split("-"); var m = +p[1]; return m === 12 ? (+p[0] + 1) + "-01" : p[0] + "-" + String(m + 1).padStart(2, "0"); })();
 
   // Dividends actually declared. Monthly ones (ex-dividend through mid-June 2026) were paid at the month's end, later ones the next business day.
   var MONTHLY_UNTIL = toDay("2026-06-30");
@@ -333,14 +318,16 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
   function dailyAmount(monthly, days, d) { return d === days ? monthly - cut(monthly, days, d - 1) / 100 : (cut(monthly, days, d) - cut(monthly, days, d - 1)) / 100; }
 
   var projCache = {};
-  // Dividends after the data: o.rate applies to months with no declared rate; periods run through `end` (the last may end after it).
-  function projected(cadence, rate, end) {
-    var key = cadence + "|" + rate + "|" + end;
+  // The rate of a month: declared, or the latest declared one for the months after it.
+  function rateOf(key) { return key > LATEST_KEY ? LATEST_RATE : DATA.rates[key]; }
+
+  // Dividends after the data; periods run through `end` (the last may end after it).
+  function projected(cadence, end) {
+    var key = cadence + "|" + end;
     if (projCache[key]) return projCache[key];
     var out = [], open = null;
     for (var n = PROJ_FROM; n <= end || open; n++) {
-      var p = ymd(n), mk = monthKey(n), r = DATA.rates[mk] != null ? DATA.rates[mk] : rate;
-      var monthly = r / 12, days = daysIn(p.y, p.m);
+      var p = ymd(n), monthly = rateOf(monthKey(n)) / 12, days = daysIn(p.y, p.m);
       if (cadence === "daily") {
         if (n > end) break;
         var ex = onOrBeforeTrading(n);
@@ -360,9 +347,9 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
 
   function priceOn(n, assumed) { return n <= LAST_DAY ? closeAt[Math.max(n, FIRST_DAY) - FIRST_DAY] : assumed; }
 
-  // o: { start, end (days), initial, reinvest, fractional, cadence, rate (% a year after the declared months), price (after the data) }
+  // o: { start, end (days), initial, reinvest, fractional, cadence, price (after the data) }
   function simulate(o) {
-    var events = HISTORY.concat(projected(o.cadence, o.rate, o.end)).filter(function (e) { return e.ex > o.start; });
+    var events = HISTORY.concat(projected(o.cadence, o.end)).filter(function (e) { return e.ex > o.start; });
     var actions = [];
     events.forEach(function (e) { e = Object.assign({}, e); actions.push({ day: e.ex, kind: 0, e: e }, { day: e.pay, kind: 1, e: e }); });
     actions.sort(function (a, b) { return a.day - b.day || a.kind - b.kind; });
@@ -427,15 +414,14 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
   function plural(n, w) { return n + " " + w + (n === 1 ? "" : "s"); }
 
   // ----- inputs
-  var DEFAULTS = { initial: 100000, start: iso(LAST_DAY), years: 10, reinvest: "yes", fractional: "yes", cadence: "daily", rate: LATEST_RATE, price: LAST_CLOSE };
+  var DEFAULTS = { initial: 100000, start: iso(LAST_DAY), years: 10, reinvest: "yes", fractional: "yes", cadence: "daily", price: LAST_CLOSE };
   $("start").min = iso(FIRST_DAY); $("start").max = iso(LAST_DAY);
-  $("rateFrom").textContent = monthLabel(ASSUMED_FROM);
   function radio(name) { return document.querySelector("input[name=" + name + "]:checked").value; }
   function setRadio(name, v) { document.querySelector("input[name=" + name + "][value=" + v + "]").checked = true; }
   function apply(d) {
     $("initial").value = d.initial; $("start").value = d.start; $("years").value = d.years;
     setRadio("reinvest", d.reinvest); setRadio("fractional", d.fractional); setRadio("cadence", d.cadence);
-    $("rate").value = d.rate; $("perDay").value = (d.rate / 365).toFixed(4); $("price").value = d.price;
+    $("price").value = d.price;
   }
   function read() {
     var s = $("start").value ? toDay($("start").value) : LAST_DAY;
@@ -446,7 +432,7 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
       start: start, end: addYears(start, years), years: years,
       initial: Math.max(100, +$("initial").value || 0),
       reinvest: radio("reinvest") === "yes", fractional: radio("fractional") === "yes", cadence: radio("cadence"),
-      rate: Math.max(0, +$("rate").value || 0), price: Math.max(1, +$("price").value || LAST_CLOSE)
+      price: Math.max(1, +$("price").value || LAST_CLOSE)
     };
   }
 
@@ -495,8 +481,6 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
     var projDays = Math.max(0, o.end - LAST_DAY), histDays = Math.min(o.end, LAST_DAY) - o.start;
     $("yearsHint").textContent = "Until " + dateLabel(o.end) + ": " + (histDays > 0 ? int0.format(histDays) + " days of real data" : "no real data yet") + (projDays > 0 ? ", " + int0.format(projDays) + " projected." : ".");
     $("startHint").textContent = "Bought on " + longLabel(o.start) + " at " + cents(priceOn(o.start, o.price)) + " a share.";
-    var perDay = o.rate / 365;
-    $("rateHint").textContent = o.rate.toFixed(2) + "% of the $100 stated amount is " + cents(o.rate) + " a share a year, " + cents(o.rate / 12) + " a month, about " + "$" + perDay.toFixed(4) + " a day. " + fullMonth(LATEST_KEY) + " is declared at " + LATEST_RATE.toFixed(2) + "%.";
 
     var run = simulate(o);
     var cadences = { daily: "Daily", semi: "Twice a month", monthly: "Monthly" };
@@ -512,22 +496,23 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
     $("status").innerHTML =
       "<span class='live'>Data through <b>" + longLabel(LAST_DAY) + "</b></span>" +
       "<span>Last close <b>" + cents(LAST_CLOSE) + "</b></span>" +
-      "<span>" + fullMonth(LATEST_KEY) + " rate <b>" + LATEST_RATE.toFixed(2) + "%</b></span>" +
+      "<span>" + fullMonth(LATEST_KEY) + " dividend <b>" + cents(LATEST_RATE / 12) + "</b> a share (" + LATEST_RATE.toFixed(2) + "% a year, about $" + (LATEST_RATE / 365).toFixed(4) + " a day)</span>" +
       "<span>Yield on price <b>" + pct(LATEST_RATE / LAST_CLOSE) + "</b></span>" +
       "<span>Latest dividend <b>" + cents(latestDiv[1]) + "</b> (ex " + dateLabel(toDay(latestDiv[0])) + ")</span>";
     document.querySelectorAll(".lastClose").forEach(function (el) { el.textContent = dateLabel(LAST_DAY); });
+    document.querySelectorAll(".rateNow").forEach(function (el) { el.textContent = fullMonth(LATEST_KEY) + ", " + LATEST_RATE.toFixed(2) + "% a year"; });
     var low = DATA.closes.indexOf(Math.min.apply(null, DATA.closes));
     $("lowClose").textContent = cents(DATA.closes[low]) + ", on " + dateLabel(toDay(DATA.dates[low]));
 
     // effective yields at the assumed price
-    var y = o.rate / o.price;
+    var y = LATEST_RATE / o.price;
     var apys = [["Simple", y, null], ["Monthly", Math.pow(1 + y / 12, 12) - 1, "monthly"], ["Twice a month", Math.pow(1 + y / 24, 24) - 1, "semi"], ["Daily", Math.pow(1 + y / 365, 365) - 1, "daily"]];
     $("apy").innerHTML = apys.map(function (a) { return "<div class='" + (a[2] === o.cadence && o.reinvest ? "on" : "") + "'>" + a[0] + "<b>" + pct(a[1]) + "</b></div>"; }).join("");
 
     // KPIs
     var gain = run.total - o.initial, yrs = (o.end - o.start) / 365.25;
     var cagr = Math.pow(run.total / o.initial, 1 / yrs) - 1;
-    var endKey = monthKey(o.end), endRate = DATA.rates[endKey] != null ? DATA.rates[endKey] : endKey >= ASSUMED_FROM ? o.rate : LATEST_RATE;
+    var endRate = rateOf(monthKey(o.end));
     var endIncome = run.shares * endRate / 12;
     var dailyVsMonthly = runs.daily.total - runs.monthly.total;
     var kpis = [
@@ -546,7 +531,7 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
     // growth
     $("growthSub").textContent = (o.reinvest
       ? "Value of the STRC position with every dividend reinvested" + (whole ? " (whole shares; the cash waiting for the next share is included)" : "")
-      : "Value of the STRC position, and the total with the dividends taken as cash") + ". Dashed after the latest close: projected at " + o.rate.toFixed(2) + "% and " + cents(o.price) + ".";
+      : "Value of the STRC position, and the total with the dividends taken as cash") + ". Dashed after the latest close: projected at the current " + cents(LATEST_RATE / 12) + " a share a month and " + cents(o.price) + ".";
     var growthSets = [];
     if (!o.reinvest) growthSets.push({ label: "Total with cash taken", data: run.samples.map(function (s) { return { x: s.x, y: s.total }; }), borderColor: good, backgroundColor: alpha(good, 0.12), fill: "+1", pointRadius: 0, borderWidth: 2, segment: projectedSegment() });
     growthSets.push({ label: "STRC position", data: run.samples.map(function (s) { return { x: s.x, y: s.position }; }), borderColor: accent, backgroundColor: alpha(accent, 0.1),
@@ -612,7 +597,7 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
     $("tableSub").textContent = "Each calendar year of the run; the first and last can be partial. " + (o.reinvest ? "Shares bought with the year’s dividends." : "Dividends taken as cash; Total adds up everything taken so far.");
     $("rows").innerHTML = run.years.map(function (r) {
       var rates = [];
-      for (var m = 0; m < 12; m++) { var key = r.year + "-" + String(m + 1).padStart(2, "0"); if (key < monthKey(o.start) || key > monthKey(o.end)) continue; var v = DATA.rates[key] != null ? DATA.rates[key] : (key >= ASSUMED_FROM ? o.rate : null); if (v != null) rates.push(v); }
+      for (var m = 0; m < 12; m++) { var key = r.year + "-" + String(m + 1).padStart(2, "0"); if (key < monthKey(o.start) || key > monthKey(o.end)) continue; var v = rateOf(key); if (v != null) rates.push(v); }
       var lo = Math.min.apply(null, rates), hi = Math.max.apply(null, rates);
       var rateText = !rates.length ? "–" : lo === hi ? lo.toFixed(2) + "%" : lo.toFixed(2) + "–" + hi.toFixed(2) + "%";
       var cls = r.day <= LAST_DAY ? "" : Math.max(o.start, toDay(r.year + "-01-01")) > LAST_DAY ? "proj" : "part";
@@ -620,9 +605,7 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
     }).join("");
   }
 
-  // ----- price and rate chips
-  $("rateChips").innerHTML = [[LATEST_RATE, "Current " + LATEST_RATE.toFixed(2) + "%"], [10, "10%"], [9, "9% (IPO)"], [8, "8%"]]
-    .map(function (c) { return "<button type='button' class='chip' data-rate='" + c[0] + "'>" + c[1] + "</button>"; }).join("");
+  // ----- price chips
   $("priceChips").innerHTML = [[LAST_CLOSE, "Last close " + cents(LAST_CLOSE)], [100, "$100 stated"], [90, "$90 (IPO)"]]
     .map(function (c) { return "<button type='button' class='chip' data-price='" + c[0] + "'>" + c[1] + "</button>"; }).join("");
 
@@ -632,9 +615,6 @@ var DATA = {"updated":"2026-11-24","dates":["2025-07-30","2025-07-31","2025-08-0
   ["initial", "start", "years", "price"].forEach(function (id) { $(id).addEventListener("input", schedule); });
   document.querySelectorAll("input[type=radio]").forEach(function (el) { el.addEventListener("change", schedule); });
   $("logScale").addEventListener("change", schedule);
-  $("rate").addEventListener("input", function () { $("perDay").value = ((+$("rate").value || 0) / 365).toFixed(4); schedule(); });
-  $("perDay").addEventListener("input", function () { $("rate").value = +((+$("perDay").value || 0) * 365).toFixed(2); schedule(); });
-  $("rateChips").addEventListener("click", function (e) { var b = e.target.closest("[data-rate]"); if (!b) return; $("rate").value = +b.dataset.rate; $("perDay").value = (+b.dataset.rate / 365).toFixed(4); render(); });
   $("priceChips").addEventListener("click", function (e) { var b = e.target.closest("[data-price]"); if (!b) return; $("price").value = +b.dataset.price; render(); });
   document.querySelectorAll("[data-start]").forEach(function (b) {
     b.addEventListener("click", function () { var v = b.dataset.start; $("start").value = v === "ipo" ? iso(FIRST_DAY) : v === "last" ? iso(LAST_DAY) : v; render(); });
