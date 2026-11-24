@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Living off BRK.A or the S&amp;P 500 — Withdrawal &amp; Cash Buffer Simulator</title>
+  <title>Living off Berkshire Hathaway — Withdrawal &amp; Cash Buffer Simulator</title>
   <meta name="description" content="Simulate monthly withdrawals from a BRK.A or S&amp;P 500 position since 1980, with an optional cash buffer used in down markets.">
   <script>
     (function () {
@@ -11,6 +11,8 @@
         var theme = localStorage.getItem("theme");
         var dark = theme === "dark" || (theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
         if (dark) document.documentElement.classList.add("dark");
+        var inputs = localStorage.getItem("brkSim.inputs");
+        if (/^(collapsed|closed|floating)$/.test(inputs)) document.documentElement.setAttribute("data-inputs", inputs);
       } catch (e) {}
     })();
   </script>
@@ -54,8 +56,9 @@
       -webkit-font-smoothing: antialiased;
     }
     a { color: var(--accent); }
-    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 20px 64px; }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 72px 20px 64px; } /* the top leaves room for the floating playback bar */
     header.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    .top-tools { display: flex; gap: 6px; flex: none; }
     header.top h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.02em; }
     header.top p { margin: 0; color: var(--muted-fg); max-width: 70ch; }
     .btn {
@@ -63,12 +66,53 @@
       border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 0.85rem; cursor: pointer; white-space: nowrap;
     }
     .btn:hover { background: var(--muted); }
+    .icon-btn {
+      display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; flex: none;
+      border: 1px solid var(--border); background: var(--card); color: var(--fg); border-radius: 8px; cursor: pointer;
+    }
+    .icon-btn:hover { background: var(--muted); }
+    .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .icon-btn.bare { width: 28px; height: 28px; border-color: transparent; background: transparent; color: var(--muted-fg); }
+    .icon-btn.bare:hover { background: var(--muted); color: var(--fg); }
+    .icon-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .icon-btn.bare svg { width: 16px; height: 16px; }
+    html.dark .i-moon, html:not(.dark) .i-sun { display: none; }
     .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
-    @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
+    @media (max-width: 960px) { .layout { grid-template-columns: minmax(0, 1fr); } }
     .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
-    aside.card { position: sticky; top: 16px; }
-    @media (max-width: 960px) { aside.card { position: static; } }
-    aside h2, .card h2 { font-size: 1rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+    .card h2 { font-size: 1rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+    /* Inputs panel: docked in the layout (the default), collapsed to a rail, closed, or floating over the page. */
+    #inputs { position: sticky; top: 68px; max-height: calc(100vh - 84px); overflow: auto; scrollbar-width: thin; }
+    .inputs-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+    .inputs-head h2 { margin: 0; }
+    .inputs-tools { display: flex; gap: 2px; margin: -4px -8px -4px 0; }
+    #inPin, #gear { display: none; }
+    html[data-inputs=collapsed] .inputs-body { display: none; }
+    html[data-inputs=collapsed] .inputs-head { margin: 0; }
+    html[data-inputs=closed] .layout, html[data-inputs=floating] .layout { grid-template-columns: minmax(0, 1fr); }
+    html[data-inputs=closed] #inputs { display: none; }
+    html[data-inputs=closed] #gear, html[data-inputs=floating] #gear { display: inline-grid; }
+    html[data-inputs=floating] #gear { background: var(--muted); }
+    html[data-inputs=floating] #inputs {
+      position: fixed; z-index: 40; width: min(300px, calc(100vw - 16px)); top: 72px; right: 16px; max-height: calc(100vh - 88px);
+      box-shadow: 0 12px 36px color-mix(in srgb, var(--fg) 20%, transparent);
+    }
+    html[data-inputs=floating] .inputs-head { cursor: grab; touch-action: none; user-select: none; }
+    html[data-inputs=floating] #inPin { display: inline-grid; }
+    html[data-inputs=floating] #inCollapse { display: none; }
+    @media (min-width: 961px) {
+      html[data-inputs=collapsed] .layout { grid-template-columns: 44px minmax(0, 1fr); }
+      html[data-inputs=collapsed] #inputs { padding: 8px 4px; cursor: pointer; }
+      html[data-inputs=collapsed] .inputs-head { flex-direction: column-reverse; gap: 12px; }
+      html[data-inputs=collapsed] .inputs-head h2 { writing-mode: vertical-rl; }
+      html[data-inputs=collapsed] .inputs-tools { flex-direction: column; margin: 0; }
+      html[data-inputs=collapsed] #inCollapse svg { transform: rotate(180deg); }
+    }
+    @media (max-width: 960px) {
+      #inputs { position: static; max-height: none; }
+      #inCollapse svg { transform: rotate(90deg); }
+      html[data-inputs=collapsed] #inCollapse svg { transform: rotate(-90deg); }
+    }
     .card .sub { color: var(--muted-fg); font-size: 0.85rem; margin: 0 0 12px; }
     .field { margin: 14px 0; }
     .field label, .field .lbl { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
@@ -133,18 +177,15 @@
     .encoding { list-style: none; padding: 0; margin: 0 0 8px; font-size: 0.8rem; color: var(--muted-fg); }
     .encoding li { margin: 3px 0; }
     .encoding b { color: var(--fg); font-weight: 600; }
-    /* Always-visible panel inside the playback chart: follows the page theme, draggable. */
+    /* Always-visible panel inside the playback chart: follows the page theme; sits in the top-left or bottom-right corner of the plot, away from the bubble. */
     .play-panel {
       position: absolute; z-index: 2; width: 270px; padding: 10px 12px 11px; border-radius: 10px;
       background: color-mix(in srgb, var(--card) 92%, transparent); color: var(--fg); border: 1px solid var(--border);
       box-shadow: 0 6px 20px color-mix(in srgb, var(--fg) 14%, transparent); backdrop-filter: blur(6px);
-      font-size: 0.82rem; line-height: 1.35; cursor: grab; user-select: none; touch-action: none;
+      font-size: 0.82rem; line-height: 1.35; pointer-events: none; transition: left 0.3s ease, top 0.3s ease;
     }
-    .play-panel.dragging { cursor: grabbing; box-shadow: 0 10px 28px color-mix(in srgb, var(--fg) 22%, transparent); }
-    .play-panel:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .play-panel .pp-head { display: flex; align-items: center; gap: 7px; font-size: 0.9rem; padding-right: 16px; }
+    .play-panel .pp-head { display: flex; align-items: center; gap: 7px; font-size: 0.9rem; }
     .play-panel .pp-head i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
-    .play-panel .pp-head::after { content: "⠿"; position: absolute; right: 10px; top: 9px; color: var(--muted-fg); }
     .play-panel .pp-tag { margin-left: auto; font-size: 0.68rem; padding: 1px 6px; border-radius: 999px; background: var(--muted); color: var(--muted-fg); white-space: nowrap; }
     .play-panel .pp-sub { color: var(--muted-fg); font-size: 0.76rem; margin: 2px 0 6px; font-variant-numeric: tabular-nums; }
     .play-panel .pp-big { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
@@ -158,6 +199,22 @@
     .play-controls input[type=range] { flex: 1; min-width: 160px; }
     #playLabel { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 150px; }
     #playBtn { min-width: 88px; }
+    /* Floating playback bar at the top center, in sync with the controls under the chart. */
+    .play-float {
+      position: fixed; z-index: 50; top: 12px; left: 50%; transform: translateX(-50%);
+      width: min(560px, calc(100vw - 24px)); display: flex; align-items: center; gap: 12px; padding: 5px 16px 5px 5px;
+      border-radius: 999px; border: 1px solid var(--border); background: color-mix(in srgb, var(--card) 90%, transparent);
+      box-shadow: 0 6px 20px color-mix(in srgb, var(--fg) 14%, transparent); backdrop-filter: blur(8px);
+    }
+    .play-float .icon-btn { border-radius: 50%; background: var(--accent); border-color: var(--accent); color: var(--card); }
+    .play-float .icon-btn:hover { background: color-mix(in srgb, var(--accent) 85%, var(--fg)); }
+    .play-float .icon-btn svg { fill: currentColor; stroke: none; }
+    .play-float .i-pause, .play-float [aria-pressed=true] .i-play { display: none; }
+    .play-float [aria-pressed=true] .i-pause { display: block; }
+    .play-float input[type=range] { flex: 1; min-width: 80px; }
+    #fPlayLabel { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.85rem; white-space: nowrap; }
+    #fPlayLabel .short { display: none; }
+    @media (max-width: 600px) { #fPlayLabel .long { display: none; } #fPlayLabel .short { display: inline; } }
     @media (max-width: 760px) {
       .play-canvas { height: 420px; }
       .play-panel { width: 230px; font-size: 0.76rem; }
@@ -173,12 +230,43 @@
       <h1>Living off <span id="assetTitle">BRK.A</span>: withdrawals with a cash buffer</h1>
       <p>Invest a lump sum in Berkshire Hathaway (BRK.A) or the S&amp;P 500 at any month-end in their history, take a fixed amount out every month for 10 to 30 years (data runs to the <span class="lastClose"></span> close), play every start date back, and see how a cash buffer, spent only when the market is down, changes the outcome. All numbers use real month-end prices with dividends reinvested.</p>
     </div>
-    <button type="button" id="theme" class="btn" aria-label="Switch theme">Dark</button>
+    <div class="top-tools">
+      <button type="button" id="gear" class="icon-btn" aria-label="Show the inputs" title="Show the inputs" aria-controls="inputs">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+      <button type="button" id="theme" class="icon-btn" aria-label="Switch theme">
+        <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
   </header>
 
+  <div class="play-float" role="group" aria-label="Playback">
+    <button type="button" class="icon-btn" id="fPlayBtn" aria-pressed="false" aria-label="Play">
+      <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z"/></svg>
+      <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg>
+    </button>
+    <input type="range" id="fPlayRange" min="0" max="0" value="0" step="1" aria-label="Start date">
+    <span id="fPlayLabel"></span>
+  </div>
+
   <div class="layout">
-    <aside class="card" aria-label="Inputs">
-      <h2>Inputs</h2>
+    <aside class="card" id="inputs" aria-label="Inputs">
+      <div class="inputs-head" id="inputsHead">
+        <h2>Inputs</h2>
+        <div class="inputs-tools">
+          <button type="button" class="icon-btn bare" id="inCollapse" aria-label="Collapse the inputs" title="Collapse" aria-expanded="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></svg>
+          </button>
+          <button type="button" class="icon-btn bare" id="inPin" aria-label="Dock the inputs" title="Dock">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+          </button>
+          <button type="button" class="icon-btn bare" id="inClose" aria-label="Close the inputs" title="Close (the gear at the top brings them back)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="inputs-body">
       <p class="sub">Everything recalculates as you change it.</p>
 
       <div class="field">
@@ -255,6 +343,7 @@
       </div>
 
       <button type="button" class="btn" id="reset">Reset to defaults</button>
+      </div>
     </aside>
 
     <main>
@@ -264,13 +353,13 @@
       <div class="charts">
         <div class="card wide">
           <h2>Every start date, played back</h2>
-          <p class="sub">Press Play to start the same plan with <span class="assetName">BRK.A</span> one year later at each step and run it for the chosen period. The trail shows earlier starts; the panel shows the numbers for the current start, or for the trail point you point at. Drag the panel anywhere; double-click it to put it back.</p>
+          <p class="sub">Press Play to start the same plan with <span class="assetName">BRK.A</span> one year later at each step and run it for the chosen period. The trail shows earlier starts; the panel shows the numbers for the current start, or for the trail point you point at, and moves to the other corner when the bubble comes under it. The bar at the top of the page plays it back from anywhere on the page.</p>
           <ul class="encoding">
             <li><b>Across:</b> the annualized return over that window. <b>Up:</b> what’s left at the end (log scale); on the dashed line, the money ran out. <b>Size:</b> how much was withdrawn, so the bubble shrinks when the money runs out early.</li>
           </ul>
           <div class="play-canvas">
             <canvas id="cPlay" aria-label="Playback of outcomes by start date"></canvas>
-            <div class="play-panel" id="playPanel" tabindex="0" role="status" aria-live="polite" title="Drag to move · double-click to reset · arrow keys move it"></div>
+            <div class="play-panel" id="playPanel" role="status" aria-live="polite"></div>
           </div>
           <div class="play-controls">
             <button type="button" class="btn" id="playBtn" aria-pressed="false">▶ Play</button>
@@ -861,7 +950,7 @@ function simulate(o) {
 
   // ----- playback: a Gapminder-style bubble chart where the clock is the start date.
   // Each step starts the same plan, with the asset you picked, one year later.
-  var STEP_MS = 800, PANEL_KEY = "brkSim.playPanel";
+  var STEP_MS = 800;
   var play = { key: null, steps: [], idx: 0, timer: null, o: null, anim: 300, hover: null, nearest: false };
 
   function playSteps(o) {
@@ -956,6 +1045,7 @@ function simulate(o) {
     var o = play.o, steps = play.steps, panel = $("playPanel");
     if (!steps.length) {
       panel.innerHTML = '<div class="pp-head">' + esc(ASSETS[o.asset].name) + '</div><div class="pp-note">No start leaves a full ' + o.years + "-year window before " + LAST_LABEL + ".</div>";
+      placePanel();
       return;
     }
     var hovered = play.hover != null && play.hover !== play.idx, st = steps[hovered ? play.hover : play.idx];
@@ -973,36 +1063,54 @@ function simulate(o) {
         "<dt>Down months</dt><dd>" + st.fromCash + " from cash · " + st.forced + " forced</dd>" +
       "</dl>" +
       (play.nearest && !hovered ? '<div class="pp-note">Your start has no full ' + o.years + "-year window, so this shows the nearest one.</div>" : "");
+    placePanel();
   }
 
-  // Default spot: top-left of the plot. A position the user dragged to is kept, as fractions of the box.
+  // The panel sits in the top-left corner of the plot, or in the bottom-right one when the bubble and its label would be under it.
   function placePanel() {
-    var panel = $("playPanel"), box = panel.parentElement, ch = charts.play, saved = null;
-    try { saved = JSON.parse(localStorage.getItem(PANEL_KEY)); } catch (e) {}
-    var x = saved ? saved.x * box.clientWidth : (ch ? ch.chartArea.left : 60) + 10;
-    var y = saved ? saved.y * box.clientHeight : (ch ? ch.chartArea.top : 8) + 10;
-    movePanel(x, y);
+    var panel = $("playPanel"), ch = charts.play;
+    if (!ch || !ch.chartArea) return;
+    var area = ch.chartArea, w = panel.offsetWidth, h = panel.offsetHeight, gap = 10;
+    var topLeft = { x: area.left + gap, y: area.top + gap }, bottomRight = { x: area.right - w - gap, y: area.bottom - h - gap };
+    var spot = topLeft, pt = ch.data.datasets[1].data[0];
+    if (pt && ch.$play) {
+      var bx = ch.scales.x.getPixelForValue(pt.x), by = ch.scales.y.getPixelForValue(pt.y), r = pt.r + 6;
+      ch.ctx.save(); ch.ctx.font = "600 12px system-ui, sans-serif";
+      var labelW = ch.ctx.measureText(ch.$play.label).width; // drawn right of the bubble by playPlugin
+      ch.ctx.restore();
+      var b = { l: bx - r, t: by - r, r: bx + r + labelW, b: by + r };
+      var overlap = function (p) {
+        return Math.max(0, Math.min(b.r, p.x + w) - Math.max(b.l, p.x)) * Math.max(0, Math.min(b.b, p.y + h) - Math.max(b.t, p.y));
+      };
+      if (overlap(bottomRight) < overlap(topLeft)) spot = bottomRight;
+    }
+    panel.style.left = Math.max(0, spot.x) + "px";
+    panel.style.top = Math.max(0, spot.y) + "px";
   }
-  function movePanel(x, y) {
-    var panel = $("playPanel"), box = panel.parentElement;
-    panel.style.left = Math.max(0, Math.min(x, box.clientWidth - panel.offsetWidth)) + "px";
-    panel.style.top = Math.max(0, Math.min(y, box.clientHeight - panel.offsetHeight)) + "px";
+
+  // The controls under the chart and the floating bar at the top show the same state.
+  // from, to: month indices of the window, or null when there is none. The floating bar also has a short form for narrow screens.
+  function showStep(max, idx, from, to) {
+    ["playRange", "fPlayRange"].forEach(function (id) { $(id).max = max; $(id).value = idx; });
+    function shortLabel(i) { return MONTHS[monthOf(i)] + "’" + String(yearOf(i) % 100).padStart(2, "0"); }
+    var full = from == null ? "" : monthLabel(from) + " – " + monthLabel(to);
+    $("playLabel").textContent = full;
+    $("fPlayLabel").innerHTML = from == null ? "" : '<span class="long">' + full + '</span><span class="short">' + shortLabel(from) + "–" + shortLabel(to) + "</span>";
   }
-  function savePanel() {
-    var panel = $("playPanel"), box = panel.parentElement;
-    try { localStorage.setItem(PANEL_KEY, JSON.stringify({ x: panel.offsetLeft / box.clientWidth, y: panel.offsetTop / box.clientHeight })); } catch (e) {}
+  function showPlaying(on) {
+    $("playBtn").textContent = on ? "❚❚ Pause" : "▶ Play";
+    $("fPlayBtn").setAttribute("aria-label", on ? "Pause" : "Play");
+    ["playBtn", "fPlayBtn"].forEach(function (id) { $(id).setAttribute("aria-pressed", on ? "true" : "false"); });
   }
 
   function drawStep() {
     var ch = charts.play, o = play.o, steps = play.steps, pal = palette(), color = pal.assets[o.asset];
-    $("playRange").max = Math.max(0, steps.length - 1);
     if (!steps.length) {
-      $("playLabel").textContent = "";
+      showStep(0, 0, null, null);
       ch.data.datasets.forEach(function (d) { d.data = []; }); ch.$play = null; ch.update(); drawPanel(); return;
     }
     var idx = play.idx, st = steps[idx], endIdx = st.start + o.years * 12 - 1;
-    $("playRange").value = idx;
-    $("playLabel").textContent = monthLabel(st.start) + " – " + monthLabel(endIdx);
+    showStep(steps.length - 1, idx, st.start, endIdx);
     var maxW = Math.max(1, o.years * 12 * o.spend), maxR = Math.max(10, Math.min(30, ch.width / 26));
     function point(s, k) {
       return { x: s.cagr * 100, y: Math.max(s.end, play.floor), r: Math.max(3, Math.sqrt(Math.min(1, s.withdrawn / maxW)) * maxR), step: k };
@@ -1043,12 +1151,12 @@ function simulate(o) {
   }
   function stopPlay() {
     if (play.timer) clearInterval(play.timer);
-    play.timer = null; $("playBtn").textContent = "▶ Play"; $("playBtn").setAttribute("aria-pressed", "false");
+    play.timer = null; showPlaying(false);
   }
   function startPlay() {
     if (!play.steps.length) return;
     if (play.idx >= play.steps.length - 1) goToStep(0, 0);
-    $("playBtn").textContent = "❚❚ Pause"; $("playBtn").setAttribute("aria-pressed", "true");
+    showPlaying(true);
     play.timer = setInterval(function () {
       if (play.idx >= play.steps.length - 1) { stopPlay(); return; }
       goToStep(play.idx + 1, STEP_MS * 0.9);
@@ -1056,32 +1164,73 @@ function simulate(o) {
   }
 
   // ----- wiring
-  $("playBtn").addEventListener("click", function () { if (play.timer) stopPlay(); else startPlay(); });
-  $("playRange").addEventListener("input", function () { stopPlay(); goToStep(+$("playRange").value, 250); });
+  ["playBtn", "fPlayBtn"].forEach(function (id) {
+    $(id).addEventListener("click", function () { if (play.timer) stopPlay(); else startPlay(); });
+  });
+  ["playRange", "fPlayRange"].forEach(function (id) {
+    $(id).addEventListener("input", function () { stopPlay(); goToStep(+$(id).value, 250); });
+  });
   $("playTrails").addEventListener("change", drawStep);
   $("cPlay").addEventListener("mouseleave", function () { if (play.hover != null) { play.hover = null; drawPanel(); } });
+
+  // ----- inputs panel: docked, collapsed to a rail, closed (the gear brings it back floating), or floating (dragged by its header, the pin docks it).
+  var INPUTS_KEY = "brkSim.inputs", FLOAT_KEY = "brkSim.inputsAt";
+  function inputsState() { return document.documentElement.getAttribute("data-inputs") || "docked"; }
+  function setInputs(state) {
+    document.documentElement.setAttribute("data-inputs", state);
+    try { localStorage.setItem(INPUTS_KEY, state); } catch (e) {}
+    $("inCollapse").setAttribute("aria-expanded", state === "collapsed" ? "false" : "true");
+    $("inCollapse").setAttribute("aria-label", state === "collapsed" ? "Expand the inputs" : "Collapse the inputs");
+    $("inCollapse").title = state === "collapsed" ? "Expand" : "Collapse";
+    $("gear").setAttribute("aria-pressed", state === "floating" ? "true" : "false");
+    var el = $("inputs");
+    if (state === "floating") {
+      var at = null; try { at = JSON.parse(localStorage.getItem(FLOAT_KEY)); } catch (e) {}
+      if (at) moveInputs(at.x, at.y);
+      else { // first time: at the right edge, below the gear and theme buttons when they are in view
+        el.style.left = el.style.right = "";
+        var top = Math.max(72, $("gear").getBoundingClientRect().bottom + 10);
+        el.style.top = top + "px"; el.style.maxHeight = (innerHeight - top - 12) + "px";
+      }
+    } else el.style.left = el.style.top = el.style.right = el.style.maxHeight = "";
+  }
+  function moveInputs(x, y) {
+    var el = $("inputs");
+    x = Math.max(8, Math.min(x, innerWidth - el.offsetWidth - 8)); y = Math.max(8, Math.min(y, innerHeight - 60));
+    el.style.left = x + "px"; el.style.top = y + "px"; el.style.right = "auto"; el.style.maxHeight = (innerHeight - y - 12) + "px";
+  }
+  $("inCollapse").addEventListener("click", function () { setInputs(inputsState() === "collapsed" ? "docked" : "collapsed"); });
+  $("inClose").addEventListener("click", function () { setInputs("closed"); });
+  $("inPin").addEventListener("click", function () { setInputs("docked"); });
+  $("gear").addEventListener("click", function () { setInputs(inputsState() === "floating" ? "closed" : "floating"); });
+  $("inputs").addEventListener("click", function (e) { // the whole rail expands the collapsed panel
+    if (inputsState() === "collapsed" && !e.target.closest("button")) setInputs("docked");
+  });
   (function () {
-    // Drag the panel with a mouse, pen or finger; arrow keys move it too; double-click puts it back.
-    var panel = $("playPanel"), drag = null;
-    panel.addEventListener("pointerdown", function (e) {
-      drag = { dx: e.clientX - panel.offsetLeft, dy: e.clientY - panel.offsetTop };
-      panel.setPointerCapture(e.pointerId); panel.classList.add("dragging");
+    var head = $("inputsHead"), drag = null;
+    head.addEventListener("pointerdown", function (e) {
+      if (inputsState() !== "floating" || e.target.closest("button")) return;
+      var box = $("inputs").getBoundingClientRect();
+      drag = { dx: e.clientX - box.left, dy: e.clientY - box.top };
+      head.setPointerCapture(e.pointerId); e.preventDefault();
     });
-    panel.addEventListener("pointermove", function (e) { if (drag) movePanel(e.clientX - drag.dx, e.clientY - drag.dy); });
-    panel.addEventListener("pointerup", function () { if (!drag) return; drag = null; panel.classList.remove("dragging"); savePanel(); });
-    panel.addEventListener("dblclick", function () { try { localStorage.removeItem(PANEL_KEY); } catch (e) {} placePanel(); });
-    panel.addEventListener("keydown", function (e) {
-      var step = e.shiftKey ? 40 : 10, d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
-      if (!d) return;
-      e.preventDefault(); movePanel(panel.offsetLeft + d[0], panel.offsetTop + d[1]); savePanel();
+    head.addEventListener("pointermove", function (e) { if (drag) moveInputs(e.clientX - drag.dx, e.clientY - drag.dy); });
+    head.addEventListener("pointerup", function () {
+      if (!drag) return; drag = null;
+      var box = $("inputs").getBoundingClientRect();
+      try { localStorage.setItem(FLOAT_KEY, JSON.stringify({ x: box.left, y: box.top })); } catch (e) {}
+    });
+    addEventListener("resize", function () {
+      if (inputsState() !== "floating" || !$("inputs").style.left) return;
+      var box = $("inputs").getBoundingClientRect(); moveInputs(box.left, box.top);
     });
   })();
 
   function setTheme(dark) {
     document.documentElement.classList.toggle("dark", dark);
-    $("theme").textContent = dark ? "Light" : "Dark";
     $("theme").setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
-    buildCharts(); render(); placePanel();
+    $("theme").title = dark ? "Light theme" : "Dark theme";
+    buildCharts(); render();
   }
   $("theme").addEventListener("click", function () {
     var dark = !document.documentElement.classList.contains("dark");
@@ -1119,10 +1268,8 @@ function simulate(o) {
 
   document.querySelectorAll(".lastClose").forEach(function (el) { el.textContent = LAST_LABEL; });
   setStartText(DEFAULTS.start);
-  $("theme").textContent = document.documentElement.classList.contains("dark") ? "Light" : "Dark";
-  buildCharts();
-  render();
-  placePanel();
+  setInputs(inputsState());
+  setTheme(document.documentElement.classList.contains("dark"));
 })();
 </script>
 </body>
