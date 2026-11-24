@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Living off Berkshire Hathaway — Withdrawal &amp; Cash Buffer Simulator</title>
-  <meta name="description" content="Simulate monthly withdrawals from a BRK.A or S&amp;P 500 position since 1980, with an optional cash buffer used in down markets.">
+  <meta name="description" content="Simulate monthly withdrawals from a Berkshire Hathaway or S&amp;P 500 position since 1980, with an optional cash buffer used in down markets.">
   <script>
     (function () {
       try {
@@ -227,8 +227,8 @@
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>Living off <span id="assetTitle">BRK.A</span>: withdrawals with a cash buffer</h1>
-      <p>Invest a lump sum in Berkshire Hathaway (BRK.A) or the S&amp;P 500 at any month-end in their history, take a fixed amount out every month for 10 to 30 years (data runs to the <span class="lastClose"></span> close), play every start date back, and see how a cash buffer, spent only when the market is down, changes the outcome. All numbers use real month-end prices with dividends reinvested.</p>
+      <h1>Living off <span id="assetTitle">Berkshire Hathaway</span>: withdrawals with a cash buffer</h1>
+      <p>Invest a lump sum in Berkshire Hathaway or the S&amp;P 500 at any month-end in their history, take a fixed amount out every month for 10 to 30 years (data runs to the <span class="lastClose"></span> close), play every start date back, and see how a cash buffer, spent only when the market is down, changes the outcome. All numbers use real month-end prices with dividends reinvested, and amounts are in today’s dollars, adjusted for inflation, unless you switch them to nominal.</p>
     </div>
     <div class="top-tools">
       <button type="button" id="gear" class="icon-btn" aria-label="Show the inputs" title="Show the inputs" aria-controls="inputs">
@@ -272,7 +272,7 @@
       <div class="field">
         <div class="lbl">Invest in</div>
         <div class="seg" role="radiogroup" aria-label="Asset">
-          <input type="radio" name="asset" id="a-brk" value="brk" checked><label for="a-brk">BRK.A</label>
+          <input type="radio" name="asset" id="a-brk" value="brk" checked><label for="a-brk">Berkshire</label>
           <input type="radio" name="asset" id="a-spx" value="spx"><label for="a-spx">S&amp;P 500</label>
         </div>
         <div class="hint" id="assetHint"></div>
@@ -311,6 +311,15 @@
         <label for="spend">Monthly spending</label>
         <div class="money"><span>$</span><input id="spend" type="number" min="0" step="500" value="5000" inputmode="numeric"></div>
         <div class="hint" id="spendHint"></div>
+      </div>
+
+      <div class="field">
+        <div class="lbl">Amounts in</div>
+        <div class="seg" role="radiogroup" aria-label="Amounts in">
+          <input type="radio" name="dollars" id="d-real" value="real" checked><label for="d-real">Today’s dollars</label>
+          <input type="radio" name="dollars" id="d-nominal" value="nominal"><label for="d-nominal">Nominal</label>
+        </div>
+        <div class="hint" id="dollarsHint"></div>
       </div>
 
       <div class="field">
@@ -353,9 +362,9 @@
       <div class="charts">
         <div class="card wide">
           <h2>Every start date, played back</h2>
-          <p class="sub">Press Play to start the same plan with <span class="assetName">BRK.A</span> one year later at each step and run it for the chosen period. The trail shows earlier starts; the panel shows the numbers for the current start, or for the trail point you point at, and moves to the other corner when the bubble comes under it. The bar at the bottom of the screen plays it back from anywhere on the page.</p>
+          <p class="sub">Press Play to start the same plan with <span class="assetName">Berkshire Hathaway</span> one year later at each step and run it for the chosen period. The trail shows earlier starts; the panel shows the numbers for the current start, or for the trail point you point at, and moves to the other corner when the bubble comes under it. The bar at the bottom of the screen plays it back from anywhere on the page.</p>
           <ul class="encoding">
-            <li><b>Across:</b> the annualized return over that window. <b>Up:</b> what’s left at the end (log scale); on the dashed line, the money ran out. <b>Size:</b> how much was withdrawn, so the bubble shrinks when the money runs out early.</li>
+            <li><b>Across:</b> the annualized return over that window, after inflation when amounts are in today’s dollars. <b>Up:</b> what’s left at the end (log scale); on the dashed line, the money ran out. <b>Size:</b> how much was withdrawn, so the bubble shrinks when the money runs out early.</li>
           </ul>
           <div class="play-canvas">
             <canvas id="cPlay" aria-label="Playback of outcomes by start date"></canvas>
@@ -374,7 +383,7 @@
           <div class="chart-head">
             <div>
               <h2>Portfolio over time</h2>
-              <p class="sub">Month-end value of the <span class="assetName">BRK.A</span> position and the cash buffer. Shaded months are “down” months.</p>
+              <p class="sub">Month-end value of the <span class="assetName">Berkshire Hathaway</span> position and the cash buffer. Shaded months are “down” months. <span class="dollars"></span></p>
             </div>
           </div>
           <div class="chart-box"><canvas id="cPortfolio" aria-label="Portfolio value over time"></canvas></div>
@@ -388,20 +397,20 @@
 
         <div class="card">
           <h2>Buffer size compared</h2>
-          <p class="sub">Year-end total value for 0–5 years of cash, with your other inputs.</p>
+          <p class="sub">Year-end total value for 0–5 years of cash, with your other inputs. <span class="dollars"></span></p>
           <div class="chart-box"><canvas id="cBuffers" aria-label="Year-end total by buffer size"></canvas></div>
         </div>
 
         <div class="card">
           <h2>Withdrawn vs. what’s left</h2>
-          <p class="sub">Cumulative cash taken out against the remaining total value.</p>
+          <p class="sub">Cumulative cash taken out against the remaining total value. <span class="dollars"></span></p>
           <div class="chart-box"><canvas id="cCumulative" aria-label="Cumulative withdrawn versus remaining value"></canvas></div>
         </div>
 
         <div class="card wide">
           <div class="chart-head">
             <div>
-              <h2 id="priceTitle">BRK.A price and all-time high</h2>
+              <h2 id="priceTitle">Berkshire Hathaway price and all-time high</h2>
               <p class="sub">Dots mark months paid from cash and months where shares had to be sold in a down market. <span id="priceNote"></span></p>
             </div>
             <label class="toggle"><input type="checkbox" id="logScale" checked> Log scale</label>
@@ -422,7 +431,7 @@
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th>Year</th><th>Return</th><th>Year-end price</th><th id="thUnits">Shares</th><th><span class="assetName">BRK.A</span> value</th><th>Cash</th><th>Total</th><th>Withdrawn</th>
+              <th>Year</th><th>Return</th><th>Year-end price</th><th id="thUnits">Shares</th><th><span class="assetShort">Berkshire</span> value</th><th>Cash</th><th>Total</th><th>Withdrawn</th>
             </tr></thead>
             <tbody id="yearRows"></tbody>
           </table>
@@ -434,24 +443,26 @@
         <h3>The rules</h3>
         <ul>
           <li>You buy the asset at the close of the month before your first withdrawal. The cash buffer (years × 12 × monthly spending) is set aside from the initial amount; the rest buys shares (or index units). Fractional shares are allowed.</li>
+          <li><strong>Today’s dollars</strong> (the default): the initial amount and the monthly spending are dollars of the latest CPI month (<span class="cpiThrough"></span>). Each is multiplied by CPI(month) ÷ CPI(latest) to get the dollars of that month: the initial amount with the CPI of the purchase month, and the spending, and with it the buffer target, with the CPI of every month of the run, so spending keeps the same buying power. Trades happen in the dollars of their month, at the actual closes; every amount shown is converted back to today’s dollars the same way, so values and withdrawals in different years compare directly. The playback’s return is then the real return, the asset’s growth divided by the growth of the CPI. <strong>Nominal</strong> uses the amounts as they are, every year.</li>
           <li>A run lasts the chosen time period (10–30 years) from the first withdrawal; when the data ends sooner it is cut at the latest close, and the page says so. Every chart, number and table on the page covers that window.</li>
           <li>The playback steps the first withdrawal forward one year at a time with the asset you picked, keeping the month you picked, through the last start that still has a full window of data. With “Move the whole page” on, the whole page follows each step.</li>
           <li>Every month of the run, in order: cash earns one month of interest; the month is “down” if the close is below the all-time high by at least the trigger (the high includes every close in the asset’s data and is updated after the check).</li>
           <li>Down month with enough cash: spending comes from cash. Otherwise spending comes from selling shares at that month’s close. If a down month finds the buffer short, the remaining cash is used and the rest is sold — that counts as a <em>forced sale</em>.</li>
           <li>In a month that is not down, after spending, shares are sold to refill the cash buffer back to its target.</li>
           <li>If shares plus cash can no longer cover a month, the portfolio is depleted: what is left is paid out and the value stays at zero.</li>
-          <li><strong>Smoothed basis:</strong> for each year Y the annual rate is (close Dec Y−1 ÷ close Dec Y−6 − 1) ÷ 5. A synthetic price starts at the purchase close and grows by (1 + rate)<sup>1/12</sup> each month; the same rules run on it, with the all-time high measured on the synthetic price. The first rate needs the asset’s first December close, so a smoothed run starts in January 1986 for BRK.A and January 1994 for the S&amp;P 500 at the earliest.</li>
+          <li><strong>Smoothed basis:</strong> for each year Y the annual rate is (close Dec Y−1 ÷ close Dec Y−6 − 1) ÷ 5. A synthetic price starts at the purchase close and grows by (1 + rate)<sup>1/12</sup> each month; the same rules run on it, with the all-time high measured on the synthetic price. The first rate needs the asset’s first December close, so a smoothed run starts in January 1986 for Berkshire Hathaway and January 1994 for the S&amp;P 500 at the earliest.</li>
         </ul>
         <h3>Assumptions and limits</h3>
         <ul>
-          <li>No taxes, commissions or inflation adjustment; spending is a flat nominal amount. The S&amp;P 500 is the index itself, with no fund fees.</li>
+          <li>No taxes or commissions. The S&amp;P 500 is the index itself, with no fund fees.</li>
+          <li>Inflation is the US CPI for all urban consumers (CPI-U, all items, not seasonally adjusted), the monthly average of each month applied to its month-end. October 2025 was never published, after the federal shutdown, and uses the geometric mean of September and November 2025; months after <span class="cpiThrough"></span> use its CPI. Down months are still measured on the nominal price, the drop investors see.</li>
           <li>All trades happen at the month-end close; the last month is partial and uses the latest close (<span class="lastClose"></span>), with a full month of cash interest.</li>
           <li>Dividends are reinvested: Berkshire pays none, so its price is its total return; the S&amp;P 500 uses the total-return index (^SP500TR).</li>
           <li>Cash interest uses approximate annual averages of the 3-month US Treasury bill yield, applied monthly (rate ÷ 12). 1980–2005 and 2026 (to date) are averages of the daily 13-week T-bill index (^IRX):</li>
         </ul>
         <div class="rates" id="rates"></div>
         <h3>Data</h3>
-        <p class="muted">Month-end closes from Yahoo Finance, embedded in this page: BRK.A from March 1980 (the last daily close of each month for 1980–1984, monthly bars from 1985), and the S&amp;P 500 total-return index from January 1988, both through the close of <span class="lastClose"></span>. This is a historical illustration, not advice; past returns don’t predict future ones.</p>
+        <p class="muted">Month-end closes from Yahoo Finance, embedded in this page. Berkshire Hathaway is the Class B share (BRK.B), adjusted for its 50-for-1 split of January 2010, from May 1996, when it began trading; from March 1980 to April 1996 it is the Class A price (BRK.A, the last daily close of each month for 1980–1984, monthly bars from 1985) ÷ 1,500, the number of B shares one A share converts into. The two classes differ only in votes, and after 1996 the B price stays within a few percent of A ÷ 1,500. The S&amp;P 500 is its total-return index from January 1988. Both run through the close of <span class="lastClose"></span>. CPI-U from the US Bureau of Labor Statistics (FRED series CPIAUCNS), through <span class="cpiThrough"></span>. This is a historical illustration, not advice; past returns don’t predict future ones.</p>
       </section>
     </main>
   </div>
@@ -459,8 +470,10 @@
 
 <script>
 // --- sim start
-var SERIES = {"brk":[260,275,320,305,340,380,385,420,430,425,430,485,480,515,520,510,485,500,460,505,575,560,510,515,480,510,505,495,475,485,550,610,690,775,765,830,965,975,985,910,950,1020,1240,1310,1350,1310,1325,1280,1240,1250,1290,1260,1240,1290,1305,1300,1280,1275,1395,1490,1815,1850,1860,2150,2110,2040,2120,2620,2625,2470,2255,2760,3120,2910,2860,2975,2825,2900,2625,2875,2740,2820,3100,3360,3520,3380,3410,3500,3960,3990,4220,3325,2900,2950,3030,3150,3425,3775,3925,4150,4375,4300,4800,4725,4700,4700,4925,4725,4950,6275,6425,6575,7500,7975,8625,8510,8250,8675,7455,7225,6725,6700,7150,7200,7000,6400,5875,5950,6345,6675,7400,8075,8025,8125,8750,8400,8525,8775,8875,8570,8350,9050,8850,8725,8950,9125,9100,9225,9525,9125,9400,9475,10725,11750,12100,12475,12750,12650,15000,15400,16000,17525,16675,17250,17250,16325,16200,15450,15925,16100,16100,16100,19600,19100,18950,20250,20525,20400,24600,22275,22650,21600,22700,23450,24750,25500,29400,29500,31300,32100,31900,35500,33850,33500,30500,30700,30900,31300,32150,32400,33200,34100,34800,35500,36200,38000,43000,47200,47200,41500,44800,43700,45300,46000,50300,55800,67200,68600,70700,78305,70105,60500,59600,64500,67900,70000,65000,71100,71400,76400,72000,68900,67805,64200,55000,63900,57300,56100,51200,44000,57200,59300,58600,53800,55100,57700,64400,63700,65900,71000,68400,70300,65450,68000,68700,69400,69200,69400,70000,71200,70000,75600,73900,73000,71100,73450,74600,66800,68300,73000,73900,74190,72300,72750,67600,61700,63800,69815,71000,72500,72010,75775,75000,77810,83750,84250,89490,94500,93300,93390,89000,88950,87250,87000,86650,84250,83700,87900,89900,90200,87000,84350,84100,83500,83500,83150,82000,85900,89390,88620,89490,86800,90350,89000,92290,91659,91600,96097,95800,105475,107100,109990,110050,106190,108990,109200,109490,109475,110000,118390,118510,132500,140100,141600,136000,140000,133400,133850,134650,120750,114450,116600,130600,115490,104000,96600,89502,78600,86700,94000,91600,90000,97000,100850,101000,99000,100600,99200,114600,119800,121800,115325,105910,120000,117000,118675,124500,119300,120200,120450,122425,131300,125300,124750,118775,116105,111500,109769,106800,116950,118500,114755,117925,117934,121900,120800,118850,124945,127445,126560,132700,129505,131916,134060,145875,152600,156280,159000,171300,168600,173900,167050,170410,172994,174750,177900,169511,173708,187350,193275,192000,189900,188124,205880,206900,210000,223065,226000,215865,221180,217500,213400,214800,204850,214000,202531,195240,204596,201360,197800,194360,202555,213450,219000,211695,216975,216000,225760,216220,215700,237000,244121,245980,257100,249850,247780,248440,254700,262786,271450,274740,280470,291500,297600,323375,310250,299100,290650,287200,282040,301550,315800,320000,307705,326000,306000,311500,302200,301215,325080,297060,318350,308666,303078,311832,318939,330495,339590,335996,309096,272000,281700,278640,267300,293631,327560,320001,302500,343688,347815,344100,364580,385702,412500,436000,418601,418900,429900,411379,432902,416876,450662,469805,476205,528921,484340,474050,408950,451700,421308,406470,445050,480280,468711,473000,463525,465600,502880,488024,517810,535400,546725,531477,517825,545900,542625,578020,616561,634440,599500,627400,612241,659211,715300,691180,676960,724040,680920,702614,775000,798442,800540,757400,728800,719850,755280,754200,715740,770100,754800,722500,757000,718140,711900,710900,748850,766600,756650,747005,815600,859191],"spx":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,257.47,269.48,261.15,264.04,266.32,278.54,277.49,268.07,279.49,287.27,283.18,288.12,309.21,301.51,308.54,324.56,337.69,335.78,366.1,373.25,371.74,363.11,370.51,379.41,353.94,358.5,368,358.82,393.8,391.14,389.89,354.65,337.39,335.95,357.67,367.63,383.64,411.08,421.03,422.03,440.24,420.07,439.65,450.06,442.53,448.48,430.41,479.63,470.7,476.79,467.52,481.25,483.6,476.41,495.87,485.72,491.43,493.13,509.92,516.18,520.49,527.59,538.72,525.7,539.76,541.34,539.16,559.62,555.33,566.82,561.41,568.2,587.52,571.57,546.65,553.66,562.75,548.96,566.98,590.23,575.8,588.73,567.29,575.71,590.64,613.65,631.76,650.36,676.36,692.07,715.02,716.82,747.07,744.4,777.07,792.04,819,826.59,834.55,846.85,868.69,872.01,833.48,851.06,898.97,923.76,993.58,973.9,1034.74,1042.85,1000,1059.7,1124.22,1174.59,1268.05,1197.01,1262.56,1220.4,1276.89,1298.82,1313.19,1407.9,1480,1494.89,1469.19,1528.87,1512.59,1293.9,1376.79,1488.78,1579.02,1670.01,1739.84,1685.77,1753.21,1821.11,1778.1,1876.78,1818.18,1809.19,1759.59,1870.94,1908.97,2021.4,1919.84,1883.5,2067.76,2005.55,1964.4,2012.83,1981.36,2104.43,1993.33,1984.91,1828.42,1837.37,1902.55,1729.08,1619.54,1745.39,1757.09,1714.32,1697.45,1591.18,1462.69,1490.58,1604.92,1618.98,1595.35,1564.59,1623.43,1525,1513.77,1405.94,1296.34,1304.86,1163.04,1265.41,1339.89,1261.18,1228.14,1209.71,1221.46,1322.07,1391.72,1409.48,1434.33,1462.3,1446.77,1528.62,1542.07,1622.94,1652.73,1675.7,1650.42,1624.51,1646.8,1678.83,1623.26,1629.83,1647.48,1672.65,1740.33,1799.55,1755.68,1792.63,1760.89,1727.49,1782.46,1784.99,1851.37,1834.48,1849.33,1818.5,1887.28,1887.94,1937.93,1943.19,1967.38,1993.79,1936.41,1939.03,1951,1997.42,2048.89,2115.65,2155.89,2186.13,2219.19,2175.78,2200.12,2297.58,2377.75,2338.25,2265.75,2299.71,2385.72,2423.67,2322.34,2306.23,2167.9,2097.48,2088.42,2190.13,2218.5,2031.47,2014.39,2043.53,1861.44,1548.81,1437.68,1452.98,1330.51,1188.84,1292.98,1416.73,1495.97,1498.94,1612.31,1670.52,1732.86,1700.67,1802.68,1837.5,1771.4,1826.27,1936.48,1967.05,1809.98,1715.23,1835.4,1752.55,1908.95,1981.59,1981.84,2114.29,2164.4,2238.55,2239.44,2305.76,2279.66,2241.66,2196.08,2076.78,1930.79,2141.81,2137.08,2158.94,2255.69,2353.23,2430.67,2415.42,2270.25,2363.79,2396.62,2450.6,2513.93,2467.51,2481.82,2504.44,2634.16,2669.92,2770.05,2823.42,2889.46,2850.66,2995.72,2908.96,3000.18,3138.09,3233.72,3315.59,3200.95,3347.38,3375.51,3400.46,3480.29,3552.18,3503.19,3643.33,3592.25,3679.99,3778.96,3769.44,3656.28,3866.42,3805.27,3841.78,3891.18,3815.85,3895.8,3660.75,3570.17,3871.33,3882.84,3821.6,3631.96,3627.06,3873.11,3888.13,3957.95,3968.21,4114.51,4120.29,4121.06,4045.89,4195.73,4278.66,4359.81,4532.93,4538.21,4584.82,4649.34,4678.36,4774.56,4789.18,4887.97,5002.03,5155.44,5212.76,5511.21,5308.09,5173.19,5193.04,5318.1,5350.83,5549.96,5730.8,5763.42,5369.49,5478.91,4984.22,5383.63,5556.49,5664.46,5893.81,5519.27,5908.25,5993.17,5898.23,6008.59,6138.73,6361.56,6553.57,6551,6011.73,5269.2,5944.68,6227.81,6351.67,6709.81,7192.11,6918.83,6734.84,7472.06,7759.35,7681.01,7892.81,8238.48,8678.16,8738.77,8942.78,9155.21,9433.58,8994.83,9625.02,9558.33,9986.7,9469.92,9186.37,9527.46,8696.65,8712.6,7993.43,8730.46,8374.42,7603.14,8218.7,8678,8178.02,8691.88,8479.8,8791.13,8928.35,8967.16,9559.67,9866.77,9709.68,9246.74,9052.31,9879.02,10327.83,10501.38,11062.11,11418.03,10951.66,11494.7,11907.15,12052.09,12344.43,12608.07,12493.74,13227.13,12911.82,13271.38,13098.22,12360.21,12276.39,13049.13,13712.71,14020.46,14304.68,14826.8,15173.95,15211.14,15220.45,15441.15,15323.8,14560.75,16088.56,16935.35,16774.07,16763.42,17219.94,17160.41,17011.14,16256.4]};            // month-end closes per asset from March 1980, null before an asset's data begins
+var SERIES = {"brk":[0.17333,0.18333,0.21333,0.20333,0.22667,0.25333,0.25667,0.28,0.28667,0.28333,0.28667,0.32333,0.32,0.34333,0.34667,0.34,0.32333,0.33333,0.30667,0.33667,0.38333,0.37333,0.34,0.34333,0.32,0.34,0.33667,0.33,0.31667,0.32333,0.36667,0.40667,0.46,0.51667,0.51,0.55333,0.64333,0.65,0.65667,0.60667,0.63333,0.68,0.82667,0.87333,0.9,0.87333,0.88333,0.85333,0.82667,0.83333,0.86,0.84,0.82667,0.86,0.87,0.86667,0.85333,0.85,0.93,0.99333,1.21,1.2333,1.24,1.4333,1.4067,1.36,1.4133,1.7467,1.75,1.6467,1.5033,1.84,2.08,1.94,1.9067,1.9833,1.8833,1.9333,1.75,1.9167,1.8267,1.88,2.0667,2.24,2.3467,2.2533,2.2733,2.3333,2.64,2.66,2.8133,2.2167,1.9333,1.9667,2.02,2.1,2.2833,2.5167,2.6167,2.7667,2.9167,2.8667,3.2,3.15,3.1333,3.1333,3.2833,3.15,3.3,4.1833,4.2833,4.3833,5,5.3167,5.75,5.6733,5.5,5.7833,4.97,4.8167,4.4833,4.4667,4.7667,4.8,4.6667,4.2667,3.9167,3.9667,4.23,4.45,4.9333,5.3833,5.35,5.4167,5.8333,5.6,5.6833,5.85,5.9167,5.7133,5.5667,6.0333,5.9,5.8167,5.9667,6.0833,6.0667,6.15,6.35,6.0833,6.2667,6.3167,7.15,7.8333,8.0667,8.3167,8.5,8.4333,10,10.267,10.667,11.683,11.117,11.5,11.5,10.883,10.8,10.3,10.617,10.733,10.733,10.733,13.067,12.733,12.633,13.5,13.683,13.6,16.4,14.85,15.1,14.4,15.133,15.633,16.5,17,19.6,19.667,20.867,21.4,21.267,23.667,22.567,22.333,20.4,20.66,20.52,20.82,21.46,21.58,22.06,22.24,23.1,23.76,24.2,25.42,28.9,31.6,31.62,27.84,29.9,29.38,30.16,30.78,33.54,37.2,44.9,45.9,46.96,52.26,46.84,40.16,39.86,42.96,45.02,47,43,47.58,47.02,49.4,46.36,44.8,42.54,40.06,37.12,41.8,37.3,36.6,32.92,28.8,36.4,38.32,37.72,35.2,36.5,38.26,41.4,42.06,43.48,47.08,45,46.78,43.52,45.5,45.44,46,45.92,46.24,46.6,47.08,46.66,50.5,49.06,48.5,47.38,48.66,49.44,44.68,45.74,48.8,49.3,49.2,48.22,48.46,44.48,41.3,42.74,46.64,47.48,48.6,48.06,50.6,49.92,51.85,56.02,56.3,59.62,62.66,62.22,62.38,59.44,59.1,57.88,57.88,57.42,56.08,55.6,58.72,59.88,60.3,57.12,55.96,56.2,55.67,55.64,55.52,54.62,56.3,59.1,58.71,58.64,57.76,60.24,59.04,61.38,60.86,60.94,64.07,63.48,70.3,71.1,73.32,73.35,70.46,72.8,72.56,72.5,72.1,72.08,77.8,79.04,88.28,93.8,94.72,91,93.49,89.46,89.14,89.96,80.24,76.58,78.04,87.9,76.8,69.98,64.28,59.78,51.28,56.4,61.3,59.44,57.92,63.61,65.72,66.46,65.66,67.06,65.72,76.43,80.13,81.27,77,70.55,79.69,78.12,78.78,82.68,79.56,79.68,80.11,81.75,87.28,83.63,83.3,79.07,77.39,74.17,73,71.04,77.86,78.76,76.3,78.37,78.45,81.15,80.45,79.36,83.33,84.84,84.34,88.2,86.35,88.08,89.7,96.93,102.16,104.2,106.32,114.07,111.92,115.87,111.22,113.51,115.09,116.53,118.56,111.6,115.78,124.97,128.85,128.34,126.56,125.43,137.25,138.14,140.16,148.69,150.15,143.91,147.41,144.32,141.21,143,136.11,142.74,134.04,130.4,136.02,134.09,132.04,129.77,134.17,141.88,145.48,140.54,144.79,144.27,150.49,144.47,144.3,157.44,162.98,164.14,171.42,166.68,165.21,165.28,169.37,174.97,181.16,183.32,186.94,193.01,198.22,214.38,207.2,199.48,193.73,191.53,186.65,197.87,208.72,214.11,205.28,218.24,204.18,205.54,201.3,200.89,216.71,197.42,213.17,205.43,203.41,208.02,212.58,220.3,226.5,224.43,206.34,182.83,187.36,185.58,178.51,195.78,218.04,212.94,201.9,228.91,231.87,227.87,240.51,255.47,274.95,289.44,277.92,278.29,285.77,272.94,287.01,276.69,299,313.02,321.45,352.91,322.83,315.98,273.02,300.6,280.8,267.02,295.09,318.6,308.9,311.52,305.18,308.77,328.55,321.08,341,351.96,360.2,350.3,341.33,360,356.66,383.74,409.4,420.52,396.73,414.4,406.8,438.5,475.92,460.26,450.92,483.02,453.28,468.67,513.83,532.58,533.25,503.96,485.77,471.88,502.98,502.74,477.54,513.81,502.65,480.53,504.95,479.2,473.6,474.48,500.39,511.54,504.03,497.95,542.49,572.36],"spx":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,257.47,269.48,261.15,264.04,266.32,278.54,277.49,268.07,279.49,287.27,283.18,288.12,309.21,301.51,308.54,324.56,337.69,335.78,366.1,373.25,371.74,363.11,370.51,379.41,353.94,358.5,368,358.82,393.8,391.14,389.89,354.65,337.39,335.95,357.67,367.63,383.64,411.08,421.03,422.03,440.24,420.07,439.65,450.06,442.53,448.48,430.41,479.63,470.7,476.79,467.52,481.25,483.6,476.41,495.87,485.72,491.43,493.13,509.92,516.18,520.49,527.59,538.72,525.7,539.76,541.34,539.16,559.62,555.33,566.82,561.41,568.2,587.52,571.57,546.65,553.66,562.75,548.96,566.98,590.23,575.8,588.73,567.29,575.71,590.64,613.65,631.76,650.36,676.36,692.07,715.02,716.82,747.07,744.4,777.07,792.04,819,826.59,834.55,846.85,868.69,872.01,833.48,851.06,898.97,923.76,993.58,973.9,1034.74,1042.85,1000,1059.7,1124.22,1174.59,1268.05,1197.01,1262.56,1220.4,1276.89,1298.82,1313.19,1407.9,1480,1494.89,1469.19,1528.87,1512.59,1293.9,1376.79,1488.78,1579.02,1670.01,1739.84,1685.77,1753.21,1821.11,1778.1,1876.78,1818.18,1809.19,1759.59,1870.94,1908.97,2021.4,1919.84,1883.5,2067.76,2005.55,1964.4,2012.83,1981.36,2104.43,1993.33,1984.91,1828.42,1837.37,1902.55,1729.08,1619.54,1745.39,1757.09,1714.32,1697.45,1591.18,1462.69,1490.58,1604.92,1618.98,1595.35,1564.59,1623.43,1525,1513.77,1405.94,1296.34,1304.86,1163.04,1265.41,1339.89,1261.18,1228.14,1209.71,1221.46,1322.07,1391.72,1409.48,1434.33,1462.3,1446.77,1528.62,1542.07,1622.94,1652.73,1675.7,1650.42,1624.51,1646.8,1678.83,1623.26,1629.83,1647.48,1672.65,1740.33,1799.55,1755.68,1792.63,1760.89,1727.49,1782.46,1784.99,1851.37,1834.48,1849.33,1818.5,1887.28,1887.94,1937.93,1943.19,1967.38,1993.79,1936.41,1939.03,1951,1997.42,2048.89,2115.65,2155.89,2186.13,2219.19,2175.78,2200.12,2297.58,2377.75,2338.25,2265.75,2299.71,2385.72,2423.67,2322.34,2306.23,2167.9,2097.48,2088.42,2190.13,2218.5,2031.47,2014.39,2043.53,1861.44,1548.81,1437.68,1452.98,1330.51,1188.84,1292.98,1416.73,1495.97,1498.94,1612.31,1670.52,1732.86,1700.67,1802.68,1837.5,1771.4,1826.27,1936.48,1967.05,1809.98,1715.23,1835.4,1752.55,1908.95,1981.59,1981.84,2114.29,2164.4,2238.55,2239.44,2305.76,2279.66,2241.66,2196.08,2076.78,1930.79,2141.81,2137.08,2158.94,2255.69,2353.23,2430.67,2415.42,2270.25,2363.79,2396.62,2450.6,2513.93,2467.51,2481.82,2504.44,2634.16,2669.92,2770.05,2823.42,2889.46,2850.66,2995.72,2908.96,3000.18,3138.09,3233.72,3315.59,3200.95,3347.38,3375.51,3400.46,3480.29,3552.18,3503.19,3643.33,3592.25,3679.99,3778.96,3769.44,3656.28,3866.42,3805.27,3841.78,3891.18,3815.85,3895.8,3660.75,3570.17,3871.33,3882.84,3821.6,3631.96,3627.06,3873.11,3888.13,3957.95,3968.21,4114.51,4120.29,4121.06,4045.89,4195.73,4278.66,4359.81,4532.93,4538.21,4584.82,4649.34,4678.36,4774.56,4789.18,4887.97,5002.03,5155.44,5212.76,5511.21,5308.09,5173.19,5193.04,5318.1,5350.83,5549.96,5730.8,5763.42,5369.49,5478.91,4984.22,5383.63,5556.49,5664.46,5893.81,5519.27,5908.25,5993.17,5898.23,6008.59,6138.73,6361.56,6553.57,6551,6011.73,5269.2,5944.68,6227.81,6351.67,6709.81,7192.11,6918.83,6734.84,7472.06,7759.35,7681.01,7892.81,8238.48,8678.16,8738.77,8942.78,9155.21,9433.58,8994.83,9625.02,9558.33,9986.7,9469.92,9186.37,9527.46,8696.65,8712.6,7993.43,8730.46,8374.42,7603.14,8218.7,8678,8178.02,8691.88,8479.8,8791.13,8928.35,8967.16,9559.67,9866.77,9709.68,9246.74,9052.31,9879.02,10327.83,10501.38,11062.11,11418.03,10951.66,11494.7,11907.15,12052.09,12344.43,12608.07,12493.74,13227.13,12911.82,13271.38,13098.22,12360.21,12276.39,13049.13,13712.71,14020.46,14304.68,14826.8,15173.95,15211.14,15220.45,15441.15,15323.8,14560.75,16088.56,16935.35,16774.07,16763.42,17219.94,17160.41,17011.14,16256.4]};            // month-end closes per asset from March 1980, null before an asset's data begins
 var TBILL = {"1980":11.39,"1981":14.04,"1982":10.6,"1983":8.62,"1984":9.54,"1985":7.47,"1986":5.97,"1987":5.78,"1988":6.67,"1989":8.11,"1990":7.5,"1991":5.38,"1992":3.43,"1993":3,"1994":4.25,"1995":5.48,"1996":5,"1997":5.05,"1998":4.77,"1999":4.63,"2000":5.81,"2001":3.38,"2002":1.6,"2003":1,"2004":1.37,"2005":3.13,"2006":4.7,"2007":4.4,"2008":1.4,"2009":0.15,"2010":0.14,"2011":0.05,"2012":0.09,"2013":0.06,"2014":0.03,"2015":0.05,"2016":0.32,"2017":0.93,"2018":1.94,"2019":2.06,"2020":0.36,"2021":0.05,"2022":2.02,"2023":5.07,"2024":4.97,"2025":4.1,"2026":3.72};
+var CPI = [80.1,81,81.8,82.7,82.7,83.3,84,84.8,85.5,86.3,87,87.9,88.5,89.1,89.8,90.6,91.6,92.3,93.2,93.4,93.7,94,94.3,94.6,94.5,94.9,95.8,97,97.5,97.7,97.9,98.2,98,97.6,97.8,97.9,97.9,98.6,99.2,99.5,99.9,100.2,100.7,101,101.2,101.3,101.9,102.4,102.6,103.1,103.4,103.7,104.1,104.5,105,105.3,105.3,105.3,105.5,106,106.4,106.9,107.3,107.6,107.8,108,108.3,108.7,109,109.3,109.6,109.3,108.8,108.6,108.9,109.5,109.5,109.7,110.2,110.3,110.4,110.5,111.2,111.6,112.1,112.7,113.1,113.5,113.8,114.4,115,115.3,115.4,115.4,115.7,116,116.5,117.1,117.5,118,118.5,119,119.8,120.2,120.3,120.5,121.1,121.6,122.3,123.1,123.8,124.1,124.4,124.6,125,125.6,125.9,126.1,127.4,128,128.7,128.9,129.2,129.9,130.4,131.6,132.7,133.5,133.8,133.8,134.6,134.8,135,135.2,135.6,136,136.2,136.6,137.2,137.4,137.8,137.9,138.1,138.6,139.3,139.5,139.7,140.2,140.5,140.9,141.3,141.8,142,141.9,142.6,143.1,143.6,144,144.2,144.4,144.4,144.8,145.1,145.7,145.8,145.8,146.2,146.7,147.2,147.4,147.5,148,148.4,149,149.4,149.5,149.7,149.7,150.3,150.9,151.4,151.9,152.2,152.5,152.5,152.9,153.2,153.7,153.6,153.5,154.4,154.9,155.7,156.3,156.6,156.7,157,157.3,157.8,158.3,158.6,158.6,159.1,159.6,160,160.2,160.1,160.3,160.5,160.8,161.2,161.6,161.5,161.3,161.6,161.9,162.2,162.5,162.8,163,163.2,163.4,163.6,164,164,163.9,164.3,164.5,165,166.2,166.2,166.2,166.7,167.1,167.9,168.2,168.3,168.3,168.8,169.8,171.2,171.3,171.5,172.4,172.8,172.8,173.7,174,174.1,174,175.1,175.8,176.2,176.9,177.7,178,177.5,177.5,178.3,177.7,177.4,176.7,177.1,177.8,178.8,179.8,179.8,179.9,180.1,180.7,181,181.3,181.3,180.9,181.7,183.1,184.2,183.8,183.5,183.7,183.9,184.6,185.2,185,184.5,184.3,185.2,186.2,187.4,188,189.1,189.7,189.4,189.5,189.9,190.9,191,190.3,190.7,191.8,193.3,194.6,194.4,194.5,195.4,196.4,198.8,199.2,197.6,196.8,198.3,198.7,199.8,201.5,202.5,202.9,203.5,203.9,202.9,201.8,201.5,201.8,202.416,203.499,205.352,206.686,207.949,208.352,208.299,207.917,208.49,208.936,210.177,210.036,211.08,211.693,213.528,214.823,216.632,218.815,219.964,219.086,218.783,216.573,212.425,210.228,211.143,212.193,212.709,213.24,213.856,215.693,215.351,215.834,215.969,216.177,216.33,215.949,216.687,216.741,217.631,218.009,218.178,217.965,218.011,218.312,218.439,218.711,218.803,219.179,220.223,221.309,223.467,224.906,225.964,225.722,225.922,226.545,226.889,226.421,226.23,225.672,226.665,227.663,229.392,230.085,229.815,229.478,229.104,230.379,231.407,231.317,230.221,229.601,230.28,232.166,232.773,232.531,232.945,233.504,233.596,233.877,234.149,233.546,233.069,233.049,233.916,234.781,236.293,237.072,237.9,238.343,238.25,237.852,238.031,237.433,236.151,234.812,233.707,234.722,236.119,236.599,237.805,238.638,238.654,238.316,237.945,237.838,237.336,236.525,236.916,237.111,238.132,239.261,240.229,241.018,240.628,240.849,241.428,241.729,241.353,241.432,242.839,243.603,243.801,244.524,244.733,244.955,244.786,245.519,246.819,246.663,246.669,246.524,247.867,248.991,249.554,250.546,251.588,251.989,252.006,252.146,252.439,252.885,252.038,251.233,251.712,252.776,254.202,255.548,256.092,256.143,256.571,256.558,256.759,257.346,257.208,256.974,257.971,258.678,258.115,256.389,256.394,257.797,259.101,259.918,260.28,260.388,260.229,260.474,261.582,263.014,264.877,267.054,269.195,271.696,273.003,273.567,274.31,276.589,277.948,278.802,281.148,283.716,287.504,289.109,292.296,296.311,296.276,296.171,296.808,298.012,297.711,296.797,299.17,300.84,301.836,303.363,304.127,305.109,305.691,307.026,307.789,307.671,307.051,306.746,308.417,310.326,312.332,313.548,314.069,314.175,314.54,314.796,315.301,315.664,315.493,315.605,317.671,319.082,319.799,320.795,321.465,322.561,323.048,323.976,324.8,324.461,324.122,324.054,325.252,326.785,330.213,333.02,335.123,333.952,333.918,334.98,336.94,337.511,337.511];            // US CPI-U, all items, not seasonally adjusted (BLS, via FRED CPIAUCNS), aligned with SERIES; Oct 2025 (never published) is the geometric mean of Sep and Nov 2025, and Nov 2026 repeats Oct 2026
+var CPI_THROUGH = "October 2026";  // latest published CPI month: "today's dollars" are dollars of this month
 var LAST_CLOSE = "2026-11-23";    // date of the final close: the last month is partial
 var FIRST = 1980 * 12 + 2;          // index 0 = March 1980
 var N = SERIES.brk.length;          // last index = month of the latest close
@@ -470,7 +483,7 @@ function indexOf(year, month) { return year * 12 + month - FIRST; } // month: 0 
 function decIndex(y) { return indexOf(y, 11); }
 
 var ASSETS = {
-  brk: { name: "BRK.A", units: "Shares", note: "Berkshire Hathaway Class A. It pays no dividend, so its price is its total return." },
+  brk: { name: "Berkshire Hathaway", short: "Berkshire", units: "Shares", note: "Class B shares. Berkshire pays no dividend, so its price is its total return." },
   spx: { name: "S&P 500", units: "Units", note: "S&P 500 total-return index (dividends reinvested, no fund fees). Data from January 1988." }
 };
 Object.keys(ASSETS).forEach(function (k) {
@@ -508,17 +521,22 @@ function priceSeries(asset, basis, start) {
   return (seriesCache[key] = s);
 }
 
-// o: { asset, start (index of first withdrawal), years (length of the run), initial, spend, bufferYears, trigger (fraction), cashYield (bool), basis: "actual" | "smoothed" }
+// Dollars of month i worth one of today's dollars (the latest CPI month); 1 when amounts are nominal.
+function priceLevel(i, real) { return real ? CPI[i] / CPI[N - 1] : 1; }
+
+// o: { asset, start (index of first withdrawal), years (length of the run), initial, spend, bufferYears, trigger (fraction), cashYield (bool), basis: "actual" | "smoothed", real (bool) }
 // The run covers o.years from the start, cut at the latest close when the data ends sooner.
+// With o.real, initial and spend are in today's dollars: the run trades in the dollars of each month (spending and the buffer
+// target follow the CPI), and every money value it returns is converted back to today's dollars. Prices stay nominal.
 function simulate(o) {
   var a = ASSETS[o.asset], start = effectiveStart(o), end = Math.min(start + o.years * 12, N);
-  var p = priceSeries(o.asset, o.basis, start), spend = o.spend, target = o.bufferYears * 12 * spend;
-  var cash = Math.min(target, o.initial);
-  var shares = (o.initial - cash) / p[start - 1];
+  var p = priceSeries(o.asset, o.basis, start), invested = o.initial * priceLevel(start - 1, o.real);
+  var cash = Math.min(o.bufferYears * 12 * o.spend * priceLevel(start - 1, o.real), invested);
+  var shares = (invested - cash) / p[start - 1], startShares = shares;
   var ath = o.basis === "actual" ? Math.max.apply(null, p.slice(a.first, start)) : p[start - 1];
   var months = [], depleted = null, fromCash = 0, forced = 0, sold = 0, withdrawn = 0;
   for (var i = start; i < end; i++) {
-    var price = p[i], y = yearOf(i);
+    var price = p[i], y = yearOf(i), level = priceLevel(i, o.real), spend = o.spend * level, target = o.bufferYears * 12 * spend;
     if (o.cashYield) cash *= 1 + TBILL[y] / 100 / 12;
     var athBefore = ath;
     var down = price < ath * (1 - o.trigger);
@@ -540,11 +558,12 @@ function simulate(o) {
           var s2 = Math.min(shares, (target - cash) / price); shares -= s2; soldNow += s2; cash += s2 * price;
         }
       }
-      sold += soldNow; withdrawn += paid;
+      sold += soldNow; withdrawn += paid / level;
     } else kind = "after";
-    months.push({ i: i, year: y, price: price, ath: athBefore, down: down, kind: kind, paid: paid, shares: shares, cash: cash, held: shares * price, total: shares * price + cash, withdrawn: withdrawn });
+    months.push({ i: i, year: y, price: price, ath: athBefore, down: down, kind: kind, paid: paid / level, shares: shares, cash: cash / level, held: shares * price / level, total: (shares * price + cash) / level, withdrawn: withdrawn });
   }
-  return { asset: o.asset, start: start, last: end - 1, cut: end - start < o.years * 12, months: months, depleted: depleted, fromCash: fromCash, forced: forced, sold: sold, withdrawn: withdrawn, prices: p, startShares: (o.initial - Math.min(target, o.initial)) / p[start - 1], target: target };
+  return { asset: o.asset, start: start, last: end - 1, cut: end - start < o.years * 12, months: months, depleted: depleted, fromCash: fromCash, forced: forced, sold: sold, withdrawn: withdrawn, prices: p, startShares: startShares,
+    target: o.bufferYears * 12 * o.spend, invested: invested, firstSpend: o.spend * priceLevel(start, o.real) };
 }
 // --- sim end
 
@@ -555,6 +574,10 @@ function simulate(o) {
   function monthLabel(i) { return MONTHS[monthOf(i)] + " " + yearOf(i); }
   var usd0 = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
   function money(v) { return usd0.format(v); }
+  var usd2 = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function price(v) { return usd2.format(v); } // share prices, with cents: early Berkshire prices are under a dollar
+  var num2 = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function qty(v) { return num2.format(v); } // shares and index units
   function short(v) {
     var a = Math.abs(v);
     function two(x) { return String(+x.toFixed(2)); }
@@ -562,7 +585,7 @@ function simulate(o) {
     if (a >= 1e9) return "$" + two(v / 1e9) + "B";
     if (a >= 1e6) return "$" + two(v / 1e6) + "M";
     if (a >= 1e3) return "$" + (v / 1e3).toFixed(0) + "k";
-    return "$" + v.toFixed(0);
+    return "$" + (a >= 10 ? v.toFixed(0) : String(+v.toFixed(2)));
   }
   function pct(v, d) { return (v >= 0 ? "+" : "") + (v * 100).toFixed(d == null ? 1 : d) + "%"; }
   function years(months) { var y = months / 12; return (y === Math.round(y) ? y.toFixed(0) : y.toFixed(1)) + (y === 1 ? " year" : " years"); }
@@ -594,7 +617,8 @@ function simulate(o) {
       bufferYears: +$("buffer").value,
       trigger: +$("trigger").value / 100,
       cashYield: document.querySelector("input[name=yield]:checked").value === "tbill",
-      basis: document.querySelector("input[name=basis]:checked").value
+      basis: document.querySelector("input[name=basis]:checked").value,
+      real: document.querySelector("input[name=dollars]:checked").value === "real"
     };
   }
 
@@ -755,7 +779,8 @@ function simulate(o) {
           return short(v);
         };
         o.plugins.downShade = { color: pal.down, lineColor: pal.bad };
-        return moneyTooltip(o);
+        o.plugins.tooltip.callbacks.label = function (c) { return c.parsed.y == null ? null : " " + c.dataset.label + ": " + price(c.parsed.y); };
+        return o;
       })
     });
 
@@ -804,14 +829,20 @@ function simulate(o) {
     $("triggerOut").textContent = Math.round(o.trigger * 100) + "% below high";
     $("periodOut").textContent = o.years + " years";
     $("spendHint").textContent = o.initial > 0 ? money(o.spend * 12) + " a year — " + (o.spend * 12 / o.initial * 100).toFixed(1) + "% of the initial amount." : "";
+    $("dollarsHint").textContent = o.real
+      ? "The amounts are " + CPI_THROUGH + " dollars, converted with the CPI to the dollars of the start; spending then rises with inflation every month, and every amount on the page is in " + CPI_THROUGH + " dollars."
+      : "Flat amounts with no inflation adjustment: the same number of dollars is invested and spent whatever the year.";
+    document.querySelectorAll(".dollars").forEach(function (el) { el.textContent = o.real ? "In " + CPI_THROUGH + " dollars." : "In nominal dollars."; });
     var shifted = start === o.start ? ""
       : o.basis === "smoothed" && start === a.smoothStart ? "Smoothed " + a.name + " returns start in " + monthLabel(start) + " at the earliest."
       : a.name + " data starts in " + monthLabel(a.first) + ", so withdrawals start in " + monthLabel(start) + ".";
     $("startHint").innerHTML = (shifted ? "<strong>" + esc(shifted) + "</strong> " : "") +
-      esc("Buys at the " + monthLabel(start - 1) + " close (" + money(r.prices[start - 1]) + "); withdrawals run " + monthLabel(start) + " – " + endLabel + " (" + years(count) + ").") +
+      esc("Buys at the " + monthLabel(start - 1) + " close (" + price(r.prices[start - 1]) + "); withdrawals run " + monthLabel(start) + " – " + endLabel + " (" + years(count) + ").") +
+      (o.real ? " " + esc(money(o.initial) + " today is " + money(r.invested) + " in " + monthLabel(start - 1) + " dollars, and the first withdrawal is " + money(r.firstSpend) + ".") : "") +
       (cutNote ? " <strong>" + esc(cutNote) + "</strong>" : "");
     $("assetHint").textContent = a.note;
     document.querySelectorAll(".assetName").forEach(function (el) { el.textContent = a.name; });
+    document.querySelectorAll(".assetShort").forEach(function (el) { el.textContent = a.short || a.name; });
     $("assetTitle").textContent = a.name;
     $("thUnits").textContent = a.units;
     var startText = yearOf(o.start) + "-" + String(monthOf(o.start) + 1).padStart(2, "0");
@@ -821,25 +852,27 @@ function simulate(o) {
     var minK = 0; for (var k = 1; k < count; k++) if (m[k].total < m[minK].total) minK = k;
     var st = $("status");
     var basisNote = " with " + a.name + (o.basis === "smoothed" ? " (smoothed returns)" : "");
+    var unitNote = o.real ? " Amounts are in " + CPI_THROUGH + " dollars." : "";
     if (r.depleted != null) {
       st.className = "status bad";
       st.innerHTML = "<strong>The money runs out in " + monthLabel(r.depleted) + "</strong>" + basisNote + " — " + years(r.depleted - start) + " in, after withdrawing " + money(r.withdrawn) + ".";
       if (cutNote) st.innerHTML += " " + esc(cutNote);
+      st.innerHTML += esc(unitNote);
     } else {
       st.className = "status";
-      st.innerHTML = "<strong>The money lasts all " + years(count) + "</strong>" + basisNote + ", " + monthLabel(start) + " – " + endLabel + ": " + money(r.withdrawn) + " withdrawn and " + money(last.total) + " left (" + (o.initial > 0 ? (last.total / o.initial).toFixed(2) : "0") + "× the starting amount)." + (cutNote ? " " + esc(cutNote) : "");
+      st.innerHTML = "<strong>The money lasts all " + years(count) + "</strong>" + basisNote + ", " + monthLabel(start) + " – " + endLabel + ": " + money(r.withdrawn) + " withdrawn and " + money(last.total) + " left (" + (o.initial > 0 ? (last.total / o.initial).toFixed(2) : "0") + "× the starting amount)." + (cutNote ? " " + esc(cutNote) : "") + esc(unitNote);
     }
 
     // KPIs
     var downMonths = m.filter(function (x) { return x.down; }).length;
     var kpis = [
-      { k: "End value (" + endLabel + ")", v: short(last.total), d: money(last.held) + " " + a.name + " · " + money(last.cash) + " cash", cls: last.total >= o.initial ? "good" : (last.total === 0 ? "bad" : "") },
+      { k: "End value (" + endLabel + ")", v: short(last.total), d: money(last.held) + " " + (a.short || a.name) + " · " + money(last.cash) + " cash", cls: last.total >= o.initial ? "good" : (last.total === 0 ? "bad" : "") },
       { k: "Lowest value", v: short(m[minK].total), d: monthLabel(m[minK].i) },
       { k: "Depleted", v: r.depleted == null ? "Never" : monthLabel(r.depleted), d: r.depleted == null ? "Lasted all " + count + " months" : "After " + (r.depleted - start) + " of " + count + " months", cls: r.depleted == null ? "good" : "bad" },
       { k: "Total withdrawn", v: short(r.withdrawn), d: money(r.withdrawn) },
       { k: "Months paid from cash", v: String(r.fromCash), d: "of " + downMonths + " down months" },
       { k: "Forced sales", v: String(r.forced), d: "down months paid by selling shares", cls: r.forced > 0 ? "bad" : "good" },
-      { k: a.units + " sold", v: r.sold.toFixed(2), d: "of " + r.startShares.toFixed(2) + " bought at " + money(r.prices[start - 1]) }
+      { k: a.units + " sold", v: qty(r.sold), d: "of " + qty(r.startShares) + " bought at " + price(r.prices[start - 1]) }
     ];
     $("kpis").innerHTML = kpis.map(function (x) {
       return '<div class="kpi ' + (x.cls || "") + '"><div class="k">' + esc(x.k) + '</div><div class="v">' + esc(x.v) + '</div><div class="d">' + esc(x.d) + "</div></div>";
@@ -853,7 +886,7 @@ function simulate(o) {
     // Chart 1: portfolio
     var c1 = charts.portfolio;
     c1.data.labels = monthLabels;
-    c1.data.datasets[0].label = a.name + " value";
+    c1.data.datasets[0].label = (a.short || a.name) + " value";
     c1.data.datasets[0].data = m.map(function (x) { return x.held; });
     c1.data.datasets[1].data = m.map(function (x) { return x.cash; });
     c1.data.datasets[2].data = m.map(function (x) { return x.total; });
@@ -876,7 +909,7 @@ function simulate(o) {
     charts.assets.update();
     $("compareSub").textContent = "Total value with your inputs over " + years(included[0].r.months.length) + ", both starting " + monthLabel(common) +
       (common !== start ? " (the first month both have " + (o.basis === "smoothed" ? "smoothed returns" : "data") + ")" : "") + ". End values: " +
-      included.map(function (x) { var l = x.r.months[x.r.months.length - 1]; return ASSETS[x.k].name + " " + (x.r.depleted != null ? "ran out " + monthLabel(x.r.depleted) : short(l.total)); }).join(" · ") + ".";
+      included.map(function (x) { var l = x.r.months[x.r.months.length - 1]; return ASSETS[x.k].name + " " + (x.r.depleted != null ? "ran out " + monthLabel(x.r.depleted) : short(l.total)); }).join(" · ") + "." + unitNote;
 
     // Chart 2: buffer comparison, sampled at each December plus the last month
     var sample = []; m.forEach(function (x, k) { if (monthOf(x.i) === 11 || k === count - 1) sample.push(k); });
@@ -938,12 +971,13 @@ function simulate(o) {
       var ret = yearReturn(r.prices, y, start, lastIdx);
       var wy = e.withdrawn - prevW; prevW = e.withdrawn;
       var dep = r.depleted != null && r.depleted <= decIndex(y);
-      rows.push("<tr" + (dep ? ' class="dep"' : "") + "><td>" + esc(yearLabel(y, start, lastIdx)) + '</td><td class="' + (ret < 0 ? "neg" : "pos") + '">' + pct(ret) + "</td><td>" + money(e.price) + "</td><td>" + e.shares.toFixed(2) + "</td><td>" + money(e.held) + "</td><td>" + money(e.cash) + "</td><td><strong>" + money(e.total) + "</strong></td><td>" + money(wy) + "</td></tr>");
+      rows.push("<tr" + (dep ? ' class="dep"' : "") + "><td>" + esc(yearLabel(y, start, lastIdx)) + '</td><td class="' + (ret < 0 ? "neg" : "pos") + '">' + pct(ret) + "</td><td>" + price(e.price) + "</td><td>" + qty(e.shares) + "</td><td>" + money(e.held) + "</td><td>" + money(e.cash) + "</td><td><strong>" + money(e.total) + "</strong></td><td>" + money(wy) + "</td></tr>");
     });
     $("yearRows").innerHTML = rows.join("");
     $("tableSub").textContent = (o.basis === "smoothed"
       ? "Values at the end of each year (or the last month). Return and price columns show the smoothed series the simulation used."
-      : "Values at the end of each year (or the last month). Return is the total return over the part of the year simulated.");
+      : "Values at the end of each year (or the last month). Return is the total return over the part of the year simulated.") +
+      (o.real ? " Return and price are nominal; value, cash, total and withdrawn are in " + CPI_THROUGH + " dollars." : "");
 
     renderPlayback(Object.assign({}, o, { start: start })); // follow the start the run really uses
   }
@@ -954,7 +988,7 @@ function simulate(o) {
   var play = { key: null, steps: [], idx: 0, timer: null, o: null, anim: 300, hover: null, nearest: false };
 
   function playSteps(o) {
-    var key = [o.asset, o.years, o.initial, o.spend, o.bufferYears, o.trigger, o.cashYield, o.basis, monthOf(o.start)].join("|");
+    var key = [o.asset, o.years, o.initial, o.spend, o.bufferYears, o.trigger, o.cashYield, o.basis, o.real, monthOf(o.start)].join("|");
     if (play.key === key) return play.steps;
     var earliest = effectiveStart({ asset: o.asset, start: 1, basis: o.basis });
     var first = earliest + (monthOf(o.start) - monthOf(earliest) + 12) % 12, lastFull = N - o.years * 12;
@@ -965,7 +999,7 @@ function simulate(o) {
       steps.push({
         start: s, last: r.last, end: mm[mm.length - 1].total, depleted: r.depleted, withdrawn: r.withdrawn,
         lowest: mm[low].total, lowestAt: mm[low].i, fromCash: r.fromCash, forced: r.forced,
-        cagr: Math.pow(r.prices[r.last] / r.prices[s - 1], 12 / mm.length) - 1
+        cagr: Math.pow(r.prices[r.last] / r.prices[s - 1] * priceLevel(s - 1, o.real) / priceLevel(r.last, o.real), 12 / mm.length) - 1 // real with o.real
       });
     }
     play.key = key; play.steps = steps;
@@ -1057,7 +1091,7 @@ function simulate(o) {
       '<div class="pp-big' + (ran ? " bad" : "") + '">' + (ran ? "Ran out " + monthLabel(st.depleted) : money(st.end)) +
         "<small>" + (ran ? (years(st.depleted - st.start) + " in") : "left at the end") + "</small></div>" +
       '<dl class="pp-grid">' +
-        "<dt>Return</dt><dd>" + pct(st.cagr) + " a year</dd>" +
+        "<dt>" + (o.real ? "Real return" : "Return") + "</dt><dd>" + pct(st.cagr) + " a year</dd>" +
         "<dt>Withdrawn</dt><dd>" + money(st.withdrawn) + "</dd>" +
         "<dt>Lowest</dt><dd>" + short(st.lowest) + " · " + monthLabel(st.lowestAt) + "</dd>" +
         "<dt>Down months</dt><dd>" + st.fromCash + " from cash · " + st.forced + " forced</dd>" +
@@ -1121,6 +1155,7 @@ function simulate(o) {
     trail.data = $("playTrails").checked ? steps.slice(0, idx + 1).map(point) : [];
     trail.borderColor = color + "55"; trail.backgroundColor = color + "88";
     ch.options.scales.x.min = play.xMin; ch.options.scales.x.max = play.xMax;
+    ch.options.scales.x.title.text = o.real ? "Annualized real return over the window (after inflation)" : "Annualized return over the window";
     ch.options.scales.y.min = play.floor * 0.35; ch.options.scales.y.max = play.yMax;
     ch.options.animation.duration = play.anim;
     var dark = document.documentElement.classList.contains("dark");
@@ -1251,7 +1286,7 @@ function simulate(o) {
   document.querySelectorAll("#presets .chip").forEach(function (b) {
     b.addEventListener("click", function () { setStartText(b.getAttribute("data-start")); render(); });
   });
-  document.querySelectorAll("input[name=asset], input[name=yield], input[name=basis]").forEach(function (el) { el.addEventListener("change", render); });
+  document.querySelectorAll("input[name=asset], input[name=yield], input[name=basis], input[name=dollars]").forEach(function (el) { el.addEventListener("change", render); });
   $("logScale").addEventListener("change", function () {
     charts.price.options.scales.y.type = $("logScale").checked ? "logarithmic" : "linear";
     charts.price.update();
@@ -1260,13 +1295,14 @@ function simulate(o) {
     setStartText(DEFAULTS.start);
     $("period").value = DEFAULTS.period; $("initial").value = DEFAULTS.initial; $("spend").value = DEFAULTS.spend;
     $("buffer").value = DEFAULTS.buffer; $("trigger").value = DEFAULTS.trigger;
-    $("a-brk").checked = true; $("y-tbill").checked = true; $("b-actual").checked = true;
+    $("a-brk").checked = true; $("y-tbill").checked = true; $("b-actual").checked = true; $("d-real").checked = true;
     render();
   });
 
   $("rates").innerHTML = Object.keys(TBILL).map(function (y) { return "<span>" + y + " <b>" + TBILL[y] + "%</b></span>"; }).join("");
 
   document.querySelectorAll(".lastClose").forEach(function (el) { el.textContent = LAST_LABEL; });
+  document.querySelectorAll(".cpiThrough").forEach(function (el) { el.textContent = CPI_THROUGH; });
   setStartText(DEFAULTS.start);
   setInputs(inputsState());
   setTheme(document.documentElement.classList.contains("dark"));
