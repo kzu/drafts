@@ -120,19 +120,19 @@
   <section class="card bar" id="inputs" aria-label="Inputs">
     <div class="field">
       <label for="initial">Initial investment</label>
-      <div class="unit"><span>$</span><input autocomplete="off" id="initial" type="number" min="0" step="1000" value="100000" inputmode="numeric"></div>
+      <div class="unit"><span>$</span><input autocomplete="off" id="initial" type="number" min="0" step="1000" value="1000" inputmode="numeric"></div>
       <div class="hint" id="initialHint"></div>
     </div>
 
     <div class="field">
       <label for="monthly">Monthly investment</label>
-      <div class="unit"><span>$</span><input autocomplete="off" id="monthly" type="number" min="0" step="100" value="0" inputmode="numeric"></div>
+      <div class="unit"><span>$</span><input autocomplete="off" id="monthly" type="number" min="0" step="100" value="1000" inputmode="numeric"></div>
       <div class="hint" id="monthlyHint"></div>
     </div>
 
     <div class="field">
       <label for="years">Investment period <output id="yearsOut" for="years"></output></label>
-      <input autocomplete="off" id="years" type="range" min="1" max="30" step="1" value="10">
+      <input autocomplete="off" id="years" type="range" min="1" max="30" step="1" value="15">
       <div class="hint" id="yearsHint"></div>
     </div>
 
@@ -147,8 +147,8 @@
     <div class="field" id="fractionalField">
       <div class="lbl">Reinvest into</div>
       <div class="seg" role="radiogroup" aria-label="Reinvest into">
-        <input autocomplete="off" type="radio" name="fractional" id="f-yes" value="yes" checked><label for="f-yes">Fractional</label>
-        <input autocomplete="off" type="radio" name="fractional" id="f-no" value="no"><label for="f-no">Whole shares</label>
+        <input autocomplete="off" type="radio" name="fractional" id="f-yes" value="yes"><label for="f-yes">Fractional</label>
+        <input autocomplete="off" type="radio" name="fractional" id="f-no" value="no" checked><label for="f-no">Whole shares</label>
       </div>
     </div>
   </section>
@@ -336,7 +336,7 @@ var DATA = {"updated":"2026-11-24","month":"2026-11","rate":12.0};
   function ordinal(n) { var s = ["th", "st", "nd", "rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
 
   // ----- inputs
-  var DEFAULTS = { initial: 100000, monthly: 0, years: 10, reinvest: "yes", fractional: "yes" };
+  var DEFAULTS = { initial: 1000, monthly: 1000, years: 15, reinvest: "yes", fractional: "no" };
   function radio(name) { return document.querySelector("input[name=" + name + "]:checked").value; }
   function setRadio(name, v) { document.querySelector("input[name=" + name + "][value=" + v + "]").checked = true; }
   function apply(d) {
