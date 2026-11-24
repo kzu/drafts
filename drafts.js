@@ -2,7 +2,7 @@ window.DRAFTS = {
   "files": [
     {
       "path": "brk-withdrawal-simulator.html",
-      "title": "Living off BRK.A — Withdrawal & Cash Buffer Simulator",
+      "title": "Living off BRK.A, the S&P 500 or QQQ — Withdrawal & Cash Buffer Simulator",
       "headings": [
         {
           "level": 1,
@@ -15,6 +15,10 @@ window.DRAFTS = {
         {
           "level": 2,
           "text": "Portfolio over time"
+        },
+        {
+          "level": 2,
+          "text": "Same plan, each asset"
         },
         {
           "level": 2,
