@@ -6,7 +6,7 @@ window.DRAFTS = {
       "headings": [
         {
           "level": 1,
-          "text": "Living off BRK.A: withdrawals with a cash buffer"
+          "text": "Living off Berkshire Hathaway: withdrawals with a cash buffer"
         },
         {
           "level": 2,
@@ -34,7 +34,7 @@ window.DRAFTS = {
         },
         {
           "level": 2,
-          "text": "BRK.A price and all-time high",
+          "text": "Berkshire Hathaway price and all-time high",
           "id": "priceTitle"
         },
         {
