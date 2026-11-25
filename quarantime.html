@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuaranTime now — ticks, milliseconds, seconds and minutes in Base62</title>
+  <meta name="description" content="The current QuaranTime (time since 2020-03-20T00:00:00-03:00) as ticks, milliseconds, seconds and minutes, each in decimal, case-sensitive Base62 and upper-case-only Base36.">
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem("theme");
+        if (theme === "dark" || (theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches)) document.documentElement.classList.add("dark");
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    :root {
+      --radius: 0.75rem;
+      --bg: #ffffff; --fg: #18181b; --card: #ffffff; --muted: #f4f4f5; --muted-fg: #71717a; --border: #e4e4e7;
+      --accent: #ea580c; --good: #059669;
+      color-scheme: light;
+    }
+    html.dark {
+      --bg: #0b0b0d; --fg: #fafafa; --card: #16161a; --muted: #232328; --muted-fg: #a1a1aa; --border: #2c2c33;
+      --accent: #fb923c; --good: #34d399;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font-family: Geist, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.5;
+    }
+    main { max-width: 64rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+    h1 { margin: 0 0 0.25rem; font-size: 1.75rem; letter-spacing: -0.02em; }
+    .sub { margin: 0; color: var(--muted-fg); max-width: 44rem; }
+    .mono { font-family: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, Menlo, monospace; }
+    a { color: var(--accent); }
+    button {
+      font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--border);
+      border-radius: 0.5rem; padding: 0.3rem 0.7rem; cursor: pointer;
+    }
+    button:hover { background: var(--muted); }
+    button.icon { width: 2.25rem; height: 2.25rem; padding: 0; display: grid; place-items: center; }
+    button.icon svg { width: 1.1rem; height: 1.1rem; }
+    .i-play, .i-sun { display: none; }
+    #pause.paused .i-pause { display: none; }
+    #pause.paused .i-play { display: block; }
+    html.dark .i-moon { display: none; }
+    html.dark .i-sun { display: block; }
+    .actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    .now {
+      margin: 1.75rem 0 1.25rem; padding: 1rem 1.25rem; background: var(--muted); border-radius: var(--radius);
+      display: flex; flex-wrap: wrap; gap: 0.25rem 2rem; justify-content: space-between;
+    }
+    .now div span { display: block; color: var(--muted-fg); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .now div b { font-weight: 500; }
+    .cards { display: grid; gap: 1rem; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+    .card h2 { margin: 0 0 0.1rem; font-size: 1.1rem; }
+    .card .def { margin: 0 0 0.75rem; color: var(--muted-fg); font-size: 0.85rem; }
+    .row {
+      display: grid; grid-template-columns: 11rem 1fr auto; align-items: center; gap: 0.75rem;
+      padding: 0.45rem 0; border-top: 1px solid var(--border);
+    }
+    .row:first-of-type { border-top: 0; }
+    .row .label { color: var(--muted-fg); font-size: 0.85rem; }
+    .row .value { font-size: 1.05rem; overflow-wrap: anywhere; }
+    .row.b62 .value { color: var(--accent); font-weight: 600; }
+    .row.b36 .value { color: var(--good); font-weight: 600; }
+    .copy { font-size: 0.75rem; padding: 0.15rem 0.5rem; }
+    footer { margin-top: 2rem; color: var(--muted-fg); font-size: 0.85rem; }
+    footer p { margin: 0.4rem 0; }
+    @media (max-width: 40rem) {
+      .row { grid-template-columns: 1fr auto; }
+      .row .label { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>QuaranTime, right now</h1>
+      <p class="sub">Time elapsed since the QuaranTime epoch, <span class="mono">2020-03-20T00:00:00-03:00</span>, at four resolutions. Each number is also shown encoded in Base62 with the case-sensitive alphabet and with the upper-case-only alphabet.</p>
+    </div>
+    <div class="actions">
+      <button id="pause" class="icon" type="button" aria-label="Pause" title="Pause">
+        <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+        <svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l12-7.2a1 1 0 0 0 0-1.72l-12-7.2A1 1 0 0 0 7 4.8z"/></svg>
+      </button>
+      <button id="theme" class="icon" type="button" aria-label="Toggle theme" title="Toggle theme">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="now" aria-label="Instant shown">
+    <div><span>Local time</span><b id="local" class="mono"></b></div>
+    <div><span>UTC</span><b id="utc" class="mono"></b></div>
+    <div><span>Epoch (UTC)</span><b class="mono">2020-03-20T03:00:00Z</b></div>
+  </section>
+
+  <section id="cards" class="cards"></section>
+
+  <footer>
+    <p><b>Case-sensitive</b> uses <span class="mono">0-9 A-Z a-z</span> (62 symbols), exactly like the catbag <a href="https://github.com/devlooped/catbag/blob/main/System/Base62.cs">Base62.cs</a>. <b>Upper-case-only</b> can't have 62 distinct symbols, so it uses <span class="mono">0-9 A-Z</span> (36 symbols): the same most-significant-first positional encoding, safe where case is lost.</p>
+    <p>Definition: <a href="https://github.com/devlooped/catbag/blob/main/System/QuaranTime.md">QuaranTime</a>. Ticks are 100&nbsp;ns, as in .NET; milliseconds, seconds and minutes truncate toward zero. Browser clocks have millisecond precision, so ticks always end in <span class="mono">0000</span>.</p>
+  </footer>
+</main>
+
+<script>
+  // QuaranTime.cs: QuarantineEpochTicks = 637202700000000000 (.NET UTC ticks since 0001-01-01),
+  // which is 2020-03-20T00:00:00-03:00 == 2020-03-20T03:00:00Z == 1584673200000 Unix ms.
+  const EPOCH_UNIX_MS = 1584673200000n;
+  const TICKS_PER_MS = 10000n;
+
+  const ALPHABETS = {
+    mixed: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+    upper: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  };
+
+  // Same algorithm as Base62.Encode: absolute value, "0" for zero, most significant digit first.
+  function encode(value, alphabet) {
+    if (value < 0n) value = -value;
+    if (value === 0n) return alphabet[0];
+    const base = BigInt(alphabet.length);
+    let out = "";
+    while (value !== 0n) {
+      out = alphabet[Number(value % base)] + out;
+      value /= base;
+    }
+    return out;
+  }
+
+  const UNITS = [
+    { id: "ticks",   name: "Ticks",        def: "100 ns units since the epoch (1 ms = 10,000 ticks)", div: 1n },
+    { id: "ms",      name: "Milliseconds", def: "ToQuaranTimeMilliseconds()",                          div: TICKS_PER_MS },
+    { id: "seconds", name: "Seconds",      def: "ToQuaranTimeSeconds()",                               div: TICKS_PER_MS * 1000n },
+    { id: "minutes", name: "Minutes",      def: "Seconds ÷ 60, truncated",                             div: TICKS_PER_MS * 60000n },
+  ];
+
+  const cards = document.getElementById("cards");
+  const cells = {};
+  for (const u of UNITS) {
+    const card = document.createElement("article");
+    card.className = "card";
+    card.innerHTML = `<h2>${u.name}</h2><p class="def">${u.def}</p>`;
+    for (const [key, cls, label] of [
+      ["dec", "dec", "Decimal"],
+      ["mixed", "b62", "Base62, case-sensitive"],
+      ["upper", "b36", "Base62, upper-case only"],
+    ]) {
+      const row = document.createElement("div");
+      row.className = "row " + cls;
+      row.innerHTML = `<span class="label">${label}</span><span class="value mono"></span><button class="copy" type="button">Copy</button>`;
+      const value = row.querySelector(".value");
+      row.querySelector(".copy").addEventListener("click", async (e) => {
+        try { await navigator.clipboard.writeText(value.textContent); } catch (_) {}
+        const b = e.currentTarget; b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy"), 900);
+      });
+      card.appendChild(row);
+      cells[u.id + "." + key] = value;
+    }
+    cards.appendChild(card);
+  }
+
+  const fmt = new Intl.NumberFormat("en-US");
+  function render(unixMs) {
+    const ticks = (BigInt(unixMs) - EPOCH_UNIX_MS) * TICKS_PER_MS;
+    for (const u of UNITS) {
+      const v = ticks / u.div; // BigInt division truncates toward zero, like C#
+      cells[u.id + ".dec"].textContent = fmt.format(v);
+      cells[u.id + ".mixed"].textContent = encode(v, ALPHABETS.mixed);
+      cells[u.id + ".upper"].textContent = encode(v, ALPHABETS.upper);
+    }
+    const d = new Date(unixMs);
+    document.getElementById("local").textContent = d.toLocaleString("sv-SE", { hour12: false }) + "." + String(d.getMilliseconds()).padStart(3, "0");
+    document.getElementById("utc").textContent = d.toISOString();
+  }
+
+  let paused = false;
+  const pause = document.getElementById("pause");
+  pause.addEventListener("click", () => {
+    paused = !paused;
+    pause.classList.toggle("paused", paused);
+    const label = paused ? "Resume" : "Pause";
+    pause.setAttribute("aria-label", label); pause.title = label;
+    if (!paused) render(Date.now());
+  });
+  document.getElementById("theme").addEventListener("click", () => {
+    const dark = document.documentElement.classList.toggle("dark");
+    try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
+  });
+
+  render(Date.now());
+  setInterval(() => { if (!paused) render(Date.now()); }, 50);
+</script>
+</body>
+</html>
