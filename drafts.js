@@ -390,6 +390,16 @@ window.DRAFTS = {
       ]
     },
     {
+      "path": "quarantime.html",
+      "title": "QuaranTime now — ticks, milliseconds, seconds and minutes in Base62",
+      "headings": [
+        {
+          "level": 1,
+          "text": "QuaranTime, right now"
+        }
+      ]
+    },
+    {
       "path": "strc-simulator.html",
       "title": "STRC simulator — Stretch preferred at $100 with daily dividends",
       "headings": [
