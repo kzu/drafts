@@ -13,6 +13,22 @@ window.DRAFTS = {
           "text": "Inputs"
         },
         {
+          "level": 3,
+          "text": "Investment"
+        },
+        {
+          "level": 3,
+          "text": "Spending"
+        },
+        {
+          "level": 3,
+          "text": "Amounts"
+        },
+        {
+          "level": 3,
+          "text": "Your plan"
+        },
+        {
           "level": 2,
           "text": "Every start date, played back"
         },
@@ -26,11 +42,15 @@ window.DRAFTS = {
         },
         {
           "level": 2,
+          "text": "All at once, or spread over 1 or 2 years?"
+        },
+        {
+          "level": 2,
           "text": "Buffer size compared"
         },
         {
           "level": 2,
-          "text": "Withdrawn vs. what’s left"
+          "text": "Invested, withdrawn and what’s left"
         },
         {
           "level": 2,
