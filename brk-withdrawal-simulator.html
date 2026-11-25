@@ -57,10 +57,9 @@
     }
     a { color: var(--accent); }
     .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 20px 96px; } /* the bottom leaves room for the floating playback bar */
-    header.top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
     .top-tools { display: flex; gap: 6px; flex: none; }
-    header.top h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.02em; }
-    header.top p { margin: 0; color: var(--muted-fg); max-width: 70ch; }
+    header.top h1 { font-size: 1.6rem; line-height: 1.2; margin: 0; letter-spacing: -0.02em; }
     .btn {
       border: 1px solid var(--border); background: var(--card); color: var(--fg);
       border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 0.85rem; cursor: pointer; white-space: nowrap;
@@ -114,6 +113,9 @@
       html[data-inputs=collapsed] #inCollapse svg { transform: rotate(-90deg); }
     }
     .card .sub { color: var(--muted-fg); font-size: 0.85rem; margin: 0 0 12px; }
+    .sec { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-fg); margin: 18px 0 0; padding-top: 12px; border-top: 1px solid var(--border); }
+    .stepper { display: flex; align-items: center; gap: 4px; }
+    .stepper input { flex: 1; min-width: 0; }
     .field { margin: 14px 0; }
     .field label, .field .lbl { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
     .field output { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent); }
@@ -125,6 +127,7 @@
       background: var(--bg); color: var(--fg); font: inherit; font-variant-numeric: tabular-nums;
     }
     input[type=number]:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    input[type=number]:disabled { color: var(--muted-fg); background: var(--muted); cursor: not-allowed; }
     .when { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     select {
       width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
@@ -228,7 +231,6 @@
   <header class="top">
     <div>
       <h1>Living off <span id="assetTitle">Berkshire Hathaway</span>: withdrawals with a cash buffer</h1>
-      <p>Invest a lump sum in Berkshire Hathaway or the S&amp;P 500 at any month-end in their history, take a fixed amount out every month for 10 to 30 years (data runs to the <span class="lastClose"></span> close), play every start date back, and see how a cash buffer, spent only when the market is down, changes the outcome. All numbers use real month-end prices with dividends reinvested, and amounts are in today’s dollars, adjusted for inflation, unless you switch them to nominal.</p>
     </div>
     <div class="top-tools">
       <button type="button" id="gear" class="icon-btn" aria-label="Show the inputs" title="Show the inputs" aria-controls="inputs">
@@ -269,6 +271,7 @@
       <div class="inputs-body">
       <p class="sub">Everything recalculates as you change it.</p>
 
+      <h3 class="sec">Investment</h3>
       <div class="field">
         <div class="lbl">Invest in</div>
         <div class="seg" role="radiogroup" aria-label="Asset">
@@ -279,7 +282,7 @@
       </div>
 
       <div class="field">
-        <div class="lbl">First withdrawal</div>
+        <div class="lbl">Start date</div>
         <div class="when">
           <select id="startMonth" aria-label="Start month"></select>
           <select id="startYear" aria-label="Start year"></select>
@@ -292,34 +295,48 @@
           <button type="button" class="chip" data-start="2008-01">2008</button>
           <button type="button" class="chip" data-start="2016-01">2016</button>
         </div>
-        <div class="hint" id="startHint"></div>
+        <div class="hint">The initial amount buys at the close of the month before. With an investing period, the monthly investments start in this month; without one, the withdrawals do.</div>
       </div>
 
       <div class="field">
-        <label for="period">Time period <output id="periodOut" for="period"></output></label>
-        <input id="period" type="range" min="10" max="30" step="5" value="20" list="periodTicks">
-        <datalist id="periodTicks"><option value="10"></option><option value="15"></option><option value="20"></option><option value="25"></option><option value="30"></option></datalist>
-        <div class="hint">Every run, chart and number on the page covers this many years from the first withdrawal, or up to the latest close when the data ends sooner.</div>
+        <label for="initial">Initial</label>
+        <div class="money"><span>$</span><input id="initial" type="number" min="0" step="10000" value="1000000" inputmode="numeric"></div>
       </div>
 
       <div class="field">
-        <label for="initial">Initial investment</label>
-        <div class="money"><span>$</span><input id="initial" type="number" min="1000" step="10000" value="1000000" inputmode="numeric"></div>
+        <label for="monthly">Monthly</label>
+        <div class="money"><span>$</span><input id="monthly" type="number" min="0" step="100" value="0" inputmode="numeric"></div>
+        <div class="hint" id="monthlyHint"></div>
       </div>
 
       <div class="field">
-        <label for="spend">Monthly spending</label>
+        <label for="investYears">Period <output id="investOut" for="investYears"></output></label>
+        <div class="stepper">
+          <button type="button" class="icon-btn bare" data-step="-1" aria-label="One year less" title="One year less"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+          <input id="investYears" type="range" min="0" max="25" step="1" value="0">
+          <button type="button" class="icon-btn bare" data-step="1" aria-label="One year more" title="One year more"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button>
+        </div>
+        <div class="hint">Years of monthly investments before the withdrawals start. At the switch, the cash buffer is set aside by selling shares.</div>
+      </div>
+
+      <div class="field">
+        <label for="total">Total</label>
+        <div class="money"><span>$</span><input id="total" type="number" min="0" step="10000" inputmode="numeric"></div>
+        <div class="hint" id="totalHint"></div>
+      </div>
+
+      <h3 class="sec">Spending</h3>
+      <div class="field">
+        <label for="spend">Monthly</label>
         <div class="money"><span>$</span><input id="spend" type="number" min="0" step="500" value="5000" inputmode="numeric"></div>
         <div class="hint" id="spendHint"></div>
       </div>
 
       <div class="field">
-        <div class="lbl">Amounts in</div>
-        <div class="seg" role="radiogroup" aria-label="Amounts in">
-          <input type="radio" name="dollars" id="d-real" value="real" checked><label for="d-real">Today’s dollars</label>
-          <input type="radio" name="dollars" id="d-nominal" value="nominal"><label for="d-nominal">Nominal</label>
-        </div>
-        <div class="hint" id="dollarsHint"></div>
+        <label for="period">Period <output id="periodOut" for="period"></output></label>
+        <input id="period" type="range" min="10" max="30" step="5" value="20" list="periodTicks">
+        <datalist id="periodTicks"><option value="10"></option><option value="15"></option><option value="20"></option><option value="25"></option><option value="30"></option></datalist>
+        <div class="hint">Years of withdrawals after the investing period. Every run, chart and number on the page covers both periods, or up to the latest close when the data ends sooner.</div>
       </div>
 
       <div class="field">
@@ -351,6 +368,17 @@
         <div class="hint">Smoothed: each year grows at the asset’s prior 5-year return ÷ 5, spread evenly over the months. It needs five earlier years of prices, so it starts six years after the asset’s data begins.</div>
       </div>
 
+      <h3 class="sec">Amounts</h3>
+      <div class="field">
+        <div class="seg" role="radiogroup" aria-label="Amounts in">
+          <input type="radio" name="dollars" id="d-real" value="real" checked><label for="d-real">Today’s dollars</label>
+          <input type="radio" name="dollars" id="d-nominal" value="nominal"><label for="d-nominal">Nominal</label>
+        </div>
+        <div class="hint" id="dollarsHint"></div>
+      </div>
+
+      <h3 class="sec">Your plan</h3>
+      <div class="field"><div class="hint" id="startHint"></div></div>
       <button type="button" class="btn" id="reset">Reset to defaults</button>
       </div>
     </aside>
@@ -362,7 +390,7 @@
       <div class="charts">
         <div class="card wide">
           <h2>Every start date, played back</h2>
-          <p class="sub">Press Play to start the same plan with <span class="assetName">Berkshire Hathaway</span> one year later at each step and run it for the chosen period. The trail shows earlier starts; the panel shows the numbers for the current start, or for the trail point you point at, and moves to the other corner when the bubble comes under it. The bar at the bottom of the screen plays it back from anywhere on the page.</p>
+          <p class="sub">Press Play to start the same plan with <span class="assetName">Berkshire Hathaway</span> one year later at each step and run it for the chosen periods. The trail shows earlier starts; the panel shows the numbers for the current start, or for the trail point you point at, and moves to the other corner when the bubble comes under it. The bar at the bottom of the screen plays it back from anywhere on the page.</p>
           <ul class="encoding">
             <li><b>Across:</b> the annualized return over that window, after inflation when amounts are in today’s dollars. <b>Up:</b> what’s left at the end (log scale); on the dashed line, the money ran out. <b>Size:</b> how much was withdrawn, so the bubble shrinks when the money runs out early.</li>
           </ul>
@@ -383,7 +411,7 @@
           <div class="chart-head">
             <div>
               <h2>Portfolio over time</h2>
-              <p class="sub">Month-end value of the <span class="assetName">Berkshire Hathaway</span> position and the cash buffer. Shaded months are “down” months. <span class="dollars"></span></p>
+              <p class="sub">Month-end value of the <span class="assetName">Berkshire Hathaway</span> position and the cash buffer. Shaded months are “down” months; the tinted part before the line is the investing period. <span class="dollars"></span></p>
             </div>
           </div>
           <div class="chart-box"><canvas id="cPortfolio" aria-label="Portfolio value over time"></canvas></div>
@@ -395,6 +423,17 @@
           <div class="chart-box"><canvas id="cAssets" aria-label="Total value by asset"></canvas></div>
         </div>
 
+        <div class="card wide">
+          <div class="chart-head">
+            <div>
+              <h2>All at once, or spread over 1 or 2 years?</h2>
+              <p class="sub" id="spreadSub"></p>
+            </div>
+            <label class="toggle"><input type="checkbox" id="spreadDollars"> In dollars</label>
+          </div>
+          <div class="chart-box"><canvas id="cSpread" aria-label="End value when the total is spread over 1 or 2 years, compared with investing it at once, by start year"></canvas></div>
+        </div>
+
         <div class="card">
           <h2>Buffer size compared</h2>
           <p class="sub">Year-end total value for 0–5 years of cash, with your other inputs. <span class="dollars"></span></p>
@@ -402,8 +441,8 @@
         </div>
 
         <div class="card">
-          <h2>Withdrawn vs. what’s left</h2>
-          <p class="sub">Cumulative cash taken out against the remaining total value. <span class="dollars"></span></p>
+          <h2>Invested, withdrawn and what’s left</h2>
+          <p class="sub">Cumulative money put in and taken out against the remaining total value. <span class="dollars"></span></p>
           <div class="chart-box"><canvas id="cCumulative" aria-label="Cumulative withdrawn versus remaining value"></canvas></div>
         </div>
 
@@ -431,7 +470,7 @@
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th>Year</th><th>Return</th><th>Year-end price</th><th id="thUnits">Shares</th><th><span class="assetShort">Berkshire</span> value</th><th>Cash</th><th>Total</th><th>Withdrawn</th>
+              <th>Year</th><th>Return</th><th>Year-end price</th><th id="thUnits">Shares</th><th><span class="assetShort">Berkshire</span> value</th><th>Cash</th><th>Total</th><th>Invested</th><th>Withdrawn</th>
             </tr></thead>
             <tbody id="yearRows"></tbody>
           </table>
@@ -440,13 +479,15 @@
 
       <section class="card block notes">
         <h2>How it works</h2>
+        <p>The page invests a lump sum, and optionally a monthly amount for up to 25 years, in Berkshire Hathaway or the S&amp;P 500 at any month-end in their history, then takes a fixed amount out every month for 10 to 30 years, and shows how a cash buffer, spent only when the market is down, changes the outcome. The playback repeats the plan for every start date.</p>
         <h3>The rules</h3>
         <ul>
-          <li>You buy the asset at the close of the month before your first withdrawal. The cash buffer (years × 12 × monthly spending) is set aside from the initial amount; the rest buys shares (or index units). Fractional shares are allowed.</li>
-          <li><strong>Today’s dollars</strong> (the default): the initial amount and the monthly spending are dollars of the latest CPI month (<span class="cpiThrough"></span>). Each is multiplied by CPI(month) ÷ CPI(latest) to get the dollars of that month: the initial amount with the CPI of the purchase month, and the spending, and with it the buffer target, with the CPI of every month of the run, so spending keeps the same buying power. Trades happen in the dollars of their month, at the actual closes; every amount shown is converted back to today’s dollars the same way, so values and withdrawals in different years compare directly. The playback’s return is then the real return, the asset’s growth divided by the growth of the CPI. <strong>Nominal</strong> uses the amounts as they are, every year.</li>
-          <li>A run lasts the chosen time period (10–30 years) from the first withdrawal; when the data ends sooner it is cut at the latest close, and the page says so. Every chart, number and table on the page covers that window.</li>
-          <li>The playback steps the first withdrawal forward one year at a time with the asset you picked, keeping the month you picked, through the last start that still has a full window of data. With “Move the whole page” on, the whole page follows each step.</li>
-          <li>Every month of the run, in order: cash earns one month of interest; the month is “down” if the close is below the all-time high by at least the trigger (the high includes every close in the asset’s data and is updated after the check).</li>
+          <li>The initial amount buys the asset at the close of the month before the start date. Fractional shares (or index units) are allowed.</li>
+          <li><strong>Investing period</strong> (optional): from the start date, the monthly investment buys more at every month-end close. The cash buffer (years × 12 × monthly spending) is set aside when the withdrawals are about to start: by selling shares at the close of the last investing month, or, without an investing period, out of the initial amount before it buys shares.</li>
+          <li><strong>Today’s dollars</strong> (the default): the initial amount, the monthly investment and the monthly spending are dollars of the latest CPI month (<span class="cpiThrough"></span>). Each is multiplied by CPI(month) ÷ CPI(latest) to get the dollars of that month: the initial amount with the CPI of the purchase month, and the monthly investment, the spending and the buffer target with the CPI of every month of the run, so they keep the same buying power. Trades happen in the dollars of their month, at the actual closes; every amount shown is converted back to today’s dollars the same way, so values and withdrawals in different years compare directly. The playback’s return is then the real return, the asset’s growth divided by the growth of the CPI. <strong>Nominal</strong> uses the amounts as they are, every year.</li>
+          <li>A run lasts the investing period (0–25 years) plus the spending period (10–30 years) from the start date; when the data ends sooner it is cut at the latest close, and the page says so. Every chart, number and table on the page covers that window, and the charts tint the investing months and mark the first withdrawal with a line.</li>
+          <li>The playback steps the start date forward one year at a time with the asset you picked, keeping the month you picked, through the last start that still has a full window of data. With “Move the whole page” on, the whole page follows each step.</li>
+          <li>Every month of the withdrawals, in order: cash earns one month of interest; the month is “down” if the close is below the all-time high by at least the trigger (the high includes every close in the asset’s data, the investing months included, and is updated after the check).</li>
           <li>Down month with enough cash: spending comes from cash. Otherwise spending comes from selling shares at that month’s close. If a down month finds the buffer short, the remaining cash is used and the rest is sold — that counts as a <em>forced sale</em>.</li>
           <li>In a month that is not down, after spending, shares are sold to refill the cash buffer back to its target.</li>
           <li>If shares plus cash can no longer cover a month, the portfolio is depleted: what is left is paid out and the value stays at zero.</li>
@@ -503,7 +544,7 @@ function yearReturn(p, y, start, last) {
   var from = Math.max(decIndex(y - 1), start - 1), to = Math.min(decIndex(y), last);
   return p[to] / p[from] - 1;
 }
-// First withdrawal month actually used: not before the asset's data, nor before smoothed returns can start.
+// Start month actually used (of the first investment, or of the first withdrawal without an investing period): not before the asset's data, nor before smoothed returns can start.
 function effectiveStart(o) {
   var a = ASSETS[o.asset];
   var s = Math.min(Math.max(o.start, a.first + 1), N - 1);
@@ -524,25 +565,38 @@ function priceSeries(asset, basis, start) {
 // Dollars of month i worth one of today's dollars (the latest CPI month); 1 when amounts are nominal.
 function priceLevel(i, real) { return real ? CPI[i] / CPI[N - 1] : 1; }
 
-// o: { asset, start (index of first withdrawal), years (length of the run), initial, spend, bufferYears, trigger (fraction), cashYield (bool), basis: "actual" | "smoothed", real (bool) }
-// The run covers o.years from the start, cut at the latest close when the data ends sooner.
-// With o.real, initial and spend are in today's dollars: the run trades in the dollars of each month (spending and the buffer
-// target follow the CPI), and every money value it returns is converted back to today's dollars. Prices stay nominal.
+// o: { asset, start (index of the first month), initial, monthly (investment), investYears, years (spending period), spend,
+//      bufferYears, trigger (fraction), cashYield (bool), basis: "actual" | "smoothed", real (bool) }
+// The initial amount buys at the close before the start. For investYears the monthly amount buys more at each close; then
+// withdrawals run for o.years. The run is cut at the latest close when the data ends sooner.
+// The cash buffer is set aside when the withdrawals are about to start: out of the initial amount without an investing period,
+// else by selling shares at the close of the last investing month.
+// With o.real, amounts are in today's dollars: the run trades in the dollars of each month (investments, spending and the
+// buffer target follow the CPI), and every money value it returns is converted back to today's dollars. Prices stay nominal.
 function simulate(o) {
-  var a = ASSETS[o.asset], start = effectiveStart(o), end = Math.min(start + o.years * 12, N);
-  var p = priceSeries(o.asset, o.basis, start), invested = o.initial * priceLevel(start - 1, o.real);
-  var cash = Math.min(o.bufferYears * 12 * o.spend * priceLevel(start - 1, o.real), invested);
-  var shares = (invested - cash) / p[start - 1], startShares = shares;
+  var a = ASSETS[o.asset], start = effectiveStart(o), monthly = o.monthly || 0;
+  var switchAt = Math.min(start + (o.investYears || 0) * 12, N); // first withdrawal month; N when the data ends before
+  var end = Math.min(switchAt + o.years * 12, N);
+  var p = priceSeries(o.asset, o.basis, start), initialThen = o.initial * priceLevel(start - 1, o.real);
+  var bufferAt = function (i) { return o.bufferYears * 12 * o.spend * priceLevel(i, o.real); };
+  var cash = switchAt === start ? Math.min(bufferAt(start - 1), initialThen) : 0;
+  var shares = (initialThen - cash) / p[start - 1], bought = shares, cost = initialThen - cash; // cost: nominal dollars paid for shares
   var ath = o.basis === "actual" ? Math.max.apply(null, p.slice(a.first, start)) : p[start - 1];
-  var months = [], depleted = null, fromCash = 0, forced = 0, sold = 0, withdrawn = 0;
+  var months = [], depleted = null, fromCash = 0, forced = 0, sold = 0, withdrawn = 0, contributed = o.initial;
   for (var i = start; i < end; i++) {
     var price = p[i], y = yearOf(i), level = priceLevel(i, o.real), spend = o.spend * level, target = o.bufferYears * 12 * spend;
     if (o.cashYield) cash *= 1 + TBILL[y] / 100 / 12;
     var athBefore = ath;
     var down = price < ath * (1 - o.trigger);
     ath = Math.max(ath, price);
-    var kind = "sell", paid = 0, soldNow = 0;
-    if (depleted === null) {
+    var kind = "sell", paid = 0, put = 0, soldNow = 0;
+    if (i < switchAt) {
+      kind = "invest"; down = false; put = monthly * level; contributed += monthly;
+      var bu = put / price; shares += bu; bought += bu; cost += put;
+      if (i === switchAt - 1 && switchAt < end) { // set the buffer aside for the withdrawals
+        var sb = Math.min(shares, bufferAt(i) / price); shares -= sb; soldNow += sb; cash += sb * price;
+      }
+    } else if (depleted === null) {
       var total = shares * price + cash;
       if (total < spend) {
         depleted = i; paid = total; soldNow = shares; shares = 0; cash = 0; kind = "depleted";
@@ -558,12 +612,15 @@ function simulate(o) {
           var s2 = Math.min(shares, (target - cash) / price); shares -= s2; soldNow += s2; cash += s2 * price;
         }
       }
-      sold += soldNow; withdrawn += paid / level;
     } else kind = "after";
-    months.push({ i: i, year: y, price: price, ath: athBefore, down: down, kind: kind, paid: paid / level, shares: shares, cash: cash / level, held: shares * price / level, total: (shares * price + cash) / level, withdrawn: withdrawn });
+    sold += soldNow; withdrawn += paid / level;
+    months.push({ i: i, year: y, price: price, ath: athBefore, down: down, kind: kind, paid: paid / level, put: put / level, contributed: contributed,
+      shares: shares, cash: cash / level, held: shares * price / level, total: (shares * price + cash) / level, withdrawn: withdrawn });
   }
-  return { asset: o.asset, start: start, last: end - 1, cut: end - start < o.years * 12, months: months, depleted: depleted, fromCash: fromCash, forced: forced, sold: sold, withdrawn: withdrawn, prices: p, startShares: startShares,
-    target: o.bufferYears * 12 * o.spend, invested: invested, firstSpend: o.spend * priceLevel(start, o.real) };
+  return { asset: o.asset, start: start, switchAt: switchAt, last: end - 1, cut: end - start < ((o.investYears || 0) + o.years) * 12,
+    months: months, depleted: depleted, fromCash: fromCash, forced: forced, sold: sold, withdrawn: withdrawn, contributed: contributed,
+    prices: p, bought: bought, avgCost: bought > 0 ? cost / bought : 0, target: o.bufferYears * 12 * o.spend,
+    initialThen: initialThen, firstInvest: monthly * priceLevel(start, o.real), firstSpend: switchAt < N ? o.spend * priceLevel(switchAt, o.real) : null };
 }
 // --- sim end
 
@@ -589,11 +646,12 @@ function simulate(o) {
   }
   function pct(v, d) { return (v >= 0 ? "+" : "") + (v * 100).toFixed(d == null ? 1 : d) + "%"; }
   function years(months) { var y = months / 12; return (y === Math.round(y) ? y.toFixed(0) : y.toFixed(1)) + (y === 1 ? " year" : " years"); }
+  function endValue(run) { return run.months[run.months.length - 1].total; }
   function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
 
   // ----- inputs
   var LAST_LABEL = (function () { var d = LAST_CLOSE.split("-"); return MONTHS[+d[1] - 1] + " " + (+d[2]) + ", " + d[0]; })();
-  var DEFAULTS = { start: "1980-04", period: 20, initial: 1000000, spend: 5000, buffer: 2, trigger: 10 };
+  var DEFAULTS = { start: "1980-04", period: 20, initial: 1000000, monthly: 0, investYears: 0, spend: 5000, buffer: 2, trigger: 10 };
   var FIRST_YEAR = yearOf(1), LAST_YEAR = yearOf(N - 1);
   for (var m = 0; m < 12; m++) $("startMonth").add(new Option(FULL_MONTHS[m], m));
   for (var yy = FIRST_YEAR; yy <= LAST_YEAR; yy++) $("startYear").add(new Option(yy, yy));
@@ -613,6 +671,8 @@ function simulate(o) {
       start: readStart(),
       years: +$("period").value,
       initial: Math.max(0, +$("initial").value || 0),
+      monthly: Math.max(0, +$("monthly").value || 0),
+      investYears: +$("investYears").value,
       spend: Math.max(0, +$("spend").value || 0),
       bufferYears: +$("buffer").value,
       trigger: +$("trigger").value / 100,
@@ -629,25 +689,26 @@ function simulate(o) {
       fg: "#fafafa", muted: "#a1a1aa", grid: "rgba(255,255,255,0.08)",
       brk: "#60a5fa", brkFill: "rgba(96,165,250,0.35)", cash: "#2dd4bf", cashFill: "rgba(45,212,191,0.45)",
       total: "#fafafa", down: "rgba(248,113,113,0.12)", bad: "#f87171", good: "#34d399", ath: "#a1a1aa",
-      withdrawn: "#fbbf24", smooth: "#fbbf24",
+      withdrawn: "#fbbf24", smooth: "#fbbf24", invested: "#34d399", investFill: "rgba(96,165,250,0.08)",
       assets: { brk: "#60a5fa", spx: "#a78bfa" },
       buffers: ["#94a3b8", "#60a5fa", "#a78bfa", "#f472b6", "#fb923c", "#34d399", "#fde047"]
     } : {
       fg: "#18181b", muted: "#71717a", grid: "rgba(0,0,0,0.07)",
       brk: "#2563eb", brkFill: "rgba(37,99,235,0.25)", cash: "#0d9488", cashFill: "rgba(13,148,136,0.4)",
       total: "#18181b", down: "rgba(220,38,38,0.09)", bad: "#dc2626", good: "#059669", ath: "#71717a",
-      withdrawn: "#d97706", smooth: "#d97706",
+      withdrawn: "#d97706", smooth: "#d97706", invested: "#059669", investFill: "rgba(37,99,235,0.06)",
       assets: { brk: "#2563eb", spx: "#7c3aed" },
       buffers: ["#64748b", "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#059669", "#ca8a04"]
     };
   }
 
-  // Shades down months and marks depletion on month-axis charts.
+  // Marks on the charts with a time axis: shades down months (opts.flags, one per point), tints the investing months before
+  // opts.switchAt (an x value, between two points) with a line and a label at the switch to withdrawals, and marks the depletion.
   var shadePlugin = {
     id: "downShade",
     beforeDatasetsDraw: function (chart, args, opts) {
-      var flags = opts.flags, x = chart.scales.x, area = chart.chartArea, ctx = chart.ctx;
-      if (!flags || !x || flags.length < 2) return;
+      var flags = opts.flags || [], x = chart.scales.x, area = chart.chartArea, ctx = chart.ctx;
+      if (!x || !area || chart.data.labels.length < 2) return;
       ctx.save();
       var half = (x.getPixelForValue(1) - x.getPixelForValue(0)) / 2;
       ctx.fillStyle = opts.color;
@@ -657,14 +718,23 @@ function simulate(o) {
         var x0 = Math.max(area.left, x.getPixelForValue(first) - half), x1 = Math.min(area.right, x.getPixelForValue(k) + half);
         ctx.fillRect(x0, area.top, x1 - x0, area.bottom - area.top);
       }
-      if (opts.depleted != null) {
-        var px = x.getPixelForValue(opts.depleted);
-        ctx.strokeStyle = opts.lineColor; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+      ctx.font = "600 12px system-ui, sans-serif"; ctx.textBaseline = "alphabetic";
+      function mark(px, color, dash, label, row) {
+        ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.setLineDash(dash);
         ctx.beginPath(); ctx.moveTo(px, area.top); ctx.lineTo(px, area.bottom); ctx.stroke();
-        ctx.setLineDash([]); ctx.fillStyle = opts.lineColor; ctx.font = "600 12px system-ui, sans-serif";
-        var label = "Depleted " + opts.depletedLabel, w = ctx.measureText(label).width;
-        ctx.fillText(label, px + 6 + w > area.right ? px - w - 6 : px + 6, area.top + 14);
+        ctx.setLineDash([]); ctx.fillStyle = color;
+        var w = ctx.measureText(label).width;
+        ctx.fillText(label, px + 6 + w > area.right ? px - w - 6 : px + 6, area.top + 14 + row * 16);
       }
+      var switched = opts.switchAt != null;
+      if (switched) {
+        var sx = Math.min(area.right, Math.max(area.left, x.getPixelForValue(opts.switchAt)));
+        ctx.fillStyle = opts.investColor; ctx.fillRect(area.left, area.top, sx - area.left, area.bottom - area.top);
+        ctx.fillStyle = opts.switchColor;
+        if (sx - area.left > ctx.measureText("Investing").width + 12) ctx.fillText("Investing", area.left + 6, area.top + 14);
+        mark(sx, opts.switchColor, [], opts.switchLabel, 0);
+      }
+      if (opts.depleted != null) mark(x.getPixelForValue(opts.depleted), opts.lineColor, [5, 4], "Depleted " + opts.depletedLabel, switched ? 1 : 0);
       ctx.restore();
     }
   };
@@ -690,7 +760,7 @@ function simulate(o) {
       plugins: {
         legend: { labels: { color: pal.fg, boxWidth: 12, boxHeight: 12 } },
         tooltip: { callbacks: {} },
-        downShade: {}
+        downShade: { investColor: pal.investFill, switchColor: pal.fg, lineColor: pal.bad }
       },
       scales: {
         x: { ticks: { color: pal.muted, maxRotation: 0, autoSkip: false }, grid: { color: pal.grid } },
@@ -723,7 +793,7 @@ function simulate(o) {
       ] },
       options: baseOptions(pal, function (o) {
         o.scales.y.stacked = true; o.scales.y.beginAtZero = true;
-        o.plugins.downShade = { color: pal.down, lineColor: pal.bad };
+        o.plugins.downShade.color = pal.down;
         return moneyTooltip(moneyAxis(o));
       })
     });
@@ -736,6 +806,25 @@ function simulate(o) {
         o.plugins.tooltip.itemSort = function (a, b) { return b.parsed.y - a.parsed.y; };
         o.plugins.legend.labels.sort = function (a, b) { return a.datasetIndex - b.datasetIndex; };
         return moneyTooltip(moneyAxis(o));
+      })
+    });
+
+    charts.spread = new Chart($("cSpread"), {
+      type: "bar",
+      data: { labels: [], datasets: [
+        { label: "Spread over 1 year", data: [], backgroundColor: pal.brk, borderRadius: 3 },
+        { label: "Spread over 2 years", data: [], backgroundColor: pal.assets.spx, borderRadius: 3 }
+      ] },
+      options: baseOptions(pal, function (o) {
+        o.scales.x.ticks.autoSkip = true;
+        o.plugins.tooltip.callbacks.title = function (items) { return items.length ? "Start " + monthLabel(items[0].chart.$rows[items[0].dataIndex].start) : ""; };
+        o.plugins.tooltip.callbacks.label = function (c) {
+          var row = c.chart.$rows[c.dataIndex], run = row.spread[c.datasetIndex], lump = row.lump[c.datasetIndex];
+          var show = function (r) { return r.depleted != null ? "ran out " + monthLabel(r.depleted) : short(endValue(r)); };
+          var diff = c.parsed.y == null ? "" : " (" + (c.chart.$dollars ? (c.parsed.y >= 0 ? "+" : "−") + short(Math.abs(c.parsed.y)) : pct(c.parsed.y)) + ")";
+          return " " + c.dataset.label + ": " + show(run) + diff + " vs. " + show(lump) + " all at once";
+        };
+        return o;
       })
     });
 
@@ -755,6 +844,7 @@ function simulate(o) {
       type: "line",
       data: { labels: [], datasets: [
         { label: "Remaining total value", data: [], borderColor: pal.brk, backgroundColor: pal.brkFill, fill: "origin", pointRadius: 0, borderWidth: 2 },
+        { label: "Cumulative invested", data: [], borderColor: pal.invested, backgroundColor: pal.invested, fill: false, pointRadius: 0, borderWidth: 2, borderDash: [6, 3] },
         { label: "Cumulative withdrawn", data: [], borderColor: pal.withdrawn, backgroundColor: pal.withdrawn, fill: false, pointRadius: 0, borderWidth: 2 }
       ] },
       options: baseOptions(pal, function (o) {
@@ -778,7 +868,7 @@ function simulate(o) {
           if (o.scales.y.type === "logarithmic") { var m = v / Math.pow(10, Math.floor(Math.log10(v) + 1e-9)); if (![1, 2, 5].some(function (t) { return Math.abs(m - t) < 1e-6; })) return null; }
           return short(v);
         };
-        o.plugins.downShade = { color: pal.down, lineColor: pal.bad };
+        o.plugins.downShade.color = pal.down;
         o.plugins.tooltip.callbacks.label = function (c) { return c.parsed.y == null ? null : " " + c.dataset.label + ": " + price(c.parsed.y); };
         return o;
       })
@@ -816,29 +906,59 @@ function simulate(o) {
     var o = readInputs(), pal = palette(), a = ASSETS[o.asset];
     var r = simulate(o), m = r.months, last = m[m.length - 1], start = r.start, count = m.length;
     var lastIdx = r.last, endLabel = lastIdx === N - 1 ? LAST_LABEL : monthLabel(lastIdx);
+    var sw = r.switchAt, investing = o.investYears > 0, spending = sw <= lastIdx; // spending: the withdrawals start within the data
+    var spendCount = Math.max(0, lastIdx - sw + 1), firstSpendK = sw - start;
+    var built = investing ? m[Math.min(sw - start, count) - 1] : null; // the month before the first withdrawal (or the latest one)
     var cutNote = r.cut ? "The data ends " + LAST_LABEL + ", so this run is cut to " + years(count) + "." : "";
     var firstYear = yearOf(start), lastYear = yearOf(lastIdx);
     var monthLabels = m.map(function (x) { return monthLabel(x.i); });
     var yearList = []; for (var y = firstYear; y <= lastYear; y++) yearList.push(y);
+    var unitNote = o.real ? " Amounts are in " + CPI_THROUGH + " dollars." : "";
 
     // labels and hints
+    $("investOut").textContent = investing ? years(o.investYears * 12) : "none";
+    document.querySelectorAll("[data-step]").forEach(function (b) {
+      b.disabled = +b.getAttribute("data-step") < 0 ? o.investYears <= +$("investYears").min : o.investYears >= +$("investYears").max;
+    });
+    $("monthlyHint").textContent = !investing
+      ? "Invested only during an investing period: set one below."
+      : money(o.monthly * 12) + " a year for " + years(o.investYears * 12) + ".";
+    // Total = initial + monthly × months: kept in sync here, except while it is being typed in (then it sets the monthly amount).
+    if (document.activeElement !== $("total")) $("total").value = o.initial + o.monthly * 12 * o.investYears;
+    $("total").disabled = !investing;
+    $("totalHint").textContent = investing
+      ? "The initial amount plus the monthly investments. Change it to set the monthly investment for this initial amount and period."
+      : "The initial amount alone: set an investing period to spread a larger total over monthly investments.";
     $("bufferOut").textContent = o.bufferYears === 0 ? "none" : o.bufferYears + (o.bufferYears === 1 ? " year" : " years");
     $("bufferHint").textContent = o.bufferYears === 0
       ? "No cash: every month is paid by selling shares."
-      : "Target " + money(r.target) + " in cash (" + (o.bufferYears * 12) + " months of spending), carved out of the initial amount.";
+      : "Target " + money(r.target) + " in cash (" + (o.bufferYears * 12) + " months of spending), " +
+        (investing ? "set aside from the portfolio when the withdrawals start." : "carved out of the initial amount.");
     $("triggerOut").textContent = Math.round(o.trigger * 100) + "% below high";
     $("periodOut").textContent = o.years + " years";
-    $("spendHint").textContent = o.initial > 0 ? money(o.spend * 12) + " a year — " + (o.spend * 12 / o.initial * 100).toFixed(1) + "% of the initial amount." : "";
+    var base = investing ? built.total : o.initial;
+    $("spendHint").textContent = base > 0 && (!investing || spending)
+      ? money(o.spend * 12) + " a year — " + (o.spend * 12 / base * 100).toFixed(1) + "% of " + (investing ? "the " + money(base) + " built up by " + monthLabel(sw - 1) : "the initial amount") + "."
+      : money(o.spend * 12) + " a year.";
     $("dollarsHint").textContent = o.real
-      ? "The amounts are " + CPI_THROUGH + " dollars, converted with the CPI to the dollars of the start; spending then rises with inflation every month, and every amount on the page is in " + CPI_THROUGH + " dollars."
+      ? "The amounts are " + CPI_THROUGH + " dollars, converted with the CPI to the dollars of each month: investments and spending rise with inflation, and every amount on the page is in " + CPI_THROUGH + " dollars."
       : "Flat amounts with no inflation adjustment: the same number of dollars is invested and spent whatever the year.";
     document.querySelectorAll(".dollars").forEach(function (el) { el.textContent = o.real ? "In " + CPI_THROUGH + " dollars." : "In nominal dollars."; });
     var shifted = start === o.start ? ""
       : o.basis === "smoothed" && start === a.smoothStart ? "Smoothed " + a.name + " returns start in " + monthLabel(start) + " at the earliest."
-      : a.name + " data starts in " + monthLabel(a.first) + ", so withdrawals start in " + monthLabel(start) + ".";
+      : a.name + " data starts in " + monthLabel(a.first) + ", so the plan starts in " + monthLabel(start) + ".";
+    var then = [];
+    if (o.real) {
+      then.push(money(o.initial) + " today is " + money(r.initialThen) + " in " + monthLabel(start - 1) + " dollars");
+      if (investing && o.monthly > 0) then.push("the first monthly investment is " + money(r.firstInvest));
+      if (r.firstSpend != null) then.push("the first withdrawal is " + money(r.firstSpend));
+    }
     $("startHint").innerHTML = (shifted ? "<strong>" + esc(shifted) + "</strong> " : "") +
-      esc("Buys at the " + monthLabel(start - 1) + " close (" + price(r.prices[start - 1]) + "); withdrawals run " + monthLabel(start) + " – " + endLabel + " (" + years(count) + ").") +
-      (o.real ? " " + esc(money(o.initial) + " today is " + money(r.invested) + " in " + monthLabel(start - 1) + " dollars, and the first withdrawal is " + money(r.firstSpend) + ".") : "") +
+      esc("Buys at the " + monthLabel(start - 1) + " close (" + price(r.prices[start - 1]) + ")" +
+        (investing ? "; invests " + money(o.monthly) + " a month " + monthLabel(start) + " – " + monthLabel(Math.min(sw, N) - 1) : "") +
+        (spending ? "; withdrawals run " + monthLabel(sw) + " – " + endLabel + " (" + years(spendCount) + ")."
+          : "; the data ends before the withdrawals would start, in " + monthLabel(start + o.investYears * 12) + ".")) +
+      (then.length ? " " + esc(then.slice(0, -1).join(", ") + (then.length > 1 ? ", and " : "") + then[then.length - 1] + ".") : "") +
       (cutNote ? " <strong>" + esc(cutNote) + "</strong>" : "");
     $("assetHint").textContent = a.note;
     document.querySelectorAll(".assetName").forEach(function (el) { el.textContent = a.name; });
@@ -849,38 +969,54 @@ function simulate(o) {
     document.querySelectorAll("#presets .chip").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-start") === startText ? "true" : "false"); });
 
     // status
-    var minK = 0; for (var k = 1; k < count; k++) if (m[k].total < m[minK].total) minK = k;
+    var lowFrom = spending ? firstSpendK : 0, minK = lowFrom; // lowest value during the withdrawals
+    for (var k = lowFrom + 1; k < count; k++) if (m[k].total < m[minK].total) minK = k;
     var st = $("status");
     var basisNote = " with " + a.name + (o.basis === "smoothed" ? " (smoothed returns)" : "");
-    var unitNote = o.real ? " Amounts are in " + CPI_THROUGH + " dollars." : "";
-    if (r.depleted != null) {
+    var investNote = investing && spending ? "Investing " + money(built.contributed) + " over " + years(sw - start) + " builds " + money(built.total) + " by " + monthLabel(sw - 1) + ". " : "";
+    if (!spending) {
+      st.className = "status";
+      st.innerHTML = "<strong>Still investing at the latest close</strong>" + basisNote + ": " + money(last.contributed) + " put in since " + monthLabel(start - 1) + " is worth " + money(last.total) + " on " + LAST_LABEL +
+        ". The withdrawals would start in " + monthLabel(start + o.investYears * 12) + "." + esc(unitNote);
+    } else if (r.depleted != null) {
       st.className = "status bad";
-      st.innerHTML = "<strong>The money runs out in " + monthLabel(r.depleted) + "</strong>" + basisNote + " — " + years(r.depleted - start) + " in, after withdrawing " + money(r.withdrawn) + ".";
-      if (cutNote) st.innerHTML += " " + esc(cutNote);
-      st.innerHTML += esc(unitNote);
+      st.innerHTML = esc(investNote) + "<strong>The money runs out in " + monthLabel(r.depleted) + "</strong>" + basisNote + " — " + years(r.depleted - sw) + " into the withdrawals, after withdrawing " + money(r.withdrawn) + "." +
+        (cutNote ? " " + esc(cutNote) : "") + esc(unitNote);
     } else {
       st.className = "status";
-      st.innerHTML = "<strong>The money lasts all " + years(count) + "</strong>" + basisNote + ", " + monthLabel(start) + " – " + endLabel + ": " + money(r.withdrawn) + " withdrawn and " + money(last.total) + " left (" + (o.initial > 0 ? (last.total / o.initial).toFixed(2) : "0") + "× the starting amount)." + (cutNote ? " " + esc(cutNote) : "") + esc(unitNote);
+      st.innerHTML = esc(investNote) + "<strong>The money lasts all " + years(spendCount) + " of withdrawals</strong>" + basisNote + ", " + monthLabel(sw) + " – " + endLabel + ": " + money(r.withdrawn) + " withdrawn and " + money(last.total) + " left (" +
+        (r.contributed > 0 ? (last.total / r.contributed).toFixed(2) : "0") + "× " + (investing ? "what you put in" : "the starting amount") + ")." + (cutNote ? " " + esc(cutNote) : "") + esc(unitNote);
     }
 
     // KPIs
     var downMonths = m.filter(function (x) { return x.down; }).length;
-    var kpis = [
-      { k: "End value (" + endLabel + ")", v: short(last.total), d: money(last.held) + " " + (a.short || a.name) + " · " + money(last.cash) + " cash", cls: last.total >= o.initial ? "good" : (last.total === 0 ? "bad" : "") },
+    var kpis = [];
+    if (investing) kpis.push({ k: spending ? "Built up (" + monthLabel(sw - 1) + ")" : "Built up so far", v: short(built.total), d: money(built.contributed) + " put in", cls: built.total >= built.contributed ? "good" : "" });
+    if (!spending) kpis.push( // the data ends before the withdrawals start
       { k: "Lowest value", v: short(m[minK].total), d: monthLabel(m[minK].i) },
-      { k: "Depleted", v: r.depleted == null ? "Never" : monthLabel(r.depleted), d: r.depleted == null ? "Lasted all " + count + " months" : "After " + (r.depleted - start) + " of " + count + " months", cls: r.depleted == null ? "good" : "bad" },
+      { k: a.units + " bought", v: qty(r.bought), d: "at " + price(r.avgCost) + " on average" }
+    );
+    else kpis.push(
+      { k: "End value (" + endLabel + ")", v: short(last.total), d: money(last.held) + " " + (a.short || a.name) + " · " + money(last.cash) + " cash", cls: last.total >= r.contributed ? "good" : (last.total === 0 ? "bad" : "") },
+      { k: "Lowest value", v: short(m[minK].total), d: monthLabel(m[minK].i) + (investing && spending ? ", while withdrawing" : "") },
+      { k: "Depleted", v: r.depleted == null ? "Never" : monthLabel(r.depleted), d: r.depleted == null ? "Lasted all " + spendCount + " months of withdrawals" : "After " + (r.depleted - sw) + " of " + spendCount + " months of withdrawals", cls: r.depleted == null ? "good" : "bad" },
       { k: "Total withdrawn", v: short(r.withdrawn), d: money(r.withdrawn) },
       { k: "Months paid from cash", v: String(r.fromCash), d: "of " + downMonths + " down months" },
       { k: "Forced sales", v: String(r.forced), d: "down months paid by selling shares", cls: r.forced > 0 ? "bad" : "good" },
-      { k: a.units + " sold", v: qty(r.sold), d: "of " + qty(r.startShares) + " bought at " + price(r.prices[start - 1]) }
-    ];
+      { k: a.units + " sold", v: qty(r.sold), d: "of " + qty(r.bought) + " bought " + (investing ? "at " + price(r.avgCost) + " on average" : "at " + price(r.prices[start - 1])) }
+    );
     $("kpis").innerHTML = kpis.map(function (x) {
       return '<div class="kpi ' + (x.cls || "") + '"><div class="k">' + esc(x.k) + '</div><div class="v">' + esc(x.v) + '</div><div class="d">' + esc(x.d) + "</div></div>";
     }).join("");
 
     var flags = m.map(function (x) { return x.down; });
-    var depletedAt = r.depleted == null ? null : r.depleted - start;
-    var depletedLabel = r.depleted == null ? "" : monthLabel(r.depleted);
+    // The investing months, the switch to withdrawals and the depletion, for a chart whose point k is month runStart + k.
+    function marks(runStart, run) {
+      var at = run.switchAt <= run.last && run.switchAt > runStart ? run.switchAt - runStart - 0.5 : null;
+      return { switchAt: at, switchLabel: at == null ? "" : "Withdrawals from " + monthLabel(run.switchAt),
+        depleted: run.depleted == null ? null : run.depleted - runStart, depletedLabel: run.depleted == null ? "" : monthLabel(run.depleted) };
+    }
+    var runMarks = marks(start, r);
     var denseTicks = yearTicks(start, tickStep(count, true)), sparseTicks = yearTicks(start, tickStep(count, false));
 
     // Chart 1: portfolio
@@ -891,7 +1027,7 @@ function simulate(o) {
     c1.data.datasets[1].data = m.map(function (x) { return x.cash; });
     c1.data.datasets[2].data = m.map(function (x) { return x.total; });
     c1.options.scales.x.ticks.callback = denseTicks;
-    Object.assign(c1.options.plugins.downShade, { flags: flags, depleted: depletedAt, depletedLabel: depletedLabel });
+    Object.assign(c1.options.plugins.downShade, { flags: flags }, runMarks);
     c1.update();
 
     // Same plan with each asset, from the first month both can start
@@ -906,10 +1042,51 @@ function simulate(o) {
         borderColor: color, backgroundColor: color, pointRadius: 0, borderWidth: sel ? 3 : 1.75, order: sel ? 0 : 1 };
     });
     charts.assets.options.scales.x.ticks.callback = yearTicks(common, tickStep(included[0].r.months.length, true));
+    Object.assign(charts.assets.options.plugins.downShade, marks(common, included[0].r), { depleted: null });
     charts.assets.update();
     $("compareSub").textContent = "Total value with your inputs over " + years(included[0].r.months.length) + ", both starting " + monthLabel(common) +
       (common !== start ? " (the first month both have " + (o.basis === "smoothed" ? "smoothed returns" : "data") + ")" : "") + ". End values: " +
       included.map(function (x) { var l = x.r.months[x.r.months.length - 1]; return ASSETS[x.k].name + " " + (x.r.depleted != null ? "ran out " + monthLabel(x.r.depleted) : short(l.total)); }).join(" · ") + "." + unitNote;
+
+    // All at once or spread: the total (initial + monthly × months) invested at the start and left to grow for 1 or 2 years, or
+    // spread evenly over those years as monthly investments; both then withdraw over the same spending period, so only the way
+    // the money goes in differs. For every start in the month of the run's start whose longest plan has a full window of data.
+    var total = o.initial + o.monthly * 12 * o.investYears, SPREADS = [1, 2], inDollars = $("spreadDollars").checked;
+    var earliest = effectiveStart({ asset: o.asset, start: 1, basis: o.basis });
+    var lastS = N - (SPREADS[SPREADS.length - 1] + o.years) * 12, spreadRows = [];
+    for (var s = earliest + (monthOf(start) - monthOf(earliest) + 12) % 12; total > 0 && s <= lastS; s += 12) {
+      spreadRows.push({
+        start: s,
+        lump: SPREADS.map(function (k) { return simulate(Object.assign({}, o, { start: s, initial: total, monthly: 0, investYears: k })); }),
+        spread: SPREADS.map(function (k) { return simulate(Object.assign({}, o, { start: s, initial: 0, monthly: total / (12 * k), investYears: k })); })
+      });
+    }
+    var cs = charts.spread;
+    cs.$rows = spreadRows; cs.$dollars = inDollars;
+    cs.data.labels = spreadRows.map(function (row) { return String(yearOf(row.start)); });
+    var spreadStats = SPREADS.map(function (k, j) {
+      var rel = spreadRows.map(function (row) { var l = endValue(row.lump[j]); return l > 0 ? endValue(row.spread[j]) / l - 1 : null; });
+      cs.data.datasets[j].data = inDollars ? spreadRows.map(function (row) { return endValue(row.spread[j]) - endValue(row.lump[j]); }) : rel;
+      var known = rel.filter(function (v) { return v != null; }).sort(function (a, b) { return a - b; });
+      return { k: k, better: spreadRows.filter(function (row) { return endValue(row.spread[j]) > endValue(row.lump[j]); }).length,
+        lumpOut: spreadRows.filter(function (row) { return row.lump[j].depleted != null && row.spread[j].depleted == null; }).length,
+        spreadOut: spreadRows.filter(function (row) { return row.spread[j].depleted != null && row.lump[j].depleted == null; }).length,
+        bothOut: spreadRows.filter(function (row) { return row.spread[j].depleted != null && row.lump[j].depleted != null; }).length, median: known.length ? known[Math.floor(known.length / 2)] : null };
+    });
+    cs.options.scales.y.ticks.callback = inDollars ? function (v) { return (v < 0 ? "−" : "") + short(Math.abs(v)); } : function (v) { return (v * 100).toFixed(0) + "%"; };
+    cs.update();
+    $("spreadSub").textContent = !spreadRows.length
+      ? "No start leaves a full " + (SPREADS[SPREADS.length - 1] + o.years) + "-year window of data with these inputs."
+      : "Your total of " + money(total) + " (initial + monthly × period) invested all at once at the start and left to grow, or spread evenly over the same 1 or 2 years as monthly investments; " +
+        "both then withdraw for " + years(o.years * 12) + " with your spending inputs, over the same months. " +
+        "Bars: how much more (above zero) or less the spread plan has left at the end" + (inDollars ? "" : ", in percent; no bar when all at once ran out") + ", for starts in " + FULL_MONTHS[monthOf(spreadRows[0].start)] + " " +
+        yearOf(spreadRows[0].start) + "–" + yearOf(spreadRows[spreadRows.length - 1].start) + ". " +
+        spreadStats.map(function (x) {
+          return "Over " + (x.k === 1 ? "1 year" : x.k + " years") + ", spreading left more in " + x.better + " of " + spreadRows.length + " starts" +
+            (x.median == null ? "" : " (median " + pct(x.median) + ")") +
+            [[x.lumpOut, " only all at once ran out"], [x.spreadOut, " only the spread plan ran out"], [x.bothOut, " both ran out"]]
+              .filter(function (p) { return p[0] > 0; }).map(function (p) { return "; in " + p[0] + (p[0] === 1 ? " start" : " starts") + p[1]; }).join("");
+        }).join(". ") + "." + unitNote;
 
     // Chart 2: buffer comparison, sampled at each December plus the last month
     var sample = []; m.forEach(function (x, k) { if (monthOf(x.i) === 11 || k === count - 1) sample.push(k); });
@@ -927,6 +1104,9 @@ function simulate(o) {
         borderWidth: sel ? 3.5 : 1.5, pointRadius: sel && sample.length < 30 ? 2.5 : 0, order: sel ? 0 : 1
       };
     });
+    // point 0 is the purchase, point j + 1 the sample j: the switch goes before the first sample of the withdrawals
+    var sampleSwitch = runMarks.switchAt == null ? -1 : sample.findIndex(function (k) { return k >= firstSpendK; });
+    Object.assign(charts.buffers.options.plugins.downShade, { switchAt: sampleSwitch < 0 ? null : sampleSwitch + 0.5, switchLabel: runMarks.switchLabel });
     charts.buffers.update();
 
     // Chart 3: price + ATH + markers
@@ -937,49 +1117,83 @@ function simulate(o) {
     c3.data.datasets[0].label = o.basis === "smoothed" ? "Smoothed price" : "Month-end price";
     c3.data.datasets[0].data = m.map(function (x) { return x.price; });
     c3.data.datasets[1].data = m.map(function (x) { return x.ath; });
-    c3.data.datasets[2].data = m.map(function (x) { return x.ath * (1 - o.trigger); });
+    c3.data.datasets[2].data = m.map(function (x) { return x.kind === "invest" ? null : x.ath * (1 - o.trigger); }); // the trigger only matters while withdrawing
     c3.data.datasets[2].label = "Trigger (" + Math.round(o.trigger * 100) + "% below high)";
     c3.data.datasets[3].data = m.map(function (x) { return x.kind === "cash" ? x.price : null; });
     c3.data.datasets[4].data = m.map(function (x) { return x.kind === "forced" ? x.price : null; });
     var marker = count > 300 ? 2.5 : 4;
     c3.data.datasets[3].pointRadius = marker; c3.data.datasets[4].pointRadius = marker + 0.5;
     c3.options.scales.x.ticks.callback = denseTicks;
-    Object.assign(c3.options.plugins.downShade, { flags: flags, depleted: depletedAt, depletedLabel: depletedLabel });
+    Object.assign(c3.options.plugins.downShade, { flags: flags }, runMarks);
     c3.update();
 
-    // Chart 4: annual returns
+    // Chart 4: annual returns; the switch falls inside the bar of its year, at its month
     var c4 = charts.returns, actual = yearList.map(function (y) { return yearReturn(a.closes, y, start, lastIdx); });
     c4.data.datasets[0].label = "Actual " + a.name + " return";
     c4.data.labels = yearList.map(function (y) { return yearLabel(y, start, lastIdx); });
     c4.data.datasets[0].data = actual;
     c4.data.datasets[0].backgroundColor = actual.map(function (v) { return v < 0 ? pal.bad : pal.brk; });
     c4.data.datasets[1].data = yearList.map(function (y) { return smoothRate(a, y); });
+    var yearSwitch = runMarks.switchAt == null ? null : yearOf(sw) - firstYear - 0.5 + monthOf(sw) / 12;
+    Object.assign(c4.options.plugins.downShade, { switchAt: yearSwitch, switchLabel: runMarks.switchLabel });
     c4.update();
 
     // Chart 5: cumulative
     var c5 = charts.cumulative;
     c5.data.labels = monthLabels;
     c5.data.datasets[0].data = m.map(function (x) { return x.total; });
-    c5.data.datasets[1].data = m.map(function (x) { return x.withdrawn; });
+    c5.data.datasets[1].data = m.map(function (x) { return x.contributed; });
+    c5.data.datasets[2].data = m.map(function (x) { return x.withdrawn; });
     c5.options.scales.x.ticks.callback = sparseTicks;
+    Object.assign(c5.options.plugins.downShade, runMarks);
     c5.update();
 
     // Table
-    var rows = [], prevW = 0;
+    var rows = [], prevW = 0, prevC = 0;
     yearList.forEach(function (y) {
       var e = m[Math.min(decIndex(y), lastIdx) - start];
       var ret = yearReturn(r.prices, y, start, lastIdx);
       var wy = e.withdrawn - prevW; prevW = e.withdrawn;
+      var cy = e.contributed - prevC; prevC = e.contributed;
       var dep = r.depleted != null && r.depleted <= decIndex(y);
-      rows.push("<tr" + (dep ? ' class="dep"' : "") + "><td>" + esc(yearLabel(y, start, lastIdx)) + '</td><td class="' + (ret < 0 ? "neg" : "pos") + '">' + pct(ret) + "</td><td>" + price(e.price) + "</td><td>" + qty(e.shares) + "</td><td>" + money(e.held) + "</td><td>" + money(e.cash) + "</td><td><strong>" + money(e.total) + "</strong></td><td>" + money(wy) + "</td></tr>");
+      rows.push("<tr" + (dep ? ' class="dep"' : "") + "><td>" + esc(yearLabel(y, start, lastIdx)) + '</td><td class="' + (ret < 0 ? "neg" : "pos") + '">' + pct(ret) + "</td><td>" + price(e.price) + "</td><td>" + qty(e.shares) + "</td><td>" + money(e.held) + "</td><td>" + money(e.cash) + "</td><td><strong>" + money(e.total) + "</strong></td><td>" + money(cy) + "</td><td>" + money(wy) + "</td></tr>");
     });
     $("yearRows").innerHTML = rows.join("");
     $("tableSub").textContent = (o.basis === "smoothed"
       ? "Values at the end of each year (or the last month). Return and price columns show the smoothed series the simulation used."
       : "Values at the end of each year (or the last month). Return is the total return over the part of the year simulated.") +
-      (o.real ? " Return and price are nominal; value, cash, total and withdrawn are in " + CPI_THROUGH + " dollars." : "");
+      " Invested includes the initial amount in the first year." +
+      (o.real ? " Return and price are nominal; the other amounts are in " + CPI_THROUGH + " dollars." : "");
 
     renderPlayback(Object.assign({}, o, { start: start })); // follow the start the run really uses
+    saveValues();
+  }
+
+  // ----- the values of the inputs and toggles, kept in localStorage so that a reload or a visit later finds them as they were
+  var VALUES_KEY = "brkSim.values";
+  var SAVED = {
+    values: ["startMonth", "startYear", "initial", "monthly", "investYears", "spend", "period", "buffer", "trigger"],
+    radios: ["asset", "yield", "basis", "dollars"],
+    checks: ["logScale", "playSync", "playTrails", "spreadDollars"]
+  };
+  function saveValues() {
+    var s = {};
+    SAVED.values.forEach(function (id) { s[id] = $(id).value; });
+    SAVED.radios.forEach(function (n) { s[n] = document.querySelector("input[name=" + n + "]:checked").value; });
+    SAVED.checks.forEach(function (id) { s[id] = $(id).checked; });
+    try { localStorage.setItem(VALUES_KEY, JSON.stringify(s)); } catch (e) {}
+  }
+  // Puts back the saved values; false when there are none. A value the page no longer offers is left at its default.
+  function restoreValues() {
+    var s = null; try { s = JSON.parse(localStorage.getItem(VALUES_KEY)); } catch (e) {}
+    if (!s || typeof s !== "object") return false;
+    SAVED.values.forEach(function (id) { if (typeof s[id] === "string" && s[id] !== "") $(id).value = s[id]; });
+    SAVED.radios.forEach(function (n) {
+      document.querySelectorAll("input[name=" + n + "]").forEach(function (r) { if (r.value === s[n]) r.checked = true; });
+    });
+    SAVED.checks.forEach(function (id) { if (typeof s[id] === "boolean") $(id).checked = s[id]; });
+    setStart(+$("startYear").value, +$("startMonth").value); // keeps the start within the data
+    return true;
   }
 
   // ----- playback: a Gapminder-style bubble chart where the clock is the start date.
@@ -988,16 +1202,17 @@ function simulate(o) {
   var play = { key: null, steps: [], idx: 0, timer: null, o: null, anim: 300, hover: null, nearest: false };
 
   function playSteps(o) {
-    var key = [o.asset, o.years, o.initial, o.spend, o.bufferYears, o.trigger, o.cashYield, o.basis, o.real, monthOf(o.start)].join("|");
+    var key = [o.asset, o.years, o.initial, o.monthly, o.investYears, o.spend, o.bufferYears, o.trigger, o.cashYield, o.basis, o.real, monthOf(o.start)].join("|");
     if (play.key === key) return play.steps;
     var earliest = effectiveStart({ asset: o.asset, start: 1, basis: o.basis });
-    var first = earliest + (monthOf(o.start) - monthOf(earliest) + 12) % 12, lastFull = N - o.years * 12;
+    var first = earliest + (monthOf(o.start) - monthOf(earliest) + 12) % 12, lastFull = N - (o.investYears + o.years) * 12;
     var steps = [];
     for (var s = first; s <= lastFull; s += 12) {
-      var r = simulate(Object.assign({}, o, { start: s })), mm = r.months, low = 0;
-      for (var j = 1; j < mm.length; j++) if (mm[j].total < mm[low].total) low = j;
+      var r = simulate(Object.assign({}, o, { start: s })), mm = r.months, w0 = r.switchAt - s, low = w0; // lowest while withdrawing
+      for (var j = w0 + 1; j < mm.length; j++) if (mm[j].total < mm[low].total) low = j;
       steps.push({
-        start: s, last: r.last, end: mm[mm.length - 1].total, depleted: r.depleted, withdrawn: r.withdrawn,
+        start: s, switchAt: r.switchAt, built: w0 > 0 ? mm[w0 - 1].total : null, putIn: w0 > 0 ? mm[w0 - 1].contributed : o.initial,
+        last: r.last, end: mm[mm.length - 1].total, depleted: r.depleted, withdrawn: r.withdrawn,
         lowest: mm[low].total, lowestAt: mm[low].i, fromCash: r.fromCash, forced: r.forced,
         cagr: Math.pow(r.prices[r.last] / r.prices[s - 1] * priceLevel(s - 1, o.real) / priceLevel(r.last, o.real), 12 / mm.length) - 1 // real with o.real
       });
@@ -1006,10 +1221,11 @@ function simulate(o) {
     // Fixed axes for the whole playback, as in Gapminder: only the bubble moves.
     var xs = steps.map(function (st) { return st.cagr; });
     var ys = steps.filter(function (st) { return st.end > 0; }).map(function (st) { return st.end; });
-    play.floor = Math.max(1, o.initial * 0.01);
+    var putIn = o.initial + o.monthly * 12 * o.investYears; // the axes scale with what the plan puts in
+    play.floor = Math.max(1, putIn * 0.01);
     play.xMin = Math.floor((Math.min.apply(null, xs.concat([0])) - 0.02) * 20) * 5;
     play.xMax = Math.ceil((Math.max.apply(null, xs.concat([0.1])) + 0.02) * 20) * 5;
-    play.yMax = Math.max.apply(null, ys.concat([o.initial])) * 4; // headroom for the bubble
+    play.yMax = Math.max.apply(null, ys.concat([putIn])) * 4; // headroom for the bubble
     return steps;
   }
 
@@ -1076,9 +1292,9 @@ function simulate(o) {
 
   // The panel: the numbers of the current start, or of the trail point under the pointer.
   function drawPanel() {
-    var o = play.o, steps = play.steps, panel = $("playPanel");
+    var o = play.o, steps = play.steps, panel = $("playPanel"), span = o.investYears + o.years;
     if (!steps.length) {
-      panel.innerHTML = '<div class="pp-head">' + esc(ASSETS[o.asset].name) + '</div><div class="pp-note">No start leaves a full ' + o.years + "-year window before " + LAST_LABEL + ".</div>";
+      panel.innerHTML = '<div class="pp-head">' + esc(ASSETS[o.asset].name) + '</div><div class="pp-note">No start leaves a full ' + span + "-year window before " + LAST_LABEL + ".</div>";
       placePanel();
       return;
     }
@@ -1087,16 +1303,18 @@ function simulate(o) {
     panel.innerHTML =
       '<div class="pp-head"><i style="background:' + palette().assets[o.asset] + '"></i><span><b>' + esc(ASSETS[o.asset].name) + "</b>, starting " + monthLabel(st.start) + "</span>" +
         (hovered ? '<span class="pp-tag">earlier start</span>' : "") + "</div>" +
-      '<div class="pp-sub">' + monthLabel(st.start) + " → " + monthLabel(st.start + o.years * 12 - 1) + " · " + o.years + " years</div>" +
+      '<div class="pp-sub">' + monthLabel(st.start) + " → " + monthLabel(st.start + span * 12 - 1) + " · " +
+        (o.investYears > 0 ? o.investYears + "y investing + " + o.years + "y withdrawing" : o.years + " years") + "</div>" +
       '<div class="pp-big' + (ran ? " bad" : "") + '">' + (ran ? "Ran out " + monthLabel(st.depleted) : money(st.end)) +
-        "<small>" + (ran ? (years(st.depleted - st.start) + " in") : "left at the end") + "</small></div>" +
+        "<small>" + (ran ? (years(st.depleted - st.switchAt) + " into the withdrawals") : "left at the end") + "</small></div>" +
       '<dl class="pp-grid">' +
+        (st.built != null ? "<dt>Built up</dt><dd>" + short(st.built) + " · " + monthLabel(st.switchAt - 1) + "</dd>" : "") +
         "<dt>" + (o.real ? "Real return" : "Return") + "</dt><dd>" + pct(st.cagr) + " a year</dd>" +
         "<dt>Withdrawn</dt><dd>" + money(st.withdrawn) + "</dd>" +
         "<dt>Lowest</dt><dd>" + short(st.lowest) + " · " + monthLabel(st.lowestAt) + "</dd>" +
         "<dt>Down months</dt><dd>" + st.fromCash + " from cash · " + st.forced + " forced</dd>" +
       "</dl>" +
-      (play.nearest && !hovered ? '<div class="pp-note">Your start has no full ' + o.years + "-year window, so this shows the nearest one.</div>" : "");
+      (play.nearest && !hovered ? '<div class="pp-note">Your start has no full ' + span + "-year window, so this shows the nearest one.</div>" : "");
     placePanel();
   }
 
@@ -1143,7 +1361,7 @@ function simulate(o) {
       showStep(0, 0, null, null);
       ch.data.datasets.forEach(function (d) { d.data = []; }); ch.$play = null; ch.update(); drawPanel(); return;
     }
-    var idx = play.idx, st = steps[idx], endIdx = st.start + o.years * 12 - 1;
+    var idx = play.idx, st = steps[idx], endIdx = st.start + (o.investYears + o.years) * 12 - 1;
     showStep(steps.length - 1, idx, st.start, endIdx);
     var maxW = Math.max(1, o.years * 12 * o.spend), maxR = Math.max(10, Math.min(30, ch.width / 26));
     function point(s, k) {
@@ -1205,7 +1423,9 @@ function simulate(o) {
   ["playRange", "fPlayRange"].forEach(function (id) {
     $(id).addEventListener("input", function () { stopPlay(); goToStep(+$(id).value, 250); });
   });
-  $("playTrails").addEventListener("change", drawStep);
+  $("playTrails").addEventListener("change", function () { drawStep(); saveValues(); });
+  $("playSync").addEventListener("change", saveValues);
+  $("spreadDollars").addEventListener("change", render);
   $("cPlay").addEventListener("mouseleave", function () { if (play.hover != null) { play.hover = null; drawPanel(); } });
 
   // ----- inputs panel: docked, collapsed to a rail, closed (the gear brings it back floating), or floating (dragged by its header, the pin docks it).
@@ -1279,7 +1499,20 @@ function simulate(o) {
     });
   } catch (e) {}
 
-  ["initial", "spend", "buffer", "trigger", "period"].forEach(function (id) { $(id).addEventListener("input", render); });
+  ["initial", "monthly", "investYears", "spend", "buffer", "trigger", "period"].forEach(function (id) { $(id).addEventListener("input", render); });
+  $("total").addEventListener("input", function () { // the monthly amount that reaches the total, in whole dollars
+    var months = +$("investYears").value * 12;
+    if (!months) return;
+    $("monthly").value = Math.max(0, Math.round(((+$("total").value || 0) - Math.max(0, +$("initial").value || 0)) / months));
+    render();
+  });
+  $("total").addEventListener("blur", render); // shows the total the rounded monthly amount gives
+  document.querySelectorAll("[data-step]").forEach(function (b) { // the − and + buttons of the investing period
+    b.addEventListener("click", function () {
+      var el = $("investYears");
+      el.value = Math.min(+el.max, Math.max(+el.min, +el.value + +b.getAttribute("data-step"))); render();
+    });
+  });
   ["startMonth", "startYear"].forEach(function (id) {
     $(id).addEventListener("change", function () { setStart(+$("startYear").value, +$("startMonth").value); render(); });
   });
@@ -1289,11 +1522,12 @@ function simulate(o) {
   document.querySelectorAll("input[name=asset], input[name=yield], input[name=basis], input[name=dollars]").forEach(function (el) { el.addEventListener("change", render); });
   $("logScale").addEventListener("change", function () {
     charts.price.options.scales.y.type = $("logScale").checked ? "logarithmic" : "linear";
-    charts.price.update();
+    charts.price.update(); saveValues();
   });
   $("reset").addEventListener("click", function () {
     setStartText(DEFAULTS.start);
     $("period").value = DEFAULTS.period; $("initial").value = DEFAULTS.initial; $("spend").value = DEFAULTS.spend;
+    $("monthly").value = DEFAULTS.monthly; $("investYears").value = DEFAULTS.investYears;
     $("buffer").value = DEFAULTS.buffer; $("trigger").value = DEFAULTS.trigger;
     $("a-brk").checked = true; $("y-tbill").checked = true; $("b-actual").checked = true; $("d-real").checked = true;
     render();
@@ -1303,7 +1537,7 @@ function simulate(o) {
 
   document.querySelectorAll(".lastClose").forEach(function (el) { el.textContent = LAST_LABEL; });
   document.querySelectorAll(".cpiThrough").forEach(function (el) { el.textContent = CPI_THROUGH; });
-  setStartText(DEFAULTS.start);
+  if (!restoreValues()) setStartText(DEFAULTS.start);
   setInputs(inputsState());
   setTheme(document.documentElement.classList.contains("dark"));
 })();
